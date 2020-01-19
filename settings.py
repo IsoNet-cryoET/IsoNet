@@ -1,18 +1,18 @@
 
 # computation settings
-gpuID = "4,5,6,7"
+gpuID = "0,1,2,3"
 
 #if your dataset is composes of full tomogram(s) set this value False
-datas_are_subtomos = False
-tomogram_list = ['pp366-bin2-5i.rec']
-subtomo_dir = 'subtomos'
+datas_are_subtomos = True
+tomogram_list = ['pp676_denoised.mrc']
+subtomo_dir = 'subtomos676-bin4'
 
 #number of iterations
-iterations = 20
+iterations = 50
 
 #continus previous training? When continue, the architecture of network can not be changed.
-continue_previous_training =  False
-continue_iter = 0
+continue_previous_training = True
+continue_iter = 14
 
 #continue from either "preprocessing", "training" or "predicting"
 continue_from = "training"
@@ -27,21 +27,20 @@ reload_weight = True
 preprocessing_ncpus = 28
 
 #Temperary folder to save the generated data used for training
-data_folder = "/dev/shm/lytao/tmpdata"
+data_folder = "data"
 
 #TODO:calculate mask to exclude empty area? Please set None for now.
 mask = None
 
 #Size of training cubes, this size should be divisible by 2^unet_depth
-cube_sidelen = 96
+cube_sidelen = 80
 
 #size of cubes to impose missing wedge. Should be same or larger than size of cubes
-cropsize = 128
+cropsize = 120
 
 #number of cubes generated for each (sub)tomos.
 #Because each (sub)tomo rotates 16 times, the actual number of cubes for trainings should be ncube*16
-ncube = 256
-
+ncube = 1
 #------------------------------------------------------------------------------------------
 # train settings
 
@@ -49,23 +48,29 @@ ncube = 256
 epochs = 10
 
 #size of the minibatch
-batch_size = 4
+batch_size = 8
 
 # step per epoch. A good estimation of this value is number is
 # (sub)tomos * ncube * 16 / batch_size *0.9
-steps_per_epoch = 800
+steps_per_epoch = 100
 
 #Add noise during training, Set None to disable noise reduction
-noise_folder = None
+noise_folder = '../t253/noise80'
 
 #level of noise STD(added noise)/STD(data)
-noise_level = 0.5
+noise_level = 0.04
+
+#iteration to add trainning noise
+noise_start_iter = 20
+
+#iters trainning noise remain at one level
+noise_pause = 5
 
 #Drop out rate to reduce overfitting
-drop_out = 0.3
+drop_out = 0.5
 
 #number of convolution layer for each depth
-convs_per_depth = 4
+convs_per_depth = 3
 
 #kernel for convolution layer
 kernel = (3,3,3)
@@ -87,8 +92,8 @@ normalize_percentile = True
 
 #if datas_are_subtomos the predict cube size and crop size are both size of subtomo
 #cropsize should be larger than cubesize. Often 1.5 times of cubesize
-predict_cubesize = 96
-predict_cropsize = 144
+#predict_cubesize = 96
+predict_cropsize = 128
 
-predict_batch_size = 4
+predict_batch_size = 8
 
