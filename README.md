@@ -8,7 +8,7 @@ Create a new folder and copy a setting template **settings.py** into it.
 
 ##### Configure Training
 
-Training noise example: noise start to be added from iteration 20 and remain 0.04 for iteration 20~24, 0.08 for iteration 25~29 , so on. 
+Training noise example: noise start to be added from iteration 20 and remain 0.04 for iteration 20-24, 0.08 for iteration 25-29 , so on. 
 
 ```
 #level of noise STD(added noise)/STD(data)
