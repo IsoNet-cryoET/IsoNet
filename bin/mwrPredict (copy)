@@ -1,0 +1,63 @@
+#!/usr/bin/env python3
+
+from mwr.util import readMrcNumpy,readHeader
+from mwr.simulation import TwoDPsf
+from mwr.util.generate import DataPairs
+import numpy as np
+
+def mrcRead(mrc):
+    data=readMrcNumpy(mrc)
+    header=readHeader(mrc)
+    return data,header
+
+def get_patches(orig_data,outName='train_and_test_data.npz',npathcesper=100,patches_sidelen=128,rotate=True,prefilter=None \
+    ,noisefilter=False,type=None):
+
+    twoD_missingwedge=TwoDPsf(orig_data.shape[1],orig_data.shape[2])
+
+    convoluted=twoD_missingwedge.apply(orig_data)
+    #imgpre.imsave(filename+'_convoluted',convoluted)
+
+    pair=DataPairs()
+    pair.set_dataX(orig_data)
+    pair.set_dataY(convoluted)
+
+    if prefilter!=None:
+        pair.prefilter(prefilter[0],prefilter[1])
+    if rotate==True :
+        pair.rotate()
+
+    pair.create_patches(patches_sidelen,npathcesper,withFilter=filter)
+    train_data,test_data=pair.create_training_data2D()
+    print ('train_data.shape:',train_data[0].shape)
+
+    np.savez(outName,train_data=train_data,test_data=test_data)
+
+def train_data(fileName, outFile):
+
+    data = np.load(fileName)
+
+    x=data['train_data'][0]
+    y=data['train_data'][1]
+    x_val=data['test_data'][0]
+    y_val=data['test_data'][1]
+    from mwr.models import unet
+    unet.train(x,y,(x_val,y_val),outFile)
+    
+if __name__ == '__main__':
+    import argparse
+    parser = argparse.ArgumentParser(description='Process some integers.')
+    parser.add_argument('mrc', type=str, help='Your mrc file')
+    parser.add_argument('--weight', type=str, default='weights_last.h5' ,help='Weight file to save')
+    parser.add_argument('--data', type=str, default='train_and_test_data.npz' ,help='Data file to save')
+    args = parser.parse_args()
+
+    data,header=mrcRead(args.mrc)
+
+    get_patches(data,outName=args.data,npathcesper=100,patches_sidelen=128,rotate=False,prefilter=None \
+    ,noisefilter=False,type=None)
+
+    train_data(args.data,args.weight)
+    
+
+    

@@ -1,0 +1,241 @@
+#!/usr/bin/env python3
+
+import numpy as np
+from mwr.util.generate import DataCubes
+from mwr.simulation.simulate import apply_wedge, apply_wedge1
+from mwr.models import Res_fcnn
+import keras
+from mwr.util.norm import normalize
+from mwr.util.toTile import reform3D,DataWrapper
+import mrcfile
+from mwr.util.image import *
+
+def get_cubes_one(orig_data,settings, start = 0, mask = None, add_noise = 0):
+
+    data_cubes = DataCubes(orig_data, nCubesPerImg=1, cubeSideLen = settings.cube_sidelen, cropsize = settings.cropsize, mask = mask, noise_folder = settings.noise_folder, noise_level = settings.noise_level)
+
+    for i,img in enumerate(data_cubes.cubesX):
+        with mrcfile.new('{}/train_x/x_{}.mrc'.format(settings.data_folder, i+start), overwrite=True) as output_mrc:
+            output_mrc.set_data(img.astype(np.float32))
+        with mrcfile.new('{}/train_y/y_{}.mrc'.format(settings.data_folder, i+start), overwrite=True) as output_mrc:
+            output_mrc.set_data(data_cubes.cubesY[i].astype(np.float32))
+
+    return 0
+
+def get_cubes(inp):
+    import settings
+    mrc, start = inp
+    root_name = mrc.split('/')[-1].split('.')[0]
+    current_mrc = 'results/{}_iter{:0>2d}.mrc'.format(root_name, settings.iter_count)
+    with mrcfile.open(current_mrc) as mrcData:
+        ow_data = mrcData.data.astype(np.float32)*-1
+    ow_data = normalize(ow_data, percentile = settings.normalize_percentile)
+    with mrcfile.open('results/{}_iter00.mrc'.format(root_name)) as mrcData:
+        iw_data = mrcData.data.astype(np.float32)*-1
+    iw_data = normalize(iw_data, percentile = settings.normalize_percentile)
+
+
+    orig_data = apply_wedge1(ow_data, ld1=0, ld2=1) + apply_wedge1(iw_data, ld1 = 1, ld2=0)
+    orig_data = normalize(orig_data, percentile = settings.normalize_percentile)
+
+    from mwr.util.rotations import rotation_list
+    for r in rotation_list:
+        data = np.rot90(orig_data, k=r[0][1], axes=r[0][0])
+        data = np.rot90(data, k=r[1][1], axes=r[1][0])
+        get_cubes_one(data, settings, start = start)
+        start += 1#settings.ncube
+    
+def get_cubes_list(settings):
+    import os
+    dirs_tomake = ['train_x','train_y', 'test_x', 'test_y']
+    for d in dirs_tomake:
+        try:
+            os.makedirs('{}/{}'.format(settings.data_folder, d))
+        except OSError:
+            pass
+
+    inp=[]
+    for i,mrc in enumerate(settings.mrc_list):
+        inp.append((mrc, i*16))
+    if settings.preprocessing_ncpus > 1:
+        from multiprocessing import Pool
+        with Pool(settings.preprocessing_ncpus) as p:
+            print('******** ',len(inp))
+            p.map(get_cubes, inp)
+
+
+    all_path_x = os.listdir(settings.data_folder+'/train_x')
+    num_test = int(len(all_path_x) * 0.1)
+    num_test = num_test - num_test%settings.ngpus + settings.ngpus
+    all_path_y = ['y_'+i.split('_')[1] for i in all_path_x ]
+    ind = np.random.permutation(len(all_path_x))[0:num_test]
+    for i in ind:
+        os.rename('{}/train_x/{}'.format(settings.data_folder, all_path_x[i]), '{}/test_x/{}'.format(settings.data_folder, all_path_x[i]) )
+        os.rename('{}/train_y/{}'.format(settings.data_folder, all_path_y[i]), '{}/test_y/{}'.format(settings.data_folder, all_path_y[i]) )
+        #os.rename('data/train_y/'+all_path_y[i], 'data/test_y/'+all_path_y[i])
+
+
+def train_data(settings):
+
+    if settings.iter_count == 0 or not settings.reload_weight:
+        history = Res_fcnn.train3D_seq('results/model_iter{:0>2d}.h5'.format(settings.iter_count+1), data_folder = settings.data_folder, epochs = settings.epochs, steps_per_epoch = settings.steps_per_epoch,  batch_size = settings.batch_size, dropout = settings.drop_out, depth=settings.unet_depth,convs_per_depth = settings.convs_per_depth,batch_norm = settings.batch_normalization, kernel = settings.kernel, n_gpus = settings.ngpus)
+    else:
+        history = Res_fcnn.train3D_continue('results/model_iter{:0>2d}.h5'.format(settings.iter_count+1), 'results/model_iter{:0>2d}.h5'.format(settings.iter_count), data_folder = settings.data_folder, epochs=settings.epochs, steps_per_epoch=settings.steps_per_epoch, batch_size=settings.batch_size, n_gpus=settings.ngpus)
+
+    return history
+
+
+
+def predict(settings):
+    from keras.models import model_from_json
+
+    json_file = open('model.json', 'r')
+    loaded_model_json = json_file.read()
+
+    json_file.close()
+    model = model_from_json(loaded_model_json)
+
+    if settings.ngpus >1:
+        from keras.utils import multi_gpu_model
+        model = multi_gpu_model(model, gpus=settings.ngpus, cpu_merge=True, cpu_relocation=False)
+    model.load_weights('results/model_iter{:0>2d}.h5'.format(settings.iter_count+1))
+
+    N = settings.predict_batch_size * settings.ngpus
+
+    num_batches = len(settings.mrc_list)
+    if num_batches%N == 0:
+        append_number = 0
+    else:
+        append_number = N - num_batches%N
+    data = []
+
+    for i,mrc in enumerate(settings.mrc_list + settings.mrc_list[:append_number]):
+        root_name = mrc.split('/')[-1].split('.')[0]
+        if i < len(settings.mrc_list):
+            print('predicting:{}'.format(root_name))
+
+        with mrcfile.open('results/{}_iter00.mrc'.format(root_name)) as mrcData:
+            real_data = mrcData.data.astype(np.float32)*-1
+        real_data=normalize(real_data, percentile = settings.normalize_percentile)
+
+        cube_size = real_data.shape[0]
+        pad_size1 = (settings.predict_cropsize - cube_size)//2
+        pad_size2 = pad_size1+1 if (settings.predict_cropsize - cube_size)%2 !=0 else  pad_size1
+        padi = (pad_size1,pad_size2)
+        real_data = np.pad(real_data, (padi,padi,padi), 'symmetric')
+        
+        if (i+1)%N != 0:
+            data.append(real_data)
+        else:
+            data.append(real_data)
+            data = np.array(data)
+            print('***',data.shape)
+            predicted=model.predict(data[:,:,:,:,np.newaxis], batch_size= settings.predict_batch_size,verbose=1)
+            predicted = predicted.reshape(predicted.shape[0:-1])
+
+            for j,outData in enumerate(predicted):
+                count = i + j - N + 1
+                if count < len(settings.mrc_list):
+                    m_name = settings.mrc_list[count]
+                    root_name = m_name.split('/')[-1].split('.')[0]
+                    end_size = pad_size1+cube_size
+                    outData1 = outData[pad_size1:end_size, pad_size1:end_size, pad_size1:end_size]
+                    outData1 = normalize(outData1, percentile = settings.normalize_percentile)
+                    with mrcfile.new('results/{}_iter{:0>2d}.mrc'.format(root_name,settings.iter_count+1), overwrite=True) as output_mrc:
+                        output_mrc.set_data(-outData1)
+            data = []
+
+def generate_first_iter_mrc(mrc):
+    root_name = mrc.split('/')[-1].split('.')[0]
+    with mrcfile.open(mrc) as mrcData:
+        orig_data = normalize(mrcData.data.astype(np.float32)*-1, percentile = settings.normalize_percentile)
+
+    orig_data = apply_wedge1(orig_data, ld1=1, ld2=0)
+    orig_data = normalize(orig_data, percentile = settings.normalize_percentile)
+
+    with mrcfile.new('results/{}_iter00.mrc'.format(root_name), overwrite=True) as output_mrc:
+        output_mrc.set_data(-orig_data)
+
+def prepare_first_iter(settings):
+
+    def mkfolder(folder):
+        import os
+        try:
+            os.makedirs(folder)
+        except FileExistsError:
+            print("Waring, the {} folder already exists before the 1st iteration".format(folder))
+            print("The old {} folder will be removed".format(folder))
+            import shutil
+            shutil.rmtree(folder)
+            os.makedirs(folder)
+
+    mkfolder('results')
+
+
+    if not settings.datas_are_subtomos:
+        mkfolder(settings.subtomo_dir)
+
+        for tomogram in settings.tomogram_list:
+
+            root_name = tomogram.split('/')[-1].split('.')[0]
+            with mrcfile.open(tomogram) as mrcData:
+                orig_data = mrcData.data.astype(np.float32)
+
+            seeds=create_cube_seeds(orig_data,settings.ncube,settings.cropsize)
+            subtomos=crop_cubes(orig_data,seeds,settings.cropsize)
+
+            for j,s in enumerate(subtomos):
+                with mrcfile.new('{}/{}_{:0>6d}.mrc'.format(settings.subtomo_dir, root_name,j), overwrite=True) as output_mrc:
+                    output_mrc.set_data(s.astype(np.float32))
+    import os
+    settings.mrc_list = os.listdir(settings.subtomo_dir)
+    settings.mrc_list = ['{}/{}'.format(settings.subtomo_dir,i) for i in settings.mrc_list]
+
+    from multiprocessing import Pool
+    with Pool(settings.preprocessing_ncpus) as p:
+        res = p.map(generate_first_iter_mrc, settings.mrc_list)
+
+if __name__ == '__main__':
+
+    import os
+    import settings
+    settings.ngpus = len(settings.gpuID.split(','))
+    os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
+    os.environ["CUDA_VISIBLE_DEVICES"]=settings.gpuID  # specify which GPU(s) to be used
+
+    if not settings.continue_previous_training:
+        settings.continue_iter = 0
+        prepare_first_iter(settings)
+
+    import os
+    settings.mrc_list = os.listdir(settings.subtomo_dir)
+    settings.mrc_list = ['{}/{}'.format(settings.subtomo_dir,i) for i in settings.mrc_list]
+
+    losses = []
+    for i in range(settings.continue_iter, settings.iterations):
+        print('start iteration {}'.format(i+1))
+        settings.iter_count = i
+
+        if (not settings.continue_previous_training) or (settings.continue_from == "preprocessing"):
+            import shutil
+            try:
+                shutil.rmtree(settings.data_folder)
+            except OSError:
+                print ("  " )
+            get_cubes_list(settings)
+            settings.continue_previous_training = False
+
+        if (not settings.continue_previous_training) or (settings.continue_from == "training"):
+            history = train_data(settings)
+            print(history.history['loss'])
+            losses.append(history.history['loss'][-1])
+            settings.continue_previous_training = False
+
+        if (not settings.continue_previous_training) or (settings.continue_from == "predicting"):
+            predict(settings)
+            settings.continue_previous_training = False
+
+        if len(losses)>3:
+            if losses[-1]< losses[-2]:
+                print('loss does not reduce in this iteration')
+

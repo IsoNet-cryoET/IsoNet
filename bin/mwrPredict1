@@ -1,0 +1,56 @@
+#!/usr/bin/env python3
+
+import keras
+from tifffile import imsave,imread
+import numpy as np
+from scipy.ndimage.interpolation import rotate
+from keras.models import model_from_json
+def predict2D(real_data, model_name):
+    real_data = np.expand_dims(real_data,axis=-1)
+    xyz_data=rotate(real_data,angle=90,axes=(0,1))
+    print('rotated',xyz_data.shape)
+    imsave('xyz.tif',xyz_data)
+    model=keras.models.load_model(model_name)
+    outData=model.predict(xyz_data,batch_size=32,verbose=1)
+    imsave('xyz_corrected.tif',outData)
+    outData=rotate(outData,angle=-90,axes=(0,1))
+    outData=outData.reshape(outData.shape[0:-1])
+    return outData
+
+def predict3D(real_data, model_name):
+    data=np.expand_dims(real_data,axis=-1)
+    data=np.expand_dims(data,axis=0)
+    data=np.expand_dims(data,axis=0)
+    print('data.shape:',data.shape)
+    
+    model=keras.models.load_model(model_name)
+    print('sdfasdfasdfasdfasdfasdf')
+
+    print(model.summary())
+    for layer in model.layers:
+        print(layer.name)
+
+    outData=model.predict(data,batch_size=1,verbose=1)
+    outData=outData.reshape(outData.shape[1:-1])
+    return outData
+if __name__ == '__main__':
+    import argparse
+    parser = argparse.ArgumentParser(description='Process some integers.')
+    parser.add_argument('real_data', type=str ,help='Data for predict')
+    parser.add_argument('--model_name', type=str, default='weights_last.h5' ,help='Model to predict')
+    parser.add_argument('--outName', type=str, default='corrected_last1.tif', help='File name of corrected .tif file ')
+    parser.add_argument('--dim', type=str, default='2D' ,help='dimension of data')
+    args = parser.parse_args()
+    
+    real_data=imread(args.real_data)
+    print('real_data shape:',real_data.shape)
+    if args.dim=='2D':
+
+        outData=predict2D(real_data, args.model_name)
+    elif args.dim=='3D':
+        outData=predict3D(real_data, args.model_name)
+    print('it`s saving')
+    print ('out_shape',outData.shape)
+    imsave(args.outName,outData)
+    
+

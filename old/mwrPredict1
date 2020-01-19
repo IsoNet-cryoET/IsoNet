@@ -1,0 +1,28 @@
+#!/usr/bin/env python3
+
+import keras
+from tifffile import imsave,imread
+def predict(real_data, model_name):
+    if len(real_data.shape)!=4:
+        assert len(real_data.shape)==3
+        shape=real_data.shape
+        real_data=real_data.reshape(*shape,1)
+    trained_unet=keras.models.load_model(model_name)
+    outData=trained_unet.predict(real_data, batch_size=64)
+    outData=outData.reshape(outData.shape[0:-1])
+    return outData
+
+
+if __name__ == '__main__':
+    import argparse
+    parser = argparse.ArgumentParser(description='Process some integers.')
+    parser.add_argument('real_data', type=str ,help='Data for predict')
+    parser.add_argument('--model_name', type=str, default='weights_last.h5' ,help='Model to predict')
+    parser.add_argument('--outName', type=str, default='corrected_last.tif', help='File name of corrected .tif file ')
+    args = parser.parse_args()
+    
+    real_data=imread(args.real_data)
+    outData=predict(real_data, args.model_name)
+    imsave(args.outName,outData)
+
+    
