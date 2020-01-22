@@ -190,7 +190,9 @@ class DataPairs:
 
 class DataCubes:
 
-    def __init__(self, tomogram, nCubesPerImg=32, cubeSideLen=32, cropsize=32, mask = None, validationSplit=0.1, noise_folder = None, noise_level = 0.5):
+    def __init__(self, tomogram, tomogram2 = None, nCubesPerImg=32, cubeSideLen=32, cropsize=32, mask = None, validationSplit=0.1, noise_folder = None, noise_level = 0.5):
+
+        #TODO nCubesPerImg is always 1. We should not use this variable @Zhang Heng.
 
         self.tomogram = tomogram
         self.nCubesPerImg = nCubesPerImg
@@ -204,12 +206,21 @@ class DataCubes:
         self.noise_folder = noise_folder
         self.noise_level = noise_level
 
+        #if we have two sub-tomograms for denoising (noise to noise), we will enable the parameter tomogram2, tomogram1 and 2 should be in same size
+        #Using tomogram1 for X and tomogram2 for Y.
+        self.tomogram2 = tomogram2
+
 
     @property
     def cubesY_padded(self):
         if self.__cubesY_padded is None:
             seeds=create_cube_seeds(self.tomogram,self.nCubesPerImg,self.cropsize,self.mask)
-            self.__cubesY_padded=crop_cubes(self.tomogram,seeds,self.cropsize)
+            
+            self.__cubesX_padded = crop_cubes(self.tomogram,seeds,self.cropsize)
+            if self.tomogram2 is None:
+                self.__cubesY_padded=crop_cubes(self.tomogram,seeds,self.cropsize)
+            else:
+                self.__cubesY_padded=crop_cubes(self.tomogram2,seeds,self.cropsize)
             self.__cubesY_padded = self.__cubesY_padded.astype(np.float32)
         return self.__cubesY_padded
 
