@@ -176,7 +176,7 @@ def prepare_first_iter(settings):
     if not settings.datas_are_subtomos:
         mkfolder(settings.subtomo_dir)
 
-        for tomogram in settings.tomogram_list:
+        for tomo_count, tomogram in enumerate(settings.tomogram_list):
 
             root_name = tomogram.split('/')[-1].split('.')[0]
             with mrcfile.open(tomogram) as mrcData:
@@ -188,6 +188,16 @@ def prepare_first_iter(settings):
             for j,s in enumerate(subtomos):
                 with mrcfile.new('{}/{}_{:0>6d}.mrc'.format(settings.subtomo_dir, root_name,j), overwrite=True) as output_mrc:
                     output_mrc.set_data(s.astype(np.float32))
+
+            if settings.tomogram2_list is not None:
+            	with mrcfile.open(settings.tomogram2_list[tomo_count]) as mrcData:
+                	orig_data = mrcData.data.astype(np.float32)
+                subtomos=crop_cubes(orig_data,seeds,settings.cropsize)
+	            for j,s in enumerate(subtomos):
+	                with mrcfile.new('{}/{}_{:0>6d}.mrc2'.format(settings.subtomo_dir, root_name,j), overwrite=True) as output_mrc:
+	                    output_mrc.set_data(s.astype(np.float32))
+
+
     import os
     settings.mrc_list = os.listdir(settings.subtomo_dir)
     settings.mrc_list = ['{}/{}'.format(settings.subtomo_dir,i) for i in settings.mrc_list]
