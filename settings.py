@@ -5,6 +5,7 @@ gpuID = "0,1,2,3"
 #if your dataset is composes of full tomogram(s) set this value False
 datas_are_subtomos = True
 tomogram_list = ['pp676_denoised.mrc']
+tomogram2_list = None
 subtomo_dir = 'subtomos676-bin4'
 
 #number of iterations

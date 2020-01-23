@@ -191,7 +191,7 @@ def prepare_first_iter(settings):
 
             if settings.tomogram2_list is not None:
             	with mrcfile.open(settings.tomogram2_list[tomo_count]) as mrcData:
-                	orig_data = mrcData.data.astype(np.float32)
+                    orig_data = mrcData.data.astype(np.float32)
                 subtomos=crop_cubes(orig_data,seeds,settings.cropsize)
 	            for j,s in enumerate(subtomos):
 	                with mrcfile.new('{}/{}_{:0>6d}.mrc2'.format(settings.subtomo_dir, root_name,j), overwrite=True) as output_mrc:
