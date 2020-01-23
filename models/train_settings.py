@@ -9,3 +9,5 @@ dropout=0.5
 last_activation = 'linear'
 lr=0.0004
 residual = True
+loss = 'binary_crossentropy'
+metrics = ['accuracy']
