@@ -215,9 +215,9 @@ class DataCubes:
     @property
     def seeds(self):
         if self.__seeds is None:
-            self.seeds=create_cube_seeds(self.tomogram,self.nCubesPerImg,self.cropsize,self.mask)
+            self.__seeds=create_cube_seeds(self.tomogram,self.nCubesPerImg,self.cropsize,self.mask)
         return self.__seeds
-    
+
     @property
     def cubesX_padded(self):
         if self.__cubesX_padded is None:
@@ -235,7 +235,7 @@ class DataCubes:
                 self.__cubesY_padded=crop_cubes(self.tomogram2,self.seeds,self.cropsize)
             self.__cubesY_padded = self.__cubesY_padded.astype(np.float32)
         return self.__cubesY_padded
-    
+
 
     @property
     def cubesY(self):

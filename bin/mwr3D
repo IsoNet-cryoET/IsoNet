@@ -12,7 +12,7 @@ from mwr.util.image import *
 
 def get_cubes_one(orig_data,settings, start = 0, mask = None, add_noise = 0):
     noise_factor = ((settings.iter_count - settings.noise_start_iter) // settings.noise_pause) +1 if settings.iter_count > settings.noise_start_iter else 0
-    data_cubes = DataCubes(orig_data, nCubesPerImg=1, cubeSideLen = settings.cube_sidelen, cropsize = settings.cropsize, mask = mask, noise_folder = settings.noise_folder, 
+    data_cubes = DataCubes(orig_data, nCubesPerImg=1, cubeSideLen = settings.cube_sidelen, cropsize = settings.cropsize, mask = mask, noise_folder = settings.noise_folder,
     noise_level = settings.noise_level*noise_factor)
 
     for i,img in enumerate(data_cubes.cubesX):
@@ -45,7 +45,7 @@ def get_cubes(inp):
         data = np.rot90(data, k=r[1][1], axes=r[1][0])
         get_cubes_one(data, settings, start = start)
         start += 1#settings.ncube
-    
+
 def get_cubes_list(settings):
     import os
     dirs_tomake = ['train_x','train_y', 'test_x', 'test_y']
@@ -124,7 +124,7 @@ def predict(settings):
         pad_size2 = pad_size1+1 if (settings.predict_cropsize - cube_size)%2 !=0 else  pad_size1
         padi = (pad_size1,pad_size2)
         real_data = np.pad(real_data, (padi,padi,padi), 'symmetric')
-        
+
         if (i+1)%N != 0:
             data.append(real_data)
         else:
@@ -190,13 +190,13 @@ def prepare_first_iter(settings):
                     output_mrc.set_data(s.astype(np.float32))
 
             if settings.tomogram2_list is not None:
-            	with mrcfile.open(settings.tomogram2_list[tomo_count]) as mrcData:
+                with mrcfile.open(settings.tomogram2_list[tomo_count]) as mrcData:
                     orig_data = mrcData.data.astype(np.float32)
-                    
+
                 subtomos=crop_cubes(orig_data,seeds,settings.cropsize)
-	            for j,s in enumerate(subtomos):
-	                with mrcfile.new('{}/{}_{:0>6d}.mrc2'.format(settings.subtomo_dir, root_name,j), overwrite=True) as output_mrc:
-	                    output_mrc.set_data(s.astype(np.float32))
+                for j,s in enumerate(subtomos):
+                    with mrcfile.new('{}/{}_{:0>6d}.mrc2'.format(settings.subtomo_dir, root_name,j), overwrite=True) as output_mrc:
+                        output_mrc.set_data(s.astype(np.float32))
 
 
     import os
