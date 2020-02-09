@@ -185,7 +185,7 @@ def predict(settings):
             if i < len(settings.mrc_list):
                 print('predicting:{}'.format(root_name))
 
-            with mrcfile.open('results/{}_iter00.mrcs'.format(root_name)) as mrcData:
+            with mrcfile.open('results/{}_iter00.mrc2'.format(root_name)) as mrcData:
                 real_data = mrcData.data.astype(np.float32)*-1
             real_data=normalize(real_data, percentile = settings.normalize_percentile)
 
@@ -212,7 +212,7 @@ def predict(settings):
                         end_size = pad_size1+cube_size
                         outData1 = outData[pad_size1:end_size, pad_size1:end_size, pad_size1:end_size]
                         outData1 = normalize(outData1, percentile = settings.normalize_percentile)
-                        with mrcfile.new('results/{}_iter{:0>2d}.mrcs'.format(root_name,settings.iter_count+1), overwrite=True) as output_mrc:
+                        with mrcfile.new('results/{}_iter{:0>2d}.mrc2'.format(root_name,settings.iter_count+1), overwrite=True) as output_mrc:
                             output_mrc.set_data(-outData1)
                 data = []        
 
