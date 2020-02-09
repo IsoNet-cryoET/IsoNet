@@ -14,7 +14,7 @@ def get_cubes_one(data,settings, data2 = None, start = 0, mask = None, add_noise
     noise_factor = ((settings.iter_count - settings.noise_start_iter) // settings.noise_pause) +1 if settings.iter_count > settings.noise_start_iter else 0
 
     
-    permutation = False
+    permutation = True
     if permutation:
         #randomly switch data1 and data2
         c = np.random.rand()
