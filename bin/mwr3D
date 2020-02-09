@@ -15,7 +15,7 @@ def get_cubes_one(data,settings, data2 = None, start = 0, mask = None, add_noise
 
     
     permutation = True
-    if permutation:
+    if permutation and (data2 is not None):
         #randomly switch data1 and data2
         c = np.random.rand()
         if c > 0.5:
