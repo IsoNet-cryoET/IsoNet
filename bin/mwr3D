@@ -177,6 +177,45 @@ def predict(settings):
                         output_mrc.set_data(-outData1)
             data = []
 
+    if settings.tomogram2_list is not None:
+        data = []
+
+        for i,mrc in enumerate(settings.mrc_list + settings.mrc_list[:append_number]):
+            root_name = mrc.split('/')[-1].split('.')[0]
+            if i < len(settings.mrc_list):
+                print('predicting:{}'.format(root_name))
+
+            with mrcfile.open('results/{}_iter00.mrcs'.format(root_name)) as mrcData:
+                real_data = mrcData.data.astype(np.float32)*-1
+            real_data=normalize(real_data, percentile = settings.normalize_percentile)
+
+            cube_size = real_data.shape[0]
+            pad_size1 = (settings.predict_cropsize - cube_size)//2
+            pad_size2 = pad_size1+1 if (settings.predict_cropsize - cube_size)%2 !=0 else  pad_size1
+            padi = (pad_size1,pad_size2)
+            real_data = np.pad(real_data, (padi,padi,padi), 'symmetric')
+
+            if (i+1)%N != 0:
+                data.append(real_data)
+            else:
+                data.append(real_data)
+                data = np.array(data)
+                print('***',data.shape)
+                predicted=model.predict(data[:,:,:,:,np.newaxis], batch_size= settings.predict_batch_size,verbose=1)
+                predicted = predicted.reshape(predicted.shape[0:-1])
+
+                for j,outData in enumerate(predicted):
+                    count = i + j - N + 1
+                    if count < len(settings.mrc_list):
+                        m_name = settings.mrc_list[count]
+                        root_name = m_name.split('/')[-1].split('.')[0]
+                        end_size = pad_size1+cube_size
+                        outData1 = outData[pad_size1:end_size, pad_size1:end_size, pad_size1:end_size]
+                        outData1 = normalize(outData1, percentile = settings.normalize_percentile)
+                        with mrcfile.new('results/{}_iter{:0>2d}.mrcs'.format(root_name,settings.iter_count+1), overwrite=True) as output_mrc:
+                            output_mrc.set_data(-outData1)
+                data = []        
+
 def generate_first_iter_mrc(mrc):
     root_name = mrc.split('/')[-1].split('.')[0]
     extension = mrc.split('/')[-1].split('.')[1]
