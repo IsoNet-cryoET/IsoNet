@@ -63,7 +63,7 @@ def get_cubes(inp):
             iw_data = mrcData.data.astype(np.float32)*-1
         iw_data = normalize(iw_data, percentile = settings.normalize_percentile)
         orig_data2 = apply_wedge1(ow_data, ld1=0, ld2=1) + apply_wedge1(iw_data, ld1 = 1, ld2=0)
-        orig_data2 = normalize(orig_data, percentile = settings.normalize_percentile)
+        orig_data2 = normalize(orig_data2, percentile = settings.normalize_percentile)
 
     from mwr.util.rotations import rotation_list
     for r in rotation_list:
