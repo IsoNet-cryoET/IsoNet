@@ -190,8 +190,10 @@ class DataPairs:
 
 class DataCubes:
 
-    def __init__(self, tomogram, nCubesPerImg=32, cubeSideLen=32, cropsize=32, mask = None, validationSplit=0.1, noise_folder = None, noise_level = 0.5):
+    def __init__(self, tomogram, tomogram2 = None, nCubesPerImg=32, cubeSideLen=32, cropsize=32, mask = None, validationSplit=0.1, noise_folder = None, noise_level = 0.5):
 
+        #TODO nCubesPerImg is always 1. We should not use this variable @Zhang Heng.
+        #TODO consider add gaussian filter here
         self.tomogram = tomogram
         self.nCubesPerImg = nCubesPerImg
         self.cubeSideLen = cubeSideLen
@@ -199,19 +201,41 @@ class DataCubes:
         self.mask = mask
         self.validationSplit = validationSplit
         self.__cubesY_padded = None
+        self.__cubesX_padded = None
         self.__cubesY = None
         self.__cubesX = None
         self.noise_folder = noise_folder
         self.noise_level = noise_level
 
+        #if we have two sub-tomograms for denoising (noise to noise), we will enable the parameter tomogram2, tomogram1 and 2 should be in same size
+        #Using tomogram1 for X and tomogram2 for Y.
+        self.tomogram2 = tomogram2
+        self.__seeds = None
+
+    @property
+    def seeds(self):
+        if self.__seeds is None:
+            self.__seeds=create_cube_seeds(self.tomogram,self.nCubesPerImg,self.cropsize,self.mask)
+        return self.__seeds
+
+    @property
+    def cubesX_padded(self):
+        if self.__cubesX_padded is None:
+            self.__cubesX_padded=crop_cubes(self.tomogram,self.seeds,self.cropsize).astype(np.float32)
+            from mwr.simulation.simulate import apply_wedge
+            self.__cubesX_padded = np.array(list(map(apply_wedge, self.__cubesX_padded)), dtype = np.float32)
+        return self.__cubesX_padded
 
     @property
     def cubesY_padded(self):
         if self.__cubesY_padded is None:
-            seeds=create_cube_seeds(self.tomogram,self.nCubesPerImg,self.cropsize,self.mask)
-            self.__cubesY_padded=crop_cubes(self.tomogram,seeds,self.cropsize)
+            if self.tomogram2 is None:
+                self.__cubesY_padded=crop_cubes(self.tomogram,self.seeds,self.cropsize)
+            else:
+                self.__cubesY_padded=crop_cubes(self.tomogram2,self.seeds,self.cropsize)
             self.__cubesY_padded = self.__cubesY_padded.astype(np.float32)
         return self.__cubesY_padded
+
 
     @property
     def cubesY(self):
@@ -222,13 +246,8 @@ class DataCubes:
     @property
     def cubesX(self):
         if self.__cubesX is None:
-            #print('here', self.tomogram)
-            from mwr.simulation.simulate import apply_wedge
 
-            res = list(map(apply_wedge, self.cubesY_padded))
-
-            cubesX_padded = np.array(res, dtype = np.float32)
-            self.__cubesX = self.crop_to_size(cubesX_padded, self.cubeSideLen)
+            self.__cubesX = self.crop_to_size(self.cubesX_padded, self.cubeSideLen)
 
             if self.noise_folder is not None:
                 import os
