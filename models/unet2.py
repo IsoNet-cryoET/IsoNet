@@ -87,7 +87,7 @@ def train3D_seq(outFile, data_folder = 'data', epochs=40, steps_per_epoch=128,ba
     from mwr.models import train_settings 
     optimizer = Adam(train_settings.lr)
     metrics = train_settings.metrics
-    _metrics = [eval('loss_%s()' % m) for m in metrics]
+    # _metrics = [eval('loss_%s()' % m) for m in metrics]
 
     # inputs = Input((None, None,None, 1))
     model = define_unet_generator((None, None,None, 1),train_settings)
@@ -98,7 +98,7 @@ def train3D_seq(outFile, data_folder = 'data', epochs=40, steps_per_epoch=128,ba
     if n_gpus >1:
         model = multi_gpu_model(model, gpus=n_gpus, cpu_merge=True, cpu_relocation=False)
 
-    model.compile(optimizer=optimizer, loss=loss, metrics=_metrics)
+    model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
 
     train_data, test_data = prepare_dataseq(data_folder, batch_size)
     print('**train data size**',len(train_data))
