@@ -5,7 +5,14 @@ gpuID = "0,1,2,3"
 #if your dataset is composes of full tomogram(s) set this value False
 datas_are_subtomos = True
 tomogram_list = ['pp676_denoised.mrc']
+
+
+#Use two tomograms for denoising. 
+#Combined predication means combine the two volumes as output of the network
 tomogram2_list = None
+combined_prediction=True
+
+
 subtomo_dir = 'subtomos676-bin4'
 
 #number of iterations

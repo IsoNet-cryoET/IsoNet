@@ -18,10 +18,15 @@ def get_cubes_one(data,settings, data2 = None, start = 0, mask = None, add_noise
     if permutation and (data2 is not None):
         #randomly switch data1 and data2
         c = np.random.rand()
+
         if c > 0.5:
+            if settings.combined_prediction:
+                data2=(data+data2)/2.
             data_cubes = DataCubes(data, tomogram2 = data2, nCubesPerImg=1, cubeSideLen = settings.cube_sidelen, cropsize = settings.cropsize, mask = mask, noise_folder = settings.noise_folder,
             noise_level = settings.noise_level*noise_factor)
         else:
+            if settings.combined_prediction:
+                data=(data+data2)/2.
             data_cubes = DataCubes(data2, tomogram2 = data, nCubesPerImg=1, cubeSideLen = settings.cube_sidelen, cropsize = settings.cropsize, mask = mask, noise_folder = settings.noise_folder,
             noise_level = settings.noise_level*noise_factor)
     else:
