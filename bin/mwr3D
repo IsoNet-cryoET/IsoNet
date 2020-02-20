@@ -11,6 +11,7 @@ import mrcfile
 from mwr.util.image import *
 
 def get_cubes_one(data,settings, data2 = None, start = 0, mask = None, add_noise = 0):
+    
     noise_factor = ((settings.iter_count - settings.noise_start_iter) // settings.noise_pause) +1 if settings.iter_count > settings.noise_start_iter else 0
 
     
@@ -41,6 +42,7 @@ def get_cubes(inp):
     mrc, start = inp
     root_name = mrc.split('/')[-1].split('.')[0]
     current_mrc = 'results/{}_iter{:0>2d}.mrc'.format(root_name, settings.iter_count)
+
     with mrcfile.open(current_mrc) as mrcData:
         ow_data = mrcData.data.astype(np.float32)*-1
     ow_data = normalize(ow_data, percentile = settings.normalize_percentile)
@@ -74,7 +76,7 @@ def get_cubes(inp):
             data2 = np.rot90(data2, k=r[1][1], axes=r[1][0]) 
         else:
             data2=None
-        get_cubes_one(data, settings, data2, start = start)
+        get_cubes_one(data, settings, data2, start = start) 
         start += 1#settings.ncube
 
 def get_cubes_list(settings):
@@ -161,7 +163,6 @@ def predict(settings):
         else:
             data.append(real_data)
             data = np.array(data)
-            print('***',data.shape)
             predicted=model.predict(data[:,:,:,:,np.newaxis], batch_size= settings.predict_batch_size,verbose=1)
             predicted = predicted.reshape(predicted.shape[0:-1])
 
@@ -246,14 +247,18 @@ def prepare_first_iter(settings):
 
     if not settings.datas_are_subtomos:
         mkfolder(settings.subtomo_dir)
-
+        if settings.mask is not None:
+            with mrcfile.open(settings.mask) as m:
+                mask=m.data
+        else:
+            mask=None
         for tomo_count, tomogram in enumerate(settings.tomogram_list):
 
             root_name = tomogram.split('/')[-1].split('.')[0]
             with mrcfile.open(tomogram) as mrcData:
                 orig_data = mrcData.data.astype(np.float32)
 
-            seeds=create_cube_seeds(orig_data,settings.ncube,settings.cropsize)
+            seeds=create_cube_seeds(orig_data,settings.ncube,settings.cropsize,mask=mask)
             subtomos=crop_cubes(orig_data,seeds,settings.cropsize)
 
             for j,s in enumerate(subtomos):
@@ -305,9 +310,9 @@ if __name__ == '__main__':
         settings.continue_iter = 0
         prepare_first_iter(settings)
 
-    import os
-    settings.mrc_list = os.listdir(settings.subtomo_dir)
-    settings.mrc_list = ['{}/{}'.format(settings.subtomo_dir,i) for i in settings.mrc_list]
+    import glob
+    settings.mrc_list = glob.glob(settings.subtomo_dir+'/*.mrc')# .mrc2 file should not be in mrc_list 
+    settings.mrc2_list = glob.glob(settings.subtomo_dir+'/*.mrc2') 
 
     losses = []
     for i in range(settings.continue_iter, settings.iterations):
@@ -337,5 +342,3 @@ if __name__ == '__main__':
         if len(losses)>3:
             if losses[-1]< losses[-2]:
                 print('loss does not reduce in this iteration')
-    noise_factor = (settings.iter_count - settings.noise_start_iter)//settings.noise_pause if settings.iter_count > settings.noise_start_iter else 0
-    print('noise_factor',noise_factor)

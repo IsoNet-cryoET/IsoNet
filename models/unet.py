@@ -173,14 +173,14 @@ def train(X,Y, val_data, outFile, epochs=20,steps_per_epoch=64,batch_size=128,n_
     return history
 
 
-def train3D(X, Y, val_data, outFile, epochs=40, steps_per_epoch=128, batch_size=64,n_gpus=2 ):
-    filter_base = 32
-    depth = 3
-    convs_per_depth = 3
-    kernel = (3,3,3)
-    batch_norm = False
-    dropout = 0.0
-    pool = (2, 2, 2)
+def train3D(outFile, data_folder = 'data', epochs=40, steps_per_epoch=128,batch_size=32, dropout = 0.3,filter_base=32, convs_per_depth = 3,kernel = (3,3,3), pool = (2,2,2), batch_norm = False, depth = 3, n_gpus=2):
+    filter_base = filter_base
+    depth = depth
+    convs_per_depth = convs_per_depth
+    kernel = kernel
+    batch_norm = batch_norm
+    dropout = dropout
+    pool = pool
     last_activation = 'linear'
     optimizer = Adam(lr=0.0004)
     metrics = ('mse', 'mae')
@@ -201,18 +201,32 @@ def train3D(X, Y, val_data, outFile, epochs=40, steps_per_epoch=128, batch_size=
 
     outputs = Activation(activation=last_activation)(outputs)
     model = Model(inputs=inputs, outputs=outputs)
+    model_json = model.to_json()
+    with open("model.json", "w") as json_file:
+        json_file.write(model_json)
+
     if n_gpus >1:
         model = multi_gpu_model(model, gpus=n_gpus, cpu_merge=True, cpu_relocation=False)
+    #model.compile(optimizer=optimizer, loss='mae', metrics=_metrics)
+    #if mrc_list is not None:
+    #    model.compile(optimizer=optimizer, loss=loss_custom(model,read_data_mrc(mrc_list)), metrics=_metrics)
+    #else:
     model.compile(optimizer=optimizer, loss='mae', metrics=_metrics)
 
-    train_data = DataWrapper(X, Y, batch_size)
-    history = model.fit_generator(generator=train_data, validation_data=val_data,
+    train_data, test_data = prepare_dataseq(data_folder, batch_size)
+
+    callback_list = []
+    check_point = ModelCheckpoint('results/weights{epoch:08d}.h5', monitor='val_loss', verbose=0, save_best_only=False, save_weights_only=True, mode='auto', period=5)
+    callback_list.append(check_point)
+    tensor_board = TensorBoard(log_dir='./Graph', histogram_freq=0, write_graph=True, write_images=True)
+    callback_list.append(tensor_board)
+    
+    history = model.fit_generator(generator=train_data, validation_data=test_data,
                                   epochs=epochs, steps_per_epoch=steps_per_epoch,
                                   verbose=1,
-                                  callbacks=[TensorBoard(log_dir='./Graph', histogram_freq=0, write_graph=True,
-                                                         write_images=True)])
+                                  callbacks=callback_list)
 
-    model.save(outFile)
+    model.save_weights(outFile)
     return history
 
 

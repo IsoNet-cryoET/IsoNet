@@ -11,6 +11,8 @@ import numpy as np
 from keras.utils import multi_gpu_model
 from keras import regularizers
 import mrcfile
+import os
+import sys
 
 def encoder_block(layer_in, n_filters, kernel=(3,3,3), strides=(2,2,2), dropout=0.5, batchnorm=True, activation='relu'):
     # weight initialization
@@ -84,7 +86,12 @@ def define_unet_generator(image_shape,settings):
     return model
 
 def train3D_seq(outFile, data_folder = 'data', epochs=40, steps_per_epoch=128,batch_size=32, n_gpus=1,loss='mae'):
-    from mwr.models import train_settings 
+    sys.path.insert(0,os.getcwd())
+    if os.path.isfile('train_settings.py'):
+        print('train_settings from cwd')
+        import train_settings
+    else:
+        from mwr.models import train_settings 
     optimizer = Adam(train_settings.lr)
     metrics = train_settings.metrics
     # _metrics = [eval('loss_%s()' % m) for m in metrics]
@@ -97,8 +104,8 @@ def train3D_seq(outFile, data_folder = 'data', epochs=40, steps_per_epoch=128,ba
 
     if n_gpus >1:
         model = multi_gpu_model(model, gpus=n_gpus, cpu_merge=True, cpu_relocation=False)
-
-    model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
+    print('***',train_settings.loss)
+    model.compile(optimizer=optimizer, loss=train_settings.loss, metrics=train_settings.metrics)
 
     train_data, test_data = prepare_dataseq(data_folder, batch_size)
     print('**train data size**',len(train_data))
