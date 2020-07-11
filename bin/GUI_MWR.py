@@ -12,54 +12,54 @@ class MainWindow(QMainWindow):
         # self.resize(300, 300)
         self.status = self.statusBar()
         self.status.showMessage("Telda Wang")
-        self.setWindowTitle("WMR")
+        self.setWindowTitle("mwr train")
         self.pwd = ""
 
         # open file1
         self.line_f1 = QLineEdit()
         self.line_f1.textEdited.connect(self.updateUi)
-        self.button_f1 = QPushButton("Get File")
+        self.button_f1 = QPushButton("Tomo1")
         self.button_f1.clicked.connect(self.get_path_f1)
 
         # open file2
         self.line_f2 = QLineEdit()
         self.line_f2.textEdited.connect(self.updateUi)
-        self.button_f2 = QPushButton("Data File")
+        self.button_f2 = QPushButton("Tomo2")
         self.button_f2.clicked.connect(self.get_path_f2)
 
 
         # paras
-        weight_label = QLabel("weight")
+        weight_label = QLabel("Results")
         self.line_weight = QLineEdit()
         weight_label.setBuddy(self.line_weight)
         self.line_weight.textEdited.connect(self.updateUi)
         self.line_weight.setText("None")
 
-        data_label = QLabel("data")
+        data_label = QLabel("cubesize")
         self.line_data = QLineEdit()
         data_label.setBuddy(self.line_data)
         self.line_data.textEdited.connect(self.updateUi)
-        self.line_data.setText("None")
+        self.line_data.setText("64")
 
-        ip_label = QLabel("IP")
+        ip_label = QLabel("cropsize")
         self.line_ip = QLineEdit()
         ip_label.setBuddy(self.line_ip)
         self.line_ip.textEdited.connect(self.updateUi)
-        self.line_ip.setText("24")
+        self.line_ip.setText("96")
 
         DIM_label = QLabel("DIM")
         self.line_DIM = QLineEdit()
         ip_label.setBuddy(self.line_DIM)
         self.line_DIM.textEdited.connect(self.updateUi)
-        self.line_DIM.setText("2D")
+        self.line_DIM.setText("3D")
 
-        nGPU_label = QLabel("nGPU")
+        nGPU_label = QLabel("GPU_ID")
         self.line_nGPU = QLineEdit()
         ip_label.setBuddy(self.line_nGPU)
         self.line_nGPU.textEdited.connect(self.updateUi)
-        self.line_nGPU.setText("2")
+        self.line_nGPU.setText("0,1,2,3")
 
-        epochs_label = QLabel("epochs")
+        epochs_label = QLabel("iters")
         self.line_epochs = QLineEdit()
         epochs_label.setBuddy(self.line_epochs)
         self.line_epochs.textEdited.connect(self.updateUi)
@@ -75,7 +75,7 @@ class MainWindow(QMainWindow):
         self.line_steps_per_epoch = QLineEdit()
         steps_per_epoch_label.setBuddy(self.line_steps_per_epoch)
         self.line_steps_per_epoch.textEdited.connect(self.updateUi)
-        self.line_steps_per_epoch.setText(str(28))
+        self.line_steps_per_epoch.setText(str(300))
 
         # run train
         self.button_run = QPushButton("RUN")

@@ -47,7 +47,7 @@ def predict(model,weight,mrc,output,cubesize=64, cropsize=96, batchsize=8, gpuID
             data = reform_ins.pad_and_crop_new(cubesize,cropsize)
             #to_predict_data_shape:(n,cropsize,cropsize,cropsize,1)
             #imposing wedge to every cubes
-            data=wedge_imposing(data)
+            #data=wedge_imposing(data)
             num_batches = data.shape[0]
             if num_batches%N == 0:
                 append_number = 0

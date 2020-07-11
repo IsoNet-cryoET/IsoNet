@@ -2,7 +2,7 @@
 
 import numpy as np
 from mwr.util.generate import DataCubes
-from mwr.simulation.simulate import apply_wedge, apply_wedge1
+from mwr.simulation.simulate import apply_wedge2 as  apply_wedge1
 from mwr.models import unet
 import keras
 from mwr.util.norm import normalize
