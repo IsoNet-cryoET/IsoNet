@@ -1,0 +1,26 @@
+Metadata-Version: 2.1
+Name: tiffile
+Version: 2018.10.18
+Summary: The tiffile package is deprecated. Please use the tifffile package instead.
+Home-page: https://www.lfd.uci.edu/~gohlke/
+Author: Christoph Gohlke
+Author-email: cgohlke@uci.edu
+License: BSD
+Platform: any
+Classifier: Development Status :: 4 - Beta
+Classifier: License :: OSI Approved :: BSD License
+Classifier: Intended Audience :: Science/Research
+Classifier: Intended Audience :: Developers
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 2
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.4
+Classifier: Programming Language :: Python :: 3.5
+Classifier: Programming Language :: Python :: 3.6
+Classifier: Programming Language :: Python :: 3.7
+Requires-Dist: tifffile
+
+UNKNOWN
+
+

@@ -1,0 +1,3 @@
+from tensorflow.keras.applications.inception_resnet_v2 import InceptionResNetV2
+from tensorflow.keras.applications.inception_resnet_v2 import decode_predictions
+from tensorflow.keras.applications.inception_resnet_v2 import preprocess_input

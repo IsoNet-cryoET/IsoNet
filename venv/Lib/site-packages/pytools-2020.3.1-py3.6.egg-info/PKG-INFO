@@ -1,0 +1,58 @@
+Metadata-Version: 1.2
+Name: pytools
+Version: 2020.3.1
+Summary: A collection of tools for Python
+Home-page: http://pypi.python.org/pypi/pytools
+Author: Andreas Kloeckner
+Author-email: inform@tiker.net
+License: MIT
+Description: Pytools: Lots of Little Utilities
+        =================================
+        
+        .. image:: https://gitlab.tiker.net/inducer/pytools/badges/master/pipeline.svg
+            :alt: Gitlab Build Status
+            :target: https://gitlab.tiker.net/inducer/pytools/commits/master
+        .. image:: https://github.com/inducer/pytools/workflows/CI/badge.svg?branch=master&event=push
+            :alt: Github Build Status
+            :target: https://github.com/inducer/pytools/actions?query=branch%3Amaster+workflow%3ACI+event%3Apush
+        .. image:: https://badge.fury.io/py/pytools.png
+            :alt: Python Package Index Release Page
+            :target: https://pypi.org/project/pytools/
+        
+        Pytools is a big bag of things that are "missing" from the Python standard
+        library. This is mainly a dependency of my other software packages, and is
+        probably of little interest to you unless you use those. If you're curious
+        nonetheless, here's what's on offer:
+        
+        * A ton of small tool functions such as `len_iterable`, `argmin`,
+          tuple generation, permutation generation, ASCII table pretty printing,
+          GvR's monkeypatch_xxx() hack, the elusive `flatten`, and much more.
+        * Michele Simionato's decorator module
+        * A time-series logging module, `pytools.log`.
+        * Batch job submission, `pytools.batchjob`.
+        * A lexer, `pytools.lex`.
+        
+        Links:
+        
+        * `Documentation <https://documen.tician.de/pytools>`_
+        
+        * `Github <https://github.com/inducer/pytools>`_
+        
+Platform: UNKNOWN
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: Other Audience
+Classifier: Intended Audience :: Science/Research
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Natural Language :: English
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.6
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Topic :: Scientific/Engineering
+Classifier: Topic :: Scientific/Engineering :: Information Analysis
+Classifier: Topic :: Scientific/Engineering :: Mathematics
+Classifier: Topic :: Scientific/Engineering :: Visualization
+Classifier: Topic :: Software Development :: Libraries
+Classifier: Topic :: Utilities
+Requires-Python: ~=3.6
