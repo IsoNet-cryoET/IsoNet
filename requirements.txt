@@ -5,8 +5,8 @@ keras
 scipy
 numpy
 argparse
-pycuda
-scikit-cuda
+#pycuda
+#scikit-cuda
 six
 
 ###### Requirements with Version Specifiers ######
