@@ -8,5 +8,6 @@ argparse
 #pycuda
 #scikit-cuda
 six
+tensorflow
 
 ###### Requirements with Version Specifiers ######

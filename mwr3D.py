@@ -10,6 +10,8 @@ import logging
 import os
 import shutil
 
+from training.train import train_data
+
 
 if args.log_level == "debug":
 	logging.basicConfig(level=logging.DEBUG)
@@ -45,21 +47,23 @@ for i in range(args.continue_iter, args.iterations):
 		get_cubes_list(args)
 		logging.info("Done getting cubes!")
 		args.continue_previous_training = False
-'''
-	if (not settings.continue_previous_training) or (settings.continue_from == "training"):
-		history = train_data(settings)
-		print(history.history['loss'])
+
+	if (not args.continue_previous_training) or (args.continue_from == "training"):
+		history = train_data(args)
+		logging.info(history.history['loss'])
 		losses.append(history.history['loss'][-1])
-		settings.continue_previous_training = False
+		args.continue_previous_training = False
+		logging.info("Done training!")
 
-	if (not settings.continue_previous_training) or (settings.continue_from == "predicting"):
-		predict(settings)
-		settings.continue_previous_training = False
+	#if (not args.continue_previous_training) or (args.continue_from == "predicting"):
+	#	predict(args)
+	#	args.continue_previous_training = False
+		logging.info("Done predicting!")
 
-	if len(losses)>3:
-		if losses[-1]< losses[-2]:
-			print('loss does not reduce in this iteration')
-'''
+	#if len(losses)>3:
+	#	if losses[-1]< losses[-2]:
+	#		logging.warning('loss does not reduce in this iteration')
+
 '''
 losses = []
 for i in range(settings.continue_iter, settings.iterations):

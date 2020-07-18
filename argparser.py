@@ -82,17 +82,17 @@ parser.add_argument("--mask",
 
 parser.add_argument("--cube_sidelen",
                     type=int,
-                    default=48,
+                    default=80,
                     help="Size of training cubes, this size should be divisible by 2^unet_depth.")
 
 parser.add_argument("--cropsize",
                     type=int,
-                    default=60,
+                    default=120,
                     help="Size of cubes to impose missing wedge. Should be same or larger than size of cubes.")
 
 parser.add_argument("--ncube",
                     type=int,
-                    default=10,
+                    default=2,
                     help="Number of cubes generated for each (sub)tomos. Because each (sub)tomo rotates 16 times, the actual number of cubes for trainings should be ncube*16.")
 
 parser.add_argument("--epochs",
