@@ -11,7 +11,7 @@ import os
 import shutil
 
 from training.train import train_data
-
+from training.predict import predict
 
 if args.log_level == "debug":
 	logging.basicConfig(level=logging.DEBUG)
@@ -33,7 +33,7 @@ mrc_list = glob.glob(args.subtomo_dir+'/*.mrc')
 mrc2_list = glob.glob(args.subtomo_dir+'/*.mrc2') 
 logging.info("Done 2!")
 
-loss = []
+losses = []
 for i in range(args.continue_iter, args.iterations):
 	#logging.info('start iteration {}'.format(i+1))
 	args.iter_count = i
@@ -55,14 +55,16 @@ for i in range(args.continue_iter, args.iterations):
 		args.continue_previous_training = False
 		logging.info("Done training!")
 
-	#if (not args.continue_previous_training) or (args.continue_from == "predicting"):
-	#	predict(args)
-	#	args.continue_previous_training = False
+	if (not args.continue_previous_training) or (args.continue_from == "predicting"):
+		predict(args)
+		args.continue_previous_training = False
 		logging.info("Done predicting!")
 
-	#if len(losses)>3:
-	#	if losses[-1]< losses[-2]:
-	#		logging.warning('loss does not reduce in this iteration')
+	if len(losses)>3:
+		if losses[-1]< losses[-2]:
+			logging.warning('loss does not reduce in this iteration')
+
+	logging.info("Done Iteration{}!".format(i+1))
 
 '''
 losses = []

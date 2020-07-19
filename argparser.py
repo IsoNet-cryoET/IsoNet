@@ -92,7 +92,7 @@ parser.add_argument("--cropsize",
 
 parser.add_argument("--ncube",
                     type=int,
-                    default=2,
+                    default=5,
                     help="Number of cubes generated for each (sub)tomos. Because each (sub)tomo rotates 16 times, the actual number of cubes for trainings should be ncube*16.")
 
 parser.add_argument("--epochs",
@@ -142,6 +142,7 @@ parser.add_argument("--convs_per_depth",
 parser.add_argument('--kernel', 
                     help="Kernel for convolution layer. e.g 3,3,3", 
                     dest="kernel", 
+                    default=(3,3,3),
                     type=toTuple)
 
 parser.add_argument("--unet_depth",

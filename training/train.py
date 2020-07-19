@@ -6,6 +6,7 @@ from keras.utils import Sequence
 from keras.utils import multi_gpu_model
 from training.data_sequence import prepare_dataseq
 from models.unet.model import Unet 
+from losses.losses import loss_mae,loss_mse
 
 from keras.models import model_from_json
 
@@ -185,7 +186,7 @@ def train3D_continue(outFile,
     _metrics = [eval('loss_%s()' % m) for m in metrics]
     optimizer = Adam(lr=0.0003)
 
-    json_file = open('model.json', 'r')
+    json_file = open('{}/model.json'.format(result_folder), 'r')
     loaded_model_json = json_file.read()
 
     json_file.close()
@@ -226,7 +227,7 @@ def train3D_continue(outFile,
 def train_data(settings):
 
     if settings.iter_count == 0 or not settings.reload_weight:
-        history = train3D_seq('{}/model_iter{:0>2d}.h5'.format(setttings.result_dir,settings.iter_count+1), 
+        history = train3D_seq('{}/model_iter{:0>2d}.h5'.format(settings.result_dir,settings.iter_count+1), 
                                     data_folder = settings.data_folder,
                                     result_folder = settings.result_dir, 
                                     epochs = settings.epochs, 
@@ -239,8 +240,8 @@ def train_data(settings):
                                     kernel = settings.kernel, 
                                     n_gpus = settings.ngpus)
     else:
-        history = train3D_continue('{}/model_iter{:0>2d}.h5'.format(setttings.result_dir,settings.iter_count+1), 
-                                        '{}/model_iter{:0>2d}.h5'.format(setttings.result_dir,settings.iter_count), 
+        history = train3D_continue('{}/model_iter{:0>2d}.h5'.format(settings.result_dir,settings.iter_count+1), 
+                                        '{}/model_iter{:0>2d}.h5'.format(settings.result_dir,settings.iter_count), 
                                         data_folder = settings.data_folder, 
                                         result_folder = settings.result_dir, 
                                         epochs=settings.epochs, 
