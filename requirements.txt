@@ -1,0 +1,13 @@
+###### Requirements without Version Specifiers ######
+mrcfile
+tiffile
+keras
+scipy
+numpy
+argparse
+pycuda
+scikit-cuda
+six
+tensorflow
+
+###### Requirements with Version Specifiers ######
