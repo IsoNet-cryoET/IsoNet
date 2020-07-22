@@ -1,7 +1,7 @@
 import numpy as np
 from tifffile import imsave,imread
-from util.mrcfile import *
-from util.filter import no_background_patches
+from mwr.util.mrcfile import *
+from mwr.util.filter import no_background_patches
 #import mrcfile
 
 
