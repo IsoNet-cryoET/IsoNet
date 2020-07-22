@@ -8,7 +8,6 @@ def conv_blocks(n_filter, kernel,
                 init="glorot_uniform",
                 **kwargs):
     def layer(last_layer):
-        #print(last_layer.shape)
         if len(kernel)==2:
             conv=Conv2D(n_filter,kernel,
                         padding=padding,

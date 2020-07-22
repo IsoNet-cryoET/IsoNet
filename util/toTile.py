@@ -1,5 +1,4 @@
 import numpy as np
-from tifffile import imread,imsave
 from keras.utils import Sequence
 
 
@@ -102,9 +101,4 @@ class reform3D:
         return padded[:orig_sp[0][0]][:orig_sp[0][1]][:orig_sp[0][2]]
 
 if __name__ == '__main__':
-    orig = imread('corrected_last1.tif')
-    orig = np.expand_dims(orig,axis=-1)
-    ref = reform3D(orig)
-    out1 = ref.pad_and_crop()
-    out2 = ref.restore_from_cubes(out1).astype(np.uint8)
-    imsave('restore_from_cubes.tif',out2)
+    pass

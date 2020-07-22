@@ -37,9 +37,6 @@ def train3D_seq(outFile,
     _metrics = [eval('loss_%s()' % m) for m in metrics]
     residual = True
 
-    # from mwr.models import train_settings
-    # model = unet2.define_unet_generator((None, None,None, 1),train_settings)
-
     inputs = Input((None, None,None, 1))
     unet = Unet(filter_base=filter_base, 
         depth=depth, 
@@ -58,17 +55,13 @@ def train3D_seq(outFile,
 
     outputs = Activation(activation=last_activation)(outputs)
     model = Model(inputs=inputs, outputs=outputs)
-    # print(model.summary())
     model_json = model.to_json()
     with open("{}/model.json".format(result_folder), "w") as json_file:
         json_file.write(model_json)
 
     if n_gpus > 1:
         model = multi_gpu_model(model, gpus=n_gpus, cpu_merge=True, cpu_relocation=False)
-    #model.compile(optimizer=optimizer, loss='mae', metrics=_metrics)
-    #if mrc_list is not None:
-    #    model.compile(optimizer=optimizer, loss=loss_custom(model,read_data_mrc(mrc_list)), metrics=_metrics)
-    #else:
+
     model.compile(optimizer=optimizer, loss='mae', metrics=_metrics)
 
     train_data, test_data = prepare_dataseq(data_folder, batch_size)
