@@ -21,13 +21,13 @@ class MWR:
         data_folder = "data",
         mask = None,
         result_dir = 'results',
-        cube_sidelen = 80,
-        cropsize = 120,
+        cube_sidelen = 64,
+        cropsize = 96,
         ncube = 32,
         epochs = 1,
         batch_size = 8,
-        steps_per_epoch = 10,
-        noise_folder = None,
+        steps_per_epoch = 200,
+        noise_folde = None,
         noise_level = 0.04,
         noise_start_iter = 20,
         noise_pause = 5,
@@ -65,14 +65,15 @@ class MWR:
         """
         print('successfully predicted')
 
-    def makemask(self,tomo_path,mask_name):
+    def make_mask(self,tomo_path,mask_name):
         """
         generate a mask to constrain sampling area of the tomogram
         :param tomo_path: path to the tomogram
         :param mask_name: path and name of the mask to save as
         """
         print('mask generated')
-    def genenoise(self,outfolder: str,num: int, cubesize: int, ncpus: int=20):
+
+    def generate_noise(self,outfolder: str,num: int, cubesize: int, ncpus: int=20):
         """
         generate training noise to accelerate the missing wedge information retrieval
         :param outfolder: path to folder for saving noises
@@ -80,6 +81,7 @@ class MWR:
         :param cubesize: side length of the noise cubes, usually 64 or 96
         :param ncpus: number of cpus to use
         """
+
         print('noise generated ')
             
     def setting(self):
