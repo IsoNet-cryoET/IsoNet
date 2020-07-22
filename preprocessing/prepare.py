@@ -54,7 +54,6 @@ def prepare_first_iter(settings):
         settings.tomogram_list = ["{}/{}".format(settings.input_dir,f) for f in os.listdir(settings.input_dir) if f.split(".")[-1]=="mrc" or f.split(".")[-1]=="rec" ]
         settings.tomogram_list_items = [f for f in os.listdir(settings.input_dir) if f.split(".")[-1]=="mrc" or f.split(".")[-1]=="rec"]
         settings.tomogram2_list = ["{}/{}".format(settings.input_dir,f) for f in os.listdir(settings.input_dir) if f.split(".")[-1]=="mrc2"]
-        #logging.warning("tomo2:{}".format(settings.tomogram2_list))
         if len(settings.tomogram_list) <= 0:
             sys.exit("No input exists. Please check it in input folder!")
         if settings.tomogram2_list == []:
@@ -63,11 +62,9 @@ def prepare_first_iter(settings):
             root_name = settings.tomogram_list_items[tomo_count].split('.')[0]
             with mrcfile.open(tomogram) as mrcData:
                 orig_data = mrcData.data.astype(np.float32)
-            logging.warning("OKAY1")
             seeds=create_cube_seeds(orig_data,settings.ncube,settings.cropsize,mask=mask)
             subtomos=crop_cubes(orig_data,seeds,settings.cropsize)
 
-            logging.warning("OKAY2:{}".format(subtomos.shape))
             for j,s in enumerate(subtomos):
                 with mrcfile.new('{}/{}_{:0>6d}.mrc'.format(settings.subtomo_dir, root_name,j), overwrite=True) as output_mrc:
                     output_mrc.set_data(s.astype(np.float32))
@@ -84,8 +81,6 @@ def prepare_first_iter(settings):
 
     settings.mrc_list = os.listdir(settings.subtomo_dir)
     settings.mrc_list = ['{}/{}'.format(settings.subtomo_dir,i) for i in settings.mrc_list]
-
-    logging.warning('OKAY3:{}'.format(settings.mrc_list))
     
     #need further test
     #with Pool(settings.preprocessing_ncpus) as p:
@@ -136,7 +131,6 @@ def get_cubes_one(data,settings, data2 = None, start = 0, mask = None, add_noise
     else:
         data_cubes = DataCubes(data, tomogram2 = data2, nCubesPerImg=1, cubeSideLen = settings.cube_sidelen, cropsize = settings.cropsize, mask = mask, noise_folder = settings.noise_folder,
     noise_level = settings.noise_level*noise_factor)
-    #logging.info(start)
     for i,img in enumerate(data_cubes.cubesX):
         with mrcfile.new('{}/train_x/x_{}.mrc'.format(settings.data_folder, i+start), overwrite=True) as output_mrc:
             output_mrc.set_data(img.astype(np.float32))
@@ -209,7 +203,6 @@ def get_cubes_list(settings):
             get_cubes(settings,i)
 
     all_path_x = os.listdir(settings.data_folder+'/train_x')
-    logging.info(all_path_x)
     num_test = int(len(all_path_x) * 0.1)
     num_test = num_test - num_test%settings.ngpus + settings.ngpus
     all_path_y = ['y_'+i.split('_')[1] for i in all_path_x ]

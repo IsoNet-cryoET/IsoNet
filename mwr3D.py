@@ -13,9 +13,15 @@ import shutil
 from mwr.training.train import train_data
 from mwr.training.predict import predict
 
+
+
 def run(args):
+
+	logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
+    datefmt='%Y-%m-%d:%H:%M:%S')
 	if args.log_level == "debug":
 		logging.basicConfig(level=logging.DEBUG)
+	logger = logging.getLogger(__name__)
 
 	# Specify GPU(s) to be used 
 	args.ngpus = len(args.gpuID.split(','))
@@ -26,46 +32,43 @@ def run(args):
 	if not args.continue_previous_training:
 		args.continue_iter = 0
 		args = prepare_first_iter(args)
-		logging.info("Done preperation for the first iteration!")
+		logger.info("Done preperation for the first iteration!")
 
 
 	#.mrc2 file should not be in mrc_list 
 	mrc_list = glob.glob(args.subtomo_dir+'/*.mrc')
 	mrc2_list = glob.glob(args.subtomo_dir+'/*.mrc2') 
-	logging.info("Done 2!")
 
 	losses = []
 	for i in range(args.continue_iter, args.iterations):
-		#logging.info('start iteration {}'.format(i+1))
 		args.iter_count = i
 		noise_factor = ((args.iter_count - args.noise_start_iter)//args.noise_pause)+1 if args.iter_count > args.noise_start_iter else 0
-		logging.info("noise_factor:{}".format(noise_factor))
+		logger.info("noise_factor:{}".format(noise_factor))
 		if (not args.continue_previous_training) or (args.continue_from == "preprocessing"):
 			try:
 				shutil.rmtree(args.data_folder)
 			except OSError:
-				logging.error("Create data folder error!")
+				logger.error("Create data folder error!")
 			get_cubes_list(args)
-			logging.info("Done getting cubes!")
+			logger.info("Done getting cubes!")
 			args.continue_previous_training = False
 
 		if (not args.continue_previous_training) or (args.continue_from == "training"):
 			history = train_data(args)
-			logging.info(history.history['loss'])
 			losses.append(history.history['loss'][-1])
 			args.continue_previous_training = False
-			logging.info("Done training!")
+			logger.info("Done training!")
 
 		if (not args.continue_previous_training) or (args.continue_from == "predicting"):
 			predict(args)
 			args.continue_previous_training = False
-			logging.info("Done predicting!")
+			logger.info("Done predicting!")
 
 		if len(losses)>3:
 			if losses[-1]< losses[-2]:
-				logging.warning('loss does not reduce in this iteration')
+				logger.warning('loss does not reduce in this iteration')
 
-		logging.info("Done Iteration{}!".format(i+1))
+		logger.info("Done Iteration{}!".format(i+1))
 
 	'''
 	losses = []

@@ -72,7 +72,6 @@ def train3D_seq(outFile,
     model.compile(optimizer=optimizer, loss='mae', metrics=_metrics)
 
     train_data, test_data = prepare_dataseq(data_folder, batch_size)
-    #logging.info('**train data size**',len(train_data))
     
     callback_list = []
     check_point = ModelCheckpoint('{}/modellast.h5'.format(result_folder), 

@@ -49,7 +49,6 @@ def predict(settings):
             data = np.array(data)
             predicted=model.predict(data[:,:,:,:,np.newaxis], batch_size= settings.predict_batch_size,verbose=1)
             predicted = predicted.reshape(predicted.shape[0:-1])
-            logging.info(predicted)
             for j,outData in enumerate(predicted):
                 count = i + j - N + 1
                 if count < len(settings.mrc_list):
