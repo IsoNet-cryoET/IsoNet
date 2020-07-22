@@ -1,6 +1,7 @@
 # MWR
 
 ## Usage
+![](turorials/images/origional_data.png)
 
 ### Training
 
