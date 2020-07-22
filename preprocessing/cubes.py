@@ -14,9 +14,8 @@ import os
 import glob
 import numpy as np
 import mrcfile
-import settings
 
-from preprocessing.simulate import apply_wedge_dcube as apply_wedge
+from mwr.preprocessing.simulate import apply_wedge_dcube as apply_wedge
 
 def create_cube_seeds(img3D,nCubesPerImg,cubeSideLen,mask=None):
     sp=img3D.shape

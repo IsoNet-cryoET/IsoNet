@@ -2,14 +2,14 @@ import os
 import logging
 import sys
 import mrcfile
-from preprocessing.cubes import create_cube_seeds,crop_cubes,DataCubes
-from preprocessing.img_processing import normalize
-from preprocessing.simulate import apply_wedge
+from mwr.preprocessing.cubes import create_cube_seeds,crop_cubes,DataCubes
+from mwr.preprocessing.img_processing import normalize
+from mwr.preprocessing.simulate import apply_wedge
 from multiprocessing import Pool
 import numpy as np
 from functools import partial
 from multiprocessing import Pool
-from util.rotations import rotation_list
+from mwr.util.rotations import rotation_list
 
 #Make a new folder. If exist, nenew it
 def mkfolder(folder):
@@ -51,9 +51,9 @@ def prepare_first_iter(settings):
         if settings.input_dir[-1] == '\\' or settings.input_dir[-1] == '/':
             settings.input_dir= settings.input_dir[:-1]
 
-        settings.tomogram_list = ["{}\\{}".format(settings.input_dir,f) for f in os.listdir(settings.input_dir) if f.split(".")[-1]=="mrc"]
-        settings.tomogram_list_items = [f for f in os.listdir(settings.input_dir) if f.split(".")[-1]=="mrc"]
-        settings.tomogram2_list = ["{}\\{}".format(settings.input_dir,f) for f in os.listdir(settings.input_dir) if f.split(".")[-1]=="mrc2"]
+        settings.tomogram_list = ["{}/{}".format(settings.input_dir,f) for f in os.listdir(settings.input_dir) if f.split(".")[-1]=="mrc" or f.split(".")[-1]=="rec" ]
+        settings.tomogram_list_items = [f for f in os.listdir(settings.input_dir) if f.split(".")[-1]=="mrc" or f.split(".")[-1]=="rec"]
+        settings.tomogram2_list = ["{}/{}".format(settings.input_dir,f) for f in os.listdir(settings.input_dir) if f.split(".")[-1]=="mrc2"]
         #logging.warning("tomo2:{}".format(settings.tomogram2_list))
         if len(settings.tomogram_list) <= 0:
             sys.exit("No input exists. Please check it in input folder!")

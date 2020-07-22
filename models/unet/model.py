@@ -1,4 +1,4 @@
-from models.unet import builder
+from mwr.models.unet import builder
 
 def Unet(filter_base=32,
         depth=2,

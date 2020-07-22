@@ -21,19 +21,11 @@ class dataSequence(Sequence):
     def __getitem__(self, i):
         idx = slice(i*self.batch_size,(i+1)*self.batch_size)
         idx = self.perm[idx]
-        rx = np.array([mrcfile.open(self.x[j]).data[:,:,:,np.newaxis] for j in idx])
-        ry = np.array([mrcfile.open(self.y[j]).data[:,:,:] for j in idx])
-        sp=ry.shape
-        ry_final=np.zeros((sp[0],sp[1],sp[2],sp[3],21))
-        for i in range(0,21):
-            ry_final[:,:,:,:,i] = (ry==i).astype(int)
-        #    print(i,np.count_nonzero((ry==i).astype(int)))
-        #print(ry_final[0,:,:,:,10].shape)
-        #with mrcfile.new("1.mrc", overwrite=True) as output_mrc:
-        #    output_mrc.set_data(ry_final[0,:,:,:,10].astype(np.float32))
 
-        #imsave("1.tif",ry_final[0,:,:,:,10].astype(np.uint8))
-        return rx,ry_final
+        rx = np.array([mrcfile.open(self.x[j]).data[:,:,:,np.newaxis] for j in idx])
+        ry = np.array([mrcfile.open(self.y[j]).data[:,:,:,np.newaxis] for j in idx])
+        return rx,ry
+
 
 def prepare_dataseq(data_folder, batch_size):
 

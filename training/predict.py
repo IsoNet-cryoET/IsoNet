@@ -1,7 +1,7 @@
 from keras.models import model_from_json
 from keras.utils import multi_gpu_model
 import mrcfile
-from preprocessing.img_processing import normalize
+from mwr.preprocessing.img_processing import normalize
 import numpy as np
 import logging
 

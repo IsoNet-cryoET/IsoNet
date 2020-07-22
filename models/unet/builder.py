@@ -1,4 +1,4 @@
-from models.unet.blocks import conv_blocks
+from mwr.models.unet.blocks import conv_blocks
 from keras.layers import MaxPooling2D, UpSampling2D, MaxPooling3D, UpSampling3D
 from keras.layers.merge import Concatenate
 

@@ -4,94 +4,16 @@ from keras.optimizers import Adam
 from keras.callbacks import TensorBoard, ModelCheckpoint
 from keras.utils import Sequence
 from keras.utils import multi_gpu_model
-from training.data_sequence import prepare_dataseq
-from models.unet.model import Unet 
-from losses.losses import loss_mae,loss_mse
+from mwr.training.data_sequence import prepare_dataseq
+from mwr.models.unet.model import Unet 
+
+from mwr.losses.losses import loss_mae,loss_mse
 
 from keras.models import model_from_json
 
 import logging
 
-def train3D_seq_old(outFile, 
-	data_folder,
-	epochs=40, 
-	steps_per_epoch=128,
-	batch_size=64,
-	dropout = 0.3,
-	lr = 0.001,
-	filter_base=32,
-	convs_per_depth = 3,
-	kernel = (3,3,3), 
-	pool = (2,2,2), 
-	batch_norm = False, 
-	depth = 3, 
-	n_gpus=1):
 
-    last_activation = 'softmax'
-    optimizer = Adam(lr)
-    #metrics = ('mse', 'categorical_crossentropy')
-    #_metrics = [eval('loss_%s()' % m) for m in metrics]
-    residual = False
-
-    inputs = Input((None, None,None, 1))
-
-    unet = Unet(filter_base=filter_base, 
-    	depth=depth, 
-    	convs_per_depth=convs_per_depth,
-        kernel=kernel,
-        batch_norm=batch_norm, 
-        dropout=dropout,
-        pool=pool)(inputs)
-    if len(kernel) == 2:
-        outputs = Conv2D(1, (1, 1), activation='linear')(unet)
-    elif len(kernel) == 3:
-        outputs = Conv3D(21, (1, 1, 1))(unet)
-    if residual:
-        final = Add()([outputs, inputs])
-
-    outputs = Activation(activation=last_activation)(outputs)
-
-    model = Model(inputs=inputs, outputs=outputs)
-
-    model_json = model.to_json()
-
-    with open("{}model.json".format(settings.ab_result_folder), "w") as json_file:
-        json_file.write(model_json)
-
-    if n_gpus >1:
-        model = multi_gpu_model(model, gpus=n_gpus, cpu_merge=True, cpu_relocation=False)
-    #model.compile(optimizer=optimizer, loss='mae', metrics=_metrics)
-    #if mrc_list is not None:
-    #    model.compile(optimizer=optimizer, loss=loss_custom(model,read_data_mrc(mrc_list)), metrics=_metrics)
-    #else:
-    model.compile(optimizer=optimizer, loss='categorical_crossentropy')#, metrics=_metrics)
-
-    train_data, test_data = prepare_dataseq(data_folder, batch_size)
-
-    callback_list = []
-    check_point = ModelCheckpoint('{}modellast.h5'.format(settings.ab_result_folder), 
-    	monitor='val_loss', 
-    	verbose=0, 
-    	save_best_only=False, 
-    	save_weights_only=True, 
-    	mode='auto', period=1)
-    callback_list.append(check_point)
-
-    tensor_board = TensorBoard(log_dir='{}Graph'.format(settings.ab_result_folder), 
-    	histogram_freq=0, 
-    	write_graph=True, 
-    	write_images=True)
-    callback_list.append(tensor_board)
-
-    history = model.fit_generator(generator=train_data, 
-    	validation_data=test_data,
-        epochs=epochs, 
-        steps_per_epoch=steps_per_epoch,
-        verbose=1,
-        callbacks=callback_list)
-
-    model.save_weights(outFile)
-    return history
 
 def train3D_seq(outFile, 
                 data_folder = 'data', 
@@ -115,6 +37,9 @@ def train3D_seq(outFile,
     _metrics = [eval('loss_%s()' % m) for m in metrics]
     residual = True
 
+    # from mwr.models import train_settings
+    # model = unet2.define_unet_generator((None, None,None, 1),train_settings)
+
     inputs = Input((None, None,None, 1))
     unet = Unet(filter_base=filter_base, 
         depth=depth, 
@@ -123,10 +48,7 @@ def train3D_seq(outFile,
         batch_norm=batch_norm, 
         dropout=dropout,
         pool=pool)(inputs)
-    #Unet = unet_block(filter_base=filter_base, depth=depth, convs_per_depth=convs_per_depth,
-    #                  kernel=kernel,
-    #                  batch_norm=batch_norm, dropout=dropout,
-    #                  pool=pool)(inputs)
+
     if len(kernel) == 2:
         outputs = Conv2D(1, (1, 1), activation='linear')(unet)
     elif len(kernel) == 3:
@@ -136,6 +58,7 @@ def train3D_seq(outFile,
 
     outputs = Activation(activation=last_activation)(outputs)
     model = Model(inputs=inputs, outputs=outputs)
+    # print(model.summary())
     model_json = model.to_json()
     with open("{}/model.json".format(result_folder), "w") as json_file:
         json_file.write(model_json)
@@ -149,7 +72,7 @@ def train3D_seq(outFile,
     model.compile(optimizer=optimizer, loss='mae', metrics=_metrics)
 
     train_data, test_data = prepare_dataseq(data_folder, batch_size)
-    logging.info('**train data size**',len(train_data))
+    #logging.info('**train data size**',len(train_data))
     
     callback_list = []
     check_point = ModelCheckpoint('{}/modellast.h5'.format(result_folder), 
@@ -162,7 +85,7 @@ def train3D_seq(outFile,
     callback_list.append(check_point)
     tensor_board = TensorBoard(log_dir='./Graph', histogram_freq=0, write_graph=True, write_images=True)
     callback_list.append(tensor_board)
-    
+    print(model.summary())
     history = model.fit_generator(generator=train_data, 
                                 validation_data=test_data,
                                 epochs=epochs, 
