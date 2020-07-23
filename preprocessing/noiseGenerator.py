@@ -2,14 +2,7 @@
 import numpy as np
 import random
 from scipy.ndimage import rotate
-from mwr.preprocessing.simulate import apply_wedge
-def simulate_noise1(params):
-    np.random.seed(random.randint(0,100000))
-    gs_cube = np.random.normal(size = (params[0],)*3).astype(np.float32)
-    gs_wedged = apply_wedge(gs_cube,ld1=1,ld2=0)
-    return gs_wedged
-
-def simulate_noise2(params):
+def simulate_noise(params):
     def rt(inp):
         np.random.seed(random.randint(0,100000))
         (angle,size) = inp
@@ -23,29 +16,6 @@ def simulate_noise2(params):
     start = int(params[0]*0.2)
     res = res[start:start+params[0],:,start:start+params[0]]
     return res
-
-def make_noise(output_folder, number_volume, cubesize=64, minangle=-60,maxangle=60, anglestep=2, start=0,ncpus=25, mode=1):
-    if mode==1:
-        noise_func = simulate_noise1
-    else:
-        noise_func = simulate_noise2
-    params = [cubesize, minangle, maxangle, anglestep]
-    try:
-        os.makedirs(output_folder)
-    except OSError:
-        print ("  " )
-
-    count = 0
-    for count in range(0,number_volume, ncpus):
-        print(count+start)
-        from multiprocessing import Pool
-        with Pool(ncpus) as p:
-            res = p.map(simulate_noise, [params]*ncpus)
-        res = list(res)
-        for i,img in enumerate(res):
-            with mrcfile.new('{}/n_{:0>5d}.mrc'.format(output_folder,count+i+start), overwrite=True) as output_mrc:
-                output_mrc.set_data(img)
-
 
 if __name__ == '__main__':
     import mrcfile
@@ -77,4 +47,3 @@ if __name__ == '__main__':
         for i,img in enumerate(res):
             with mrcfile.new('{}/n_{:0>5d}.mrc'.format(args.output_folder,count+i+args.start), overwrite=True) as output_mrc:
                 output_mrc.set_data(img)
-

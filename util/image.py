@@ -1,6 +1,5 @@
 import numpy as np
-from .mrcfile import *
-from .filter import no_background_patches
+
 
 
 def toUint8(data):
@@ -37,7 +36,7 @@ def create_seed_2D(img2D,nPatchesPerSlice,patchSideLen):
     seedy = np.random.rand(nPatchesPerSlice)*(y-patchSideLen)+patchSideLen//2
     seedx = seedx.astype(int)
     seedy = seedy.astype(int)
-  return seedx,seedy
+    return seedx,seedy
 
 def print_filter_mask(img3D,nPatchesPerSlice,patchSideLen,threshold=0.4,percentile=99.9):
     sp=img3D.shape
