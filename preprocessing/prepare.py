@@ -88,7 +88,7 @@ def prepare_first_iter(settings):
     #    res = p.map(func, settings.mrc_list)
     if settings.preprocessing_ncpus >1:
         with Pool(settings.preprocessing_ncpus) as p:
-            func = partial(generate_first_iter_mrc, settings)
+            func = partial(generate_first_iter_mrc, settings=settings)
             res = p.map(func, settings.mrc_list)
     else:
         for i in settings.mrc_list:
