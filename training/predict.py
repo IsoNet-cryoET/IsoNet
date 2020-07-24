@@ -5,6 +5,7 @@ from mwr.preprocessing.img_processing import normalize
 import numpy as np
 import logging
 
+
 def predict(settings):
 
 
@@ -29,9 +30,6 @@ def predict(settings):
 
     for i,mrc in enumerate(settings.mrc_list + settings.mrc_list[:append_number]):
         root_name = mrc.split('/')[-1].split('.')[0]
-        if i < len(settings.mrc_list):
-            print('predicting:{}'.format(root_name))
-
         with mrcfile.open('{}/{}_iter00.mrc'.format(settings.result_dir,root_name)) as mrcData:
             real_data = mrcData.data.astype(np.float32)*-1
         real_data=normalize(real_data, percentile = settings.normalize_percentile)
@@ -47,7 +45,7 @@ def predict(settings):
         else:
             data.append(real_data)
             data = np.array(data)
-            predicted=model.predict(data[:,:,:,:,np.newaxis], batch_size= settings.predict_batch_size,verbose=1)
+            predicted=model.predict(data[:,:,:,:,np.newaxis], batch_size= settings.predict_batch_size,verbose=0)
             predicted = predicted.reshape(predicted.shape[0:-1])
             for j,outData in enumerate(predicted):
                 count = i + j - N + 1
@@ -61,14 +59,13 @@ def predict(settings):
                     with mrcfile.new('{}/{}_iter{:0>2d}.mrc'.format(settings.result_dir,root_name,settings.iter_count+1), overwrite=True) as output_mrc:
                         output_mrc.set_data(-outData1)
             data = []
-
+    # TODO: N2N required
+    settings.tomogram2_list = None
     if settings.tomogram2_list is not None:
         data = []
 
         for i,mrc in enumerate(settings.mrc_list + settings.mrc_list[:append_number]):
             root_name = mrc.split('/')[-1].split('.')[0]
-            if i < len(settings.mrc_list):
-                print('predicting:{}'.format(root_name))
 
             with mrcfile.open('{}/{}_iter00.mrc2'.format(settings.result_dir,root_name)) as mrcData:
                 real_data = mrcData.data.astype(np.float32)*-1
@@ -85,7 +82,6 @@ def predict(settings):
             else:
                 data.append(real_data)
                 data = np.array(data)
-                print('***',data.shape)
                 predicted=model.predict(data[:,:,:,:,np.newaxis], batch_size= settings.predict_batch_size,verbose=1)
                 predicted = predicted.reshape(predicted.shape[0:-1])
 

@@ -77,7 +77,6 @@ def train3D_seq(outFile,
     callback_list.append(check_point)
     tensor_board = TensorBoard(log_dir='./Graph', histogram_freq=0, write_graph=True, write_images=True)
     callback_list.append(tensor_board)
-    print(model.summary())
     history = model.fit_generator(generator=train_data, 
                                 validation_data=test_data,
                                 epochs=epochs, 

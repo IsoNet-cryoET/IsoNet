@@ -3,7 +3,6 @@ mrcfile
 tiffile
 keras
 scipy
-numpy
 argparse
 pycuda
 scikit-cuda
@@ -11,3 +10,4 @@ six
 tensorflow
 
 ###### Requirements with Version Specifiers ######
+numpy==1.16.4

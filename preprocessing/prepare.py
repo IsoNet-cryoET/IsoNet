@@ -23,12 +23,11 @@ def mkfolder(folder):
         shutil.rmtree(folder)
         os.makedirs(folder)
 
-def generate_first_iter_mrc(mrc,settings):
+def generate_first_iter_mrc(mrc):
     root_name = mrc.split('/')[-1].split('.')[0]
     extension = mrc.split('/')[-1].split('.')[1]
     with mrcfile.open(mrc) as mrcData:
         orig_data = normalize(mrcData.data.astype(np.float32)*-1, percentile = settings.normalize_percentile)
-
     orig_data = apply_wedge(orig_data, ld1=1, ld2=0)
     orig_data = normalize(orig_data, percentile = settings.normalize_percentile)
 
@@ -36,7 +35,9 @@ def generate_first_iter_mrc(mrc,settings):
         output_mrc.set_data(-orig_data)
 
 #preparation files for the first iteration
-def prepare_first_iter(settings):
+def prepare_first_iter(settings_out):
+    global settings
+    settings = settings_out
     mkfolder(settings.result_dir)
     #if the input are tomograms
     if not settings.datas_are_subtomos:
@@ -88,8 +89,9 @@ def prepare_first_iter(settings):
     #    res = p.map(func, settings.mrc_list)
     if settings.preprocessing_ncpus >1:
         with Pool(settings.preprocessing_ncpus) as p:
-            func = partial(generate_first_iter_mrc, settings=settings)
-            res = p.map(func, settings.mrc_list)
+            #func = partial(generate_first_iter_mrc, settings=settings)
+            #res = p.map(func, settings.mrc_list)
+            res = p.map(generate_first_iter_mrc, settings.mrc_list)
     else:
         for i in settings.mrc_list:
             generate_first_iter_mrc(i,settings)
@@ -139,7 +141,7 @@ def get_cubes_one(data,settings, data2 = None, start = 0, mask = None, add_noise
     return 0
 
 
-def get_cubes(settings,inp):
+def get_cubes(inp):
     mrc, start = inp
     root_name = mrc.split('/')[-1].split('.')[0]
     current_mrc = '{}/{}_iter{:0>2d}.mrc'.format(settings.result_dir,root_name,settings.iter_count)
@@ -179,8 +181,10 @@ def get_cubes(settings,inp):
         get_cubes_one(data, settings, data2, start = start) 
         start += 1#settings.ncube
 
-def get_cubes_list(settings):
+def get_cubes_list(settings_out):
     import os
+    global settings
+    settings = settings_out
     dirs_tomake = ['train_x','train_y', 'test_x', 'test_y']
     if not os.path.exists(settings.data_folder):
         os.makedirs(settings.data_folder)
@@ -193,10 +197,10 @@ def get_cubes_list(settings):
         inp.append((mrc, i*16))
     if settings.preprocessing_ncpus > 1:
         
-        func = partial(get_cubes, settings)
+        # func = partial(get_cubes, settings=settings)
         pool = Pool(processes=settings.preprocessing_ncpus) 
         logging.info('********{}'.format(len(inp)))
-        res = pool.map(func,inp)
+        res = pool.map(get_cubes,inp)
     if settings.preprocessing_ncpus == 1:
         logging.info('********{}'.format(len(inp)))
         for i in inp:
