@@ -9,6 +9,7 @@ from mwr.util.norm import normalize
 from mwr.util.toTile import reform3D
 import mrcfile
 from mwr.util.image import *
+from keras.models import load_model
 
 
 # def wedge_imposing(data):
@@ -33,7 +34,10 @@ def str2bool(v):
 
 
 def predict(args):
-
+    if args.log_level == 'debug':
+        os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+    else:
+        os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
     logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
     datefmt='%Y-%m-%d:%H:%M:%S')
     if args.log_level == "debug":
@@ -57,16 +61,17 @@ def predict(args):
     logger.info('percentile:{}'.format(if_percentile))
 
     ngpus = len(args.gpuID.split(','))
-    from keras.models import model_from_json
-    json_file = open(args.model, 'r')
-    loaded_model_json = json_file.read()
-    json_file.close()
-    model = model_from_json(loaded_model_json)
+    # from keras.models import model_from_json
+    # json_file = open(args.model, 'r')
+    # loaded_model_json = json_file.read()
+    # json_file.close()
+    # model = model_from_json(loaded_model_json)
+
+    model = load_model(args.model)
     logger.info('gpuID:{}'.format(args.gpuID))
     if ngpus >1:
         from keras.utils import multi_gpu_model
         model = multi_gpu_model(model, gpus=ngpus, cpu_merge=True, cpu_relocation=False)
-    model.load_weights(args.weight)
 
     logger.info("Loaded model from disk")
 
@@ -78,7 +83,7 @@ def predict(args):
     real_data = normalize(real_data,percentile=if_percentile)
     data=np.expand_dims(real_data,axis=-1)
     reform_ins = reform3D(data)
-    data = reform_ins.pad_and_crop_new(args.cubesize,args.cropsize)
+    data = reform_ins.pad_and_crop_new(args.cube_size,args.crop_size)
     #to_predict_data_shape:(n,cropsize,cropsize,cropsize,1)
     #imposing wedge to every cubes
     #data=wedge_imposing(data)
@@ -93,7 +98,7 @@ def predict(args):
     outData=model.predict(data, batch_size= args.batchsize,verbose=1)
 
     outData = outData[0:num_batches]
-    outData=reform_ins.restore_from_cubes_new(outData.reshape(outData.shape[0:-1]), args.cubesize, args.cropsize)
+    outData=reform_ins.restore_from_cubes_new(outData.reshape(outData.shape[0:-1]), args.cube_size, args.crop_size)
 
     outData = normalize(outData,percentile=if_percentile)
     with mrcfile.new(args.output_file, overwrite=True) as output_mrc:

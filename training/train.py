@@ -9,7 +9,7 @@ from mwr.models.unet.model import Unet
 
 from mwr.losses.losses import loss_mae,loss_mse
 
-from keras.models import model_from_json
+from keras.models import model_from_json,load_model, clone_model
 
 import logging
 
@@ -55,14 +55,17 @@ def train3D_seq(outFile,
 
     outputs = Activation(activation=last_activation)(outputs)
     model = Model(inputs=inputs, outputs=outputs)
-    model_json = model.to_json()
-    with open("{}/model.json".format(result_folder), "w") as json_file:
-        json_file.write(model_json)
+    # model_json = model.to_json()
+    # with open("{}/model.json".format(result_folder), "w") as json_file:
+    #     json_file.write(model_json)
 
     if n_gpus > 1:
-        model = multi_gpu_model(model, gpus=n_gpus, cpu_merge=True, cpu_relocation=False)
+        multi_model = multi_gpu_model(model, gpus=n_gpus, cpu_merge=True, cpu_relocation=False)
+    else:
+        multi_model = clone_model(model)
 
     model.compile(optimizer=optimizer, loss='mae', metrics=_metrics)
+    multi_model.compile(optimizer=optimizer, loss='mae', metrics=_metrics)
 
     train_data, test_data = prepare_dataseq(data_folder, batch_size)
     
@@ -71,24 +74,26 @@ def train3D_seq(outFile,
                                 monitor='val_loss', 
                                 verbose=0, 
                                 save_best_only=False, 
-                                save_weights_only=True, 
+                                save_weights_only=False, 
                                 mode='auto', 
                                 period=1)
     callback_list.append(check_point)
     tensor_board = TensorBoard(log_dir='./Graph', histogram_freq=0, write_graph=True, write_images=True)
     callback_list.append(tensor_board)
-    history = model.fit_generator(generator=train_data, 
+    history = multi_model.fit_generator(generator=train_data, 
                                 validation_data=test_data,
                                 epochs=epochs, 
                                 steps_per_epoch=steps_per_epoch,
                                 verbose=1,
                                 callbacks=callback_list)
+    
 
-    model.save_weights(outFile)
+    model.set_weights(multi_model.get_weights())
+    model.save(outFile)
     return history
 
 def train3D_continue(outFile, 
-                    weights,
+                    model_file,
                     data_folder = 'data',
                     result_folder='results', 
                     epochs=40, 
@@ -100,19 +105,24 @@ def train3D_continue(outFile,
     _metrics = [eval('loss_%s()' % m) for m in metrics]
     optimizer = Adam(lr=0.0003)
 
-    json_file = open('{}/model.json'.format(result_folder), 'r')
-    loaded_model_json = json_file.read()
+    # json_file = open('{}/model.json'.format(result_folder), 'r')
+    # loaded_model_json = json_file.read()
 
-    json_file.close()
-    model = model_from_json(loaded_model_json)
+    # json_file.close()
+    # model = model_from_json(loaded_model_json)
+    model = load_model( model_file) # weight is a model
+    # if n_gpus >1:
+    #     model = multi_gpu_model(model, gpus=n_gpus, cpu_merge=True, cpu_relocation=False)
+    # model.load_weights(weights)
 
-    if n_gpus >1:
-        model = multi_gpu_model(model, gpus=n_gpus, cpu_merge=True, cpu_relocation=False)
-
-    model.load_weights(weights)
-    logging.info("Loaded model from disk")
+    if n_gpus > 1:
+        multi_model = multi_gpu_model(model, gpus=n_gpus, cpu_merge=True, cpu_relocation=False)
+    else:
+        multi_model = clone_model(model)
 
     model.compile(optimizer=optimizer, loss='mae', metrics=_metrics)
+    multi_model.compile(optimizer=optimizer, loss='mae', metrics=_metrics)
+    logging.info("Loaded model from disk")
 
 
     train_data, test_data = prepare_dataseq(data_folder, batch_size)
@@ -122,25 +132,25 @@ def train3D_continue(outFile,
                                 monitor='val_loss', 
                                 verbose=0, 
                                 save_best_only=False, 
-                                save_weights_only=True, 
+                                save_weights_only=False, 
                                 mode='auto', 
                                 period=1)
     callback_list.append(check_point)
     tensor_board = TensorBoard(log_dir='./Graph', histogram_freq=0, write_graph=True, write_images=True)
     callback_list.append(tensor_board)
-
-    history = model.fit_generator(generator=train_data, validation_data=test_data,
+    logging.info("begin fitting")
+    history = multi_model.fit_generator(generator=train_data, validation_data=test_data,
                                   epochs=epochs, steps_per_epoch=steps_per_epoch,
                                   verbose=1,
                                   callbacks=callback_list)
-
+    model.set_weights(multi_model.get_weights())
     model.save(outFile)
     return history
 
 
 def train_data(settings):
 
-    if settings.iter_count == 0 or not settings.reload_weight:
+    if settings.iter_count == 0 and settings.pretrained_model is None :
         history = train3D_seq('{}/model_iter{:0>2d}.h5'.format(settings.result_dir,settings.iter_count+1), 
                                     data_folder = settings.data_folder,
                                     result_folder = settings.result_dir, 
@@ -153,6 +163,16 @@ def train_data(settings):
                                     batch_norm = settings.batch_normalization, 
                                     kernel = settings.kernel, 
                                     n_gpus = settings.ngpus)
+    elif settings.iter_count == 0 and settings.pretrained_model is not None:
+        history = train3D_continue('{}/model_iter{:0>2d}.h5'.format(settings.result_dir,settings.iter_count+1), 
+                                        settings.pretrained_model, 
+                                        data_folder = settings.data_folder, 
+                                        result_folder = settings.result_dir, 
+                                        epochs=settings.epochs, 
+                                        steps_per_epoch=settings.steps_per_epoch, 
+                                        batch_size=settings.batch_size, 
+                                        n_gpus=settings.ngpus)
+        
     else:
         history = train3D_continue('{}/model_iter{:0>2d}.h5'.format(settings.result_dir,settings.iter_count+1), 
                                         '{}/model_iter{:0>2d}.h5'.format(settings.result_dir,settings.iter_count), 

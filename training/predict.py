@@ -1,4 +1,4 @@
-from keras.models import model_from_json
+from keras.models import model_from_json,load_model
 from keras.utils import multi_gpu_model
 import mrcfile
 from mwr.preprocessing.img_processing import normalize
@@ -9,15 +9,16 @@ import logging
 def predict(settings):
 
 
-    json_file = open('{}/model.json'.format(settings.result_dir), 'r')
-    loaded_model_json = json_file.read()
+    # json_file = open('{}/model.json'.format(settings.result_dir), 'r')
+    # loaded_model_json = json_file.read()
 
-    json_file.close()
-    model = model_from_json(loaded_model_json)
-
+    # json_file.close()
+    # model = model_from_json(loaded_model_json)
+    
+    model = load_model('{}/model_iter{:0>2d}.h5'.format(settings.result_dir,settings.iter_count+1))
     if settings.ngpus >1:
         model = multi_gpu_model(model, gpus=settings.ngpus, cpu_merge=True, cpu_relocation=False)
-    model.load_weights('{}/model_iter{:0>2d}.h5'.format(settings.result_dir,settings.iter_count+1))
+    # model.load_model('{}/model_iter{:0>2d}.h5'.format(settings.result_dir,settings.iter_count+1))
 
     N = settings.predict_batch_size * settings.ngpus
 

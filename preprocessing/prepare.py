@@ -63,8 +63,8 @@ def prepare_first_iter(settings):
             root_name = settings.tomogram_list_items[tomo_count].split('.')[0]
             with mrcfile.open(tomogram) as mrcData:
                 orig_data = mrcData.data.astype(np.float32)
-            seeds=create_cube_seeds(orig_data,settings.ncube,settings.cropsize,mask=mask)
-            subtomos=crop_cubes(orig_data,seeds,settings.cropsize)
+            seeds=create_cube_seeds(orig_data,settings.ncube,settings.crop_size,mask=mask)
+            subtomos=crop_cubes(orig_data,seeds,settings.crop_size)
 
             for j,s in enumerate(subtomos):
                 with mrcfile.new('{}/{}_{:0>6d}.mrc'.format(settings.subtomo_dir, root_name,j), overwrite=True) as output_mrc:
@@ -75,7 +75,7 @@ def prepare_first_iter(settings):
                 with mrcfile.open(settings.tomogram2_list[tomo_count]) as mrcData:
                     orig_data = mrcData.data.astype(np.float32)
 
-                subtomos=crop_cubes(orig_data,seeds,settings.cropsize)
+                subtomos=crop_cubes(orig_data,seeds,settings.crop_size)
                 for j,s in enumerate(subtomos):
                     with mrcfile.new('{}/{}_{:0>6d}.mrc2'.format(settings.subtomo_dir, root_name,j), overwrite=True) as output_mrc:
                         output_mrc.set_data(s.astype(np.float32))
@@ -123,15 +123,15 @@ def get_cubes_one(data,settings, data2 = None, start = 0, mask = None, add_noise
         if c > 0.5:
             if settings.combined_prediction:
                 data2=(data+data2)/2.
-            data_cubes = DataCubes(data, tomogram2 = data2, nCubesPerImg=1, cubeSideLen = settings.cube_sidelen, cropsize = settings.cropsize, mask = mask, noise_folder = settings.noise_folder,
+            data_cubes = DataCubes(data, tomogram2 = data2, nCubesPerImg=1, cubeSideLen = settings.cube_size, cropsize = settings.crop_size, mask = mask, noise_folder = settings.noise_folder,
             noise_level = settings.noise_level*noise_factor)
         else:
             if settings.combined_prediction:
                 data=(data+data2)/2.
-            data_cubes = DataCubes(data2, tomogram2 = data, nCubesPerImg=1, cubeSideLen = settings.cube_sidelen, cropsize = settings.cropsize, mask = mask, noise_folder = settings.noise_folder,
+            data_cubes = DataCubes(data2, tomogram2 = data, nCubesPerImg=1, cubeSideLen = settings.cube_size, cropsize = settings.crop_size, mask = mask, noise_folder = settings.noise_folder,
             noise_level = settings.noise_level*noise_factor)
     else:
-        data_cubes = DataCubes(data, tomogram2 = data2, nCubesPerImg=1, cubeSideLen = settings.cube_sidelen, cropsize = settings.cropsize, mask = mask, noise_folder = settings.noise_folder,
+        data_cubes = DataCubes(data, tomogram2 = data2, nCubesPerImg=1, cubeSideLen = settings.cube_size, cropsize = settings.crop_size, mask = mask, noise_folder = settings.noise_folder,
     noise_level = settings.noise_level*noise_factor)
     for i,img in enumerate(data_cubes.cubesX):
         with mrcfile.new('{}/train_x/x_{}.mrc'.format(settings.data_folder, i+start), overwrite=True) as output_mrc:
@@ -199,10 +199,8 @@ def get_cubes_list(settings):
         
         func = partial(get_cubes, settings=settings)
         pool = Pool(processes=settings.preprocessing_ncpus) 
-        logging.debug('********{}'.format(len(inp)))
         res = pool.map(func,inp)
     if settings.preprocessing_ncpus == 1:
-        logging.info('********{}'.format(len(inp)))
         for i in inp:
             get_cubes(settings,i)
 
