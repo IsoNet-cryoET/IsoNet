@@ -102,20 +102,26 @@ class MWR:
 
         d = locals()
         d_args = Arg(d)
-        logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
+        logging.basicConfig(level=logging.DEBUG,format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
         datefmt='%Y-%m-%d:%H:%M:%S')
         #if d_args.log_level == "debug":
-        logging.basicConfig(level=logging.DEBUG)
+        # logging.basicConfig(level=logging.DEBUG)
+        logger = logging.getLogger('mwr.bin.mwr3D')
         run(d_args)
 
     def predict(self, mrc_file: str, output_file: str, weight:str, model: str, gpuID:str='0,1,2,3', cubesize:int=64,cropsize:int=96, batchsize:int=16,norm: bool=True,log_level: str="debug"):
         """
         Predict tomograms using trained model including model.json and weight(xxx.h5)
         :param mrc_file: path to tomogram format: .mwr or .rec
-        
-        :return ******options******
-        :param model: path to trained model
         :param output_file: 
+        :param weight: 
+        :param model: path to trained model
+        :param gpuID:
+        :param cubesize:
+        :parma cropsize:
+        :parma batchsize:
+        :parma norm:
+        :parma log_level:
         """
         from mwr.bin.mwr3D_predict import predict
         d = locals()

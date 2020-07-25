@@ -19,8 +19,8 @@ def run(args):
 	args.reload_weight = True
 	args.result_dir = 'results'
 	args.continue_from = "predicting"
-
-	logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.DEBUG)
+	print('name',__name__)
+	# logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.DEBUG)
         #if d_args.log_level == "debug":
 	#logger = logging.getLogger(__name__)
 
@@ -47,17 +47,17 @@ def run(args):
 
 	losses = []
 	for i in range(args.continue_iter, args.iterations):
-		logging.debug("Start Iteration{}!".format(i+1))
+		logging.info("Start Iteration{}!".format(i+1))
 		args.iter_count = i
 		noise_factor = ((args.iter_count - args.noise_start_iter)//args.noise_pause)+1 if args.iter_count > args.noise_start_iter else 0
-		logging.warning("noise_factor:{}".format(noise_factor))
+		logging.info("noise_factor:{}".format(noise_factor))
 		if (not args.continue_training) or (args.continue_from == "preprocessing"):
 			try:
 				shutil.rmtree(args.data_folder)
 			except OSError:
 				logging.error("Create data folder error!")
 			get_cubes_list(args)
-			logging.error("Done getting cubes!")
+			logging.info("Done getting cubes!")
 			args.continue_training = False
 
 		if (not args.continue_training) or (args.continue_from == "training"):
@@ -66,7 +66,7 @@ def run(args):
 			history = train_data(args)
 			losses.append(history.history['loss'][-1])
 			args.continue_training = False
-			logging.warning("Done training!")
+			logging.info("Done training!")
 
 		if (not args.continue_training) or (args.continue_from == "predicting"):
 			logging.info("Start predicting!")
@@ -78,7 +78,7 @@ def run(args):
 
 		if len(losses)>3:
 			if losses[-1]< losses[-2]:
-				logger.warning('loss does not reduce in this iteration')
+				logging.warning('loss does not reduce in this iteration')
 
 		logging.info("Done Iteration{}!".format(i+1))
 

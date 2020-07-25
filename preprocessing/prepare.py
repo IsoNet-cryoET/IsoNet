@@ -199,7 +199,7 @@ def get_cubes_list(settings):
         
         func = partial(get_cubes, settings=settings)
         pool = Pool(processes=settings.preprocessing_ncpus) 
-        logging.info('********{}'.format(len(inp)))
+        logging.debug('********{}'.format(len(inp)))
         res = pool.map(func,inp)
     if settings.preprocessing_ncpus == 1:
         logging.info('********{}'.format(len(inp)))
