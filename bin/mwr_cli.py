@@ -7,7 +7,7 @@ class MWR:
     """
     MWR: Train on tomograms and Predict to restore missing-wedge
     """
-    def train(self, input_dir: str,
+    def train(self, input_dir: str = None,
         gpuID: str = '0,1,2,3',
         mask: str= None,
         noise_folder: str = None,
@@ -117,10 +117,10 @@ class MWR:
         :param model: path to trained model
         :param gpuID: (0,1,2,3) The gpuID to used during the training. e.g 0,1,2,3.
         :param cube_size: (64) The tomogram is divided into cubes to predict due to the memory limitation of GPUs. 
-        :parma crop_size: (96) The side-length of cubes cropping from tomogram in an overlapping strategy
-        :parma batchsize: The batch size of the cubes grouped into for network predicting
-        :parma norm: (True) if normalize the tomograms by percentile
-        :parma log_level: ("debug") level of message to be displayed
+        :param crop_size: (96) The side-length of cubes cropping from tomogram in an overlapping strategy
+        :param batchsize: The batch size of the cubes grouped into for network predicting
+        :param norm: (True) if normalize the tomograms by percentile
+        :param log_level: ("debug") level of message to be displayed
         """
         from mwr.bin.mwr3D_predict import predict
         d = locals()

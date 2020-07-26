@@ -70,22 +70,22 @@ def train3D_seq(outFile,
     train_data, test_data = prepare_dataseq(data_folder, batch_size)
     
     callback_list = []
-    check_point = ModelCheckpoint('{}/modellast.h5'.format(result_folder), 
-                                monitor='val_loss', 
-                                verbose=0, 
-                                save_best_only=False, 
-                                save_weights_only=False, 
-                                mode='auto', 
-                                period=1)
-    callback_list.append(check_point)
+    # check_point = ModelCheckpoint('{}/modellast.h5'.format(result_folder), 
+    #                             monitor='val_loss', 
+    #                             verbose=0, 
+    #                             save_best_only=False, 
+    #                             save_weights_only=False, 
+    #                             mode='auto', 
+    #                             period=1)
+    # callback_list.append(check_point)
     tensor_board = TensorBoard(log_dir='./Graph', histogram_freq=0, write_graph=True, write_images=True)
     callback_list.append(tensor_board)
     history = multi_model.fit_generator(generator=train_data, 
                                 validation_data=test_data,
                                 epochs=epochs, 
                                 steps_per_epoch=steps_per_epoch,
-                                verbose=1,
-                                callbacks=callback_list)
+                                verbose=1)
+                                # callbacks=callback_list)
     
 
     model.set_weights(multi_model.get_weights())
@@ -103,7 +103,7 @@ def train3D_continue(outFile,
 
     metrics = ('mse', 'mae')
     _metrics = [eval('loss_%s()' % m) for m in metrics]
-    optimizer = Adam(lr=0.0003)
+    optimizer = Adam(lr=0.0004)
 
     # json_file = open('{}/model.json'.format(result_folder), 'r')
     # loaded_model_json = json_file.read()
@@ -128,21 +128,21 @@ def train3D_continue(outFile,
     train_data, test_data = prepare_dataseq(data_folder, batch_size)
 
     callback_list = []
-    check_point = ModelCheckpoint('{}/modellast.h5'.format(result_folder), 
-                                monitor='val_loss', 
-                                verbose=0, 
-                                save_best_only=False, 
-                                save_weights_only=False, 
-                                mode='auto', 
-                                period=1)
-    callback_list.append(check_point)
+    # check_point = ModelCheckpoint('{}/modellast.h5'.format(result_folder), 
+    #                             monitor='val_loss', 
+    #                             verbose=0, 
+    #                             save_best_only=False, 
+    #                             save_weights_only=False, 
+    #                             mode='auto', 
+    #                             period=1)
+    # callback_list.append(check_point)
     tensor_board = TensorBoard(log_dir='./Graph', histogram_freq=0, write_graph=True, write_images=True)
     callback_list.append(tensor_board)
     logging.info("begin fitting")
     history = multi_model.fit_generator(generator=train_data, validation_data=test_data,
                                   epochs=epochs, steps_per_epoch=steps_per_epoch,
-                                  verbose=1,
-                                  callbacks=callback_list)
+                                  verbose=1)
+                                #   callbacks=callback_list)
     model.set_weights(multi_model.get_weights())
     model.save(outFile)
     return history

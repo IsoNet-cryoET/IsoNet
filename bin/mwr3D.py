@@ -18,7 +18,7 @@ from mwr.training.predict import predict
 def run(args):
 	args.reload_weight = True
 	args.result_dir = 'results'
-	args.continue_from = "predicting"
+	args.continue_from = "training"
 	print('name',__name__)
 	# logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.DEBUG)
         #if d_args.log_level == "debug":
@@ -81,7 +81,7 @@ def run(args):
 				logging.warning('loss does not reduce in this iteration')
 
 		logging.info("Done Iteration{}!".format(i+1))
-
+		shutil.rmtree(args.data_folder)
 	'''
 	losses = []
 	for i in range(settings.continue_iter, settings.iterations):

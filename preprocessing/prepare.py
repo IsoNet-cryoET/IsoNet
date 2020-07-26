@@ -10,6 +10,7 @@ import numpy as np
 from functools import partial
 from multiprocessing import Pool
 from mwr.util.rotations import rotation_list
+import logging
 
 #Make a new folder. If exist, nenew it
 def mkfolder(folder):
@@ -17,8 +18,7 @@ def mkfolder(folder):
     try:
         os.makedirs(folder)
     except FileExistsError:
-        print("Waring, the {} folder already exists before the 1st iteration".format(folder))
-        print("The old {} folder will be removed".format(folder))
+        logging.warning("Waring, the {} folder already exists before the 1st iteration \n The old {} folder will be removed".format(folder,folder))
         import shutil
         shutil.rmtree(folder)
         os.makedirs(folder)
@@ -40,6 +40,7 @@ def prepare_first_iter(settings):
     # settings = settings_out
     mkfolder(settings.result_dir)
     #if the input are tomograms
+    settings.tomogram2_list = None
     if not settings.datas_are_subtomos:
         mkfolder(settings.subtomo_dir)
         #load the mask
@@ -82,7 +83,6 @@ def prepare_first_iter(settings):
 
     settings.mrc_list = os.listdir(settings.subtomo_dir)
     settings.mrc_list = ['{}/{}'.format(settings.subtomo_dir,i) for i in settings.mrc_list]
-    
     #need further test
     #with Pool(settings.preprocessing_ncpus) as p:
     #    func = partial(generate_first_iter_mrc, settings)
@@ -194,7 +194,7 @@ def get_cubes_list(settings):
             os.makedirs(folder)
     inp=[]
     for i,mrc in enumerate(settings.mrc_list):
-        inp.append((mrc, i*16))
+        inp.append((mrc, i*len(rotation_list)))
     if settings.preprocessing_ncpus > 1:
         
         func = partial(get_cubes, settings=settings)

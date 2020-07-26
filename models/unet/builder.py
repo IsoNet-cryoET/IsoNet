@@ -1,5 +1,5 @@
 from mwr.models.unet.blocks import conv_blocks
-from keras.layers import MaxPooling2D, UpSampling2D, MaxPooling3D, UpSampling3D
+from keras.layers import MaxPooling2D, UpSampling2D, MaxPooling3D, UpSampling3D, AveragePooling3D
 from keras.layers.merge import Concatenate
 
 def build_unet(filter_base=32,depth=2,convs_per_depth=2,
@@ -11,7 +11,8 @@ def build_unet(filter_base=32,depth=2,convs_per_depth=2,
         MaxPooling=MaxPooling2D
         UpSampling=UpSampling2D
     else:
-        MaxPooling=MaxPooling3D
+        # MaxPooling=MaxPooling3D
+        MaxPooling=AveragePooling3D
         UpSampling=UpSampling3D
     def _func(inputs):
         concatenate = []
