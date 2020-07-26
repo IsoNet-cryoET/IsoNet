@@ -2,7 +2,7 @@
 import fire 
 import logging
 from mwr.util.dict2attr import Arg
-# from argparser import args
+
 class MWR:
     """
     MWR: Train on tomograms and Predict to restore missing-wedge
@@ -11,7 +11,7 @@ class MWR:
         gpuID: str = '0,1,2,3',
         mask: str= None,
         noise_folder: str = None,
-        iterations: int = 50,
+        iterations: int = 40,
         datas_are_subtomos: bool = False,
         subtomo_dir: str='subtomo',
         data_folder: str = "data",      
@@ -21,8 +21,8 @@ class MWR:
         continue_training: bool = False,
         continue_iter: int = 0,
 
-        noise_level:  float= 0.04,
-        noise_start_iter: int = 20,
+        noise_level:  float= 0.05,
+        noise_start_iter: int = 15,
         noise_pause: int = 5,
         
         cube_size: int = 64,
@@ -112,15 +112,15 @@ class MWR:
     def predict(self, mrc_file: str, output_file: str, model: str, gpuID: str = '0,1,2,3', cube_size:int=64,crop_size:int=96, batchsize:int=16,norm: bool=True,log_level: str="debug"):
         """
         Predict tomograms using trained model including model.json and weight(xxx.h5)
-        :param mrc_file: path to tomogram format: .mwr or .rec
-        :param output_file: 
+        :param mrc_file: path to tomogram, format: .mwr or .rec
+        :param output_file: file_name of predicted tomograms
         :param model: path to trained model
-        :param gpuID:
-        :param cube_size:
-        :parma crop_size:
-        :parma batchsize:
-        :parma norm:
-        :parma log_level:
+        :param gpuID: (0,1,2,3) The gpuID to used during the training. e.g 0,1,2,3.
+        :param cube_size: (64) The tomogram is divided into cubes to predict due to the memory limitation of GPUs. 
+        :parma crop_size: (96) The side-length of cubes cropping from tomogram in an overlapping strategy
+        :parma batchsize: The batch size of the cubes grouped into for network predicting
+        :parma norm: (True) if normalize the tomograms by percentile
+        :parma log_level: ("debug") level of message to be displayed
         """
         from mwr.bin.mwr3D_predict import predict
         d = locals()
