@@ -7,7 +7,8 @@ class MWR:
     """
     MWR: Train on tomograms and Predict to restore missing-wedge
     """
-    def train(self, input_dir: str = None,
+    def train(self, 
+        input_dir: str = None,
         gpuID: str = '0,1,2,3',
         mask: str= None,
         noise_folder: str = None,
@@ -33,9 +34,6 @@ class MWR:
         epochs: int = 10,
         batch_size: int = 8,
         steps_per_epoch: int = 200,
-        
-        predict_cropsize: int = 96,
-        predict_batch_size: int = 16,
 
         drop_out: float = 0.5,
         convs_per_depth: int = 3,
@@ -73,7 +71,7 @@ class MWR:
         :param batch_size:Size of the minibatch.
         :param steps_per_epoch:Step per epoch. A good estimation of this value is (sub)tomos * ncube * 16 / batch_size *0.9.")
 
-        ************************predict settings************************
+        ************************network settings************************
 
         :param noise_folder: Add noise during training, Set None to disable noise reduction. 
         :param noise_level: Level of noise STD(added noise)/STD(data).
@@ -88,11 +86,6 @@ class MWR:
         :param unet_depth: Number of convolution layer for each depth.
         :param batch_normalization: Sometimes batch normalization may induce artifacts for extreme pixels in the first several iterations. Those could be restored in further iterations.
         :param normalize_percentile:Normalize the 5 percent and 95 percent pixel intensity to 0 and 1 respectively. If this is set to False, normalize the input to 0 mean and 1 standard dievation.
-        :param predict_batch_size： Predict batch size. 
-
-        ************************network settings************************
-        
-        :param predict_cropsize: Predict cubesize.
         """
         #from mwr.argparser import args
         # import warnings  
