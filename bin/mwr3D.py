@@ -19,13 +19,13 @@ def run(args):
 	args.reload_weight = True
 	args.result_dir = 'results'
 	args.continue_from = "training"
-	args.predict_cropsize = args.crop_size,
-    args.predict_batch_size = args.batch_size,
-
-	print('name',__name__)
-	# logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.DEBUG)
-        #if d_args.log_level == "debug":
-	#logger = logging.getLogger(__name__)
+	args.predict_cropsize = args.crop_size
+	args.predict_batch_size = args.batch_size
+	if args.log_level == "debug":
+		logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.DEBUG)
+	else:
+		logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.INFO)
+	logger = logging.getLogger('mwr.preprocessing.prepare')
 
 	# Specify GPU(s) to be used 
 	args.ngpus = len(args.gpuID.split(','))

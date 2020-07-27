@@ -10,7 +10,7 @@ class MWR:
     def train(self, 
         input_dir: str = None,
         gpuID: str = '0,1,2,3',
-        mask: str= None,
+        mask_dir: str= None,
         noise_folder: str = None,
         iterations: int = 40,
         datas_are_subtomos: bool = False,
@@ -45,7 +45,7 @@ class MWR:
         """
         Preprocess tomogram and train u-net model on generated subtomos
         :param input_dir: path to tomogram from which subtomos are sampled; format: .mwr or .rec
-        :param mask: (None) the path to mask file 
+        :param mask: (None) folder of  mask files 
         :param gpuID: (0,1,2,3) The gpuID to used during the training. e.g 0,1,2,3.
         :param datas_are_subtomos: (False) Is your trainin data subtomograms?
         :param subtomo_dir: (subtomo) The folder where the input subtomograms at.

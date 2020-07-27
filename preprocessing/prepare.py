@@ -11,7 +11,7 @@ from functools import partial
 from multiprocessing import Pool
 from mwr.util.rotations import rotation_list
 import logging
-
+from difflib import get_close_matches
 #Make a new folder. If exist, nenew it
 def mkfolder(folder):
     import os
@@ -44,11 +44,10 @@ def prepare_first_iter(settings):
     if not settings.datas_are_subtomos:
         mkfolder(settings.subtomo_dir)
         #load the mask
-        if settings.mask is not None:
-            with mrcfile.open(settings.mask) as m:
-                mask=m.data
+        if settings.mask_dir is not None:
+            mask_list = ["{}/{}".format(settings.mask_dir,f) for f in os.listdir(settings.mask_dir) if f.split(".")[-1]=="mrc" or f.split(".")[-1]=="rec" ]
         else:
-            mask=None
+            mask_list=[]
         #use all the mrc files in the input folder
         if settings.input_dir[-1] == '\\' or settings.input_dir[-1] == '/':
             settings.input_dir= settings.input_dir[:-1]
@@ -64,7 +63,20 @@ def prepare_first_iter(settings):
             root_name = settings.tomogram_list_items[tomo_count].split('.')[0]
             with mrcfile.open(tomogram) as mrcData:
                 orig_data = mrcData.data.astype(np.float32)
-            seeds=create_cube_seeds(orig_data,settings.ncube,settings.crop_size,mask=mask)
+            #find corresponding mask from mask_list
+            close_mask = get_close_matches(root_name,os.listdir(settings.mask_dir),cutoff=0.6)# a list
+            if len(close_mask)>0:
+                with mrcfile.open(settings.mask_dir + '/' + close_mask[0]) as m:
+                    mask_data = m.data
+                if mask_data.shape == orig_data.shape:
+                    logging.debug("{} mask load!".format(root_name))
+                else:
+                    mask_data = None
+                    logging.debug("{}:mask match error!".format(root_name))
+            else:
+                logging.debug("{} mask not found!".format(root_name))
+                mask_data = None
+            seeds=create_cube_seeds(orig_data,settings.ncube,settings.crop_size,mask=mask_data)
             subtomos=crop_cubes(orig_data,seeds,settings.crop_size)
 
             for j,s in enumerate(subtomos):
