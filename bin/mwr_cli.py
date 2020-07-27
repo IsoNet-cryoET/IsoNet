@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import fire 
 import logging
-from mwr.util.dict2attr import Arg
+from mwr.util.dict2attr import Arg,check_args
 
 class MWR:
     """
@@ -11,11 +11,11 @@ class MWR:
         input_dir: str = None,
         gpuID: str = '0,1,2,3',
         mask_dir: str= None,
-        noise_folder: str = None,
+        noise_dir: str = None,
         iterations: int = 40,
         datas_are_subtomos: bool = False,
         subtomo_dir: str='subtomo',
-        data_folder: str = "data",      
+        data_dir: str = "data",      
         pretrained_model = None,          
         log_level: str = "debug",
 
@@ -100,9 +100,9 @@ class MWR:
         #if d_args.log_level == "debug":
         # logging.basicConfig(level=logging.DEBUG)
         logger = logging.getLogger('mwr.bin.mwr3D')
-        run(d_args)
+        # run(d_args)
 
-    def predict(self, mrc_file: str, output_file: str, model: str, gpuID: str = '0,1,2,3', cube_size:int=64,crop_size:int=96, batchsize:int=16,norm: bool=True,log_level: str="debug"):
+    def predict(self, mrc_file: str, output_file: str, model: str, gpuID: str = None, cube_size:int=64,crop_size:int=96, batch_size:int=16,norm: bool=True,log_level: str="debug"):
         """
         Predict tomograms using trained model including model.json and weight(xxx.h5)
         :param mrc_file: path to tomogram, format: .mwr or .rec
@@ -111,9 +111,10 @@ class MWR:
         :param gpuID: (0,1,2,3) The gpuID to used during the training. e.g 0,1,2,3.
         :param cube_size: (64) The tomogram is divided into cubes to predict due to the memory limitation of GPUs. 
         :param crop_size: (96) The side-length of cubes cropping from tomogram in an overlapping strategy
-        :param batchsize: The batch size of the cubes grouped into for network predicting
+        :param batch_size: The batch size of the cubes grouped into for network predicting
         :param norm: (True) if normalize the tomograms by percentile
         :param log_level: ("debug") level of message to be displayed
+        :raises: AttributeError, KeyError
         """
         from mwr.bin.mwr3D_predict import predict
         d = locals()
@@ -121,7 +122,7 @@ class MWR:
         d_args = Arg(d)
         predict(d_args)
 
-    def make_mask(self,tomo_path,mask_name,side: int=8,percentile: int=50,threshold: int=1):
+    def make_mask(self,tomo_path,mask_name: str = None,side: int=8,percentile: int=50,threshold: int=1):
         """
         generate a mask to constrain sampling area of the tomogram
         :param tomo_path: path to the tomogram
@@ -150,10 +151,14 @@ class MWR:
         from mwr.util.mwr3D_noise_generator import make_noise
         make_noise(output_folder=output_folder, number_volume=number_volume, cubesize=cubesize, minangle=minangle,maxangle=maxangle, anglestep=anglestep, start=start,ncpus=ncpus, mode=mode)
         
-    def check(self):
+    def check(self,para0, para1: str = '1',gpuID: str = '2'):
         from mwr.bin.mwr3D_predict import predict
         from mwr.bin.mwr3D import run
         print('MWR --version 0.9.9 installed')
 
 if __name__ == "__main__":
+    import sys
+    # args = sys.argv
+    # print('***:',args)
+    # check_args(args)
     fire.Fire(MWR)

@@ -140,15 +140,15 @@ def get_cubes_one(data,settings, data2 = None, start = 0, mask = None, add_noise
         else:
             if settings.combined_prediction:
                 data=(data+data2)/2.
-            data_cubes = DataCubes(data2, tomogram2 = data, nCubesPerImg=1, cubeSideLen = settings.cube_size, cropsize = settings.crop_size, mask = mask, noise_folder = settings.noise_folder,
+            data_cubes = DataCubes(data2, tomogram2 = data, nCubesPerImg=1, cubeSideLen = settings.cube_size, cropsize = settings.crop_size, mask = mask, noise_folder = settings.noise_dir,
             noise_level = settings.noise_level*noise_factor)
     else:
-        data_cubes = DataCubes(data, tomogram2 = data2, nCubesPerImg=1, cubeSideLen = settings.cube_size, cropsize = settings.crop_size, mask = mask, noise_folder = settings.noise_folder,
+        data_cubes = DataCubes(data, tomogram2 = data2, nCubesPerImg=1, cubeSideLen = settings.cube_size, cropsize = settings.crop_size, mask = mask, noise_folder = settings.noise_dir,
     noise_level = settings.noise_level*noise_factor)
     for i,img in enumerate(data_cubes.cubesX):
-        with mrcfile.new('{}/train_x/x_{}.mrc'.format(settings.data_folder, i+start), overwrite=True) as output_mrc:
+        with mrcfile.new('{}/train_x/x_{}.mrc'.format(settings.data_dir, i+start), overwrite=True) as output_mrc:
             output_mrc.set_data(img.astype(np.float32))
-        with mrcfile.new('{}/train_y/y_{}.mrc'.format(settings.data_folder, i+start), overwrite=True) as output_mrc:
+        with mrcfile.new('{}/train_y/y_{}.mrc'.format(settings.data_dir, i+start), overwrite=True) as output_mrc:
             output_mrc.set_data(data_cubes.cubesY[i].astype(np.float32))
     return 0
 
@@ -198,10 +198,10 @@ def get_cubes_list(settings):
     # global settings
     # settings = settings_out
     dirs_tomake = ['train_x','train_y', 'test_x', 'test_y']
-    if not os.path.exists(settings.data_folder):
-        os.makedirs(settings.data_folder)
+    if not os.path.exists(settings.data_dir):
+        os.makedirs(settings.data_dir)
     for d in dirs_tomake:
-        folder = '{}/{}'.format(settings.data_folder, d)
+        folder = '{}/{}'.format(settings.data_dir, d)
         if not os.path.exists(folder):
             os.makedirs(folder)
     inp=[]
@@ -216,12 +216,12 @@ def get_cubes_list(settings):
         for i in inp:
             get_cubes(settings,i)
 
-    all_path_x = os.listdir(settings.data_folder+'/train_x')
+    all_path_x = os.listdir(settings.data_dir+'/train_x')
     num_test = int(len(all_path_x) * 0.1)
     num_test = num_test - num_test%settings.ngpus + settings.ngpus
     all_path_y = ['y_'+i.split('_')[1] for i in all_path_x ]
     ind = np.random.permutation(len(all_path_x))[0:num_test]
     for i in ind:
-        os.rename('{}/train_x/{}'.format(settings.data_folder, all_path_x[i]), '{}/test_x/{}'.format(settings.data_folder, all_path_x[i]) )
-        os.rename('{}/train_y/{}'.format(settings.data_folder, all_path_y[i]), '{}/test_y/{}'.format(settings.data_folder, all_path_y[i]) )
+        os.rename('{}/train_x/{}'.format(settings.data_dir, all_path_x[i]), '{}/test_x/{}'.format(settings.data_dir, all_path_x[i]) )
+        os.rename('{}/train_y/{}'.format(settings.data_dir, all_path_y[i]), '{}/test_y/{}'.format(settings.data_dir, all_path_y[i]) )
         #os.rename('data/train_y/'+all_path_y[i], 'data/test_y/'+all_path_y[i])

@@ -58,7 +58,7 @@ def predict(args):
     if_percentile = str2bool(args.norm)
     os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
     os.environ["CUDA_VISIBLE_DEVICES"]=args.gpuID 
-    logger.info('percentile:{}'.format(if_percentile))
+    logger.debug('percentile:{}'.format(if_percentile))
 
     ngpus = len(args.gpuID.split(','))
     # from keras.models import model_from_json
@@ -75,7 +75,7 @@ def predict(args):
 
     logger.info("Loaded model from disk")
 
-    N = args.batchsize * ngpus
+    N = args.batch_size * ngpus
     root_name = args.mrc_file.split('/')[-1].split('.')[0]
     print('predicting:{}'.format(root_name))
     with mrcfile.open(args.mrc_file) as mrcData:
@@ -95,7 +95,7 @@ def predict(args):
         append_number = N - num_batches%N
     data = np.append(data, data[0:append_number], axis = 0)
 
-    outData=model.predict(data, batch_size= args.batchsize,verbose=1)
+    outData=model.predict(data, batch_size= args.batch_size,verbose=1)
 
     outData = outData[0:num_batches]
     outData=reform_ins.restore_from_cubes_new(outData.reshape(outData.shape[0:-1]), args.cube_size, args.crop_size)
@@ -104,4 +104,4 @@ def predict(args):
     with mrcfile.new(args.output_file, overwrite=True) as output_mrc:
         output_mrc.set_data(-outData)
     print('Done predicting')
-    # predict(args.model,args.weight,args.mrc_file,args.output_file, cubesize=args.cubesize, cropsize=args.cropsize, batchsize=args.batchsize, gpuID=args.gpuID, if_percentile=if_percentile)
+    # predict(args.model,args.weight,args.mrc_file,args.output_file, cubesize=args.cubesize, cropsize=args.cropsize, batch_size=args.batch_size, gpuID=args.gpuID, if_percentile=if_percentile)
