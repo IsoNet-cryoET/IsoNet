@@ -27,10 +27,10 @@ def run(args):
 		logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.INFO)
 	logger = logging.getLogger('mwr.preprocessing.prepare')
 
-	# Specify GPU(s) to be used 
+	# Specify GPU(s) to be used
 	args.ngpus = len(args.gpuID.split(','))
 	os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
-	os.environ["CUDA_VISIBLE_DEVICES"]=args.gpuID  
+	os.environ["CUDA_VISIBLE_DEVICES"]=args.gpuID
 	if args.log_level == 'debug':
 		os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 	else:
@@ -44,9 +44,9 @@ def run(args):
 		args.continue_iter = args.continue_iter - 1
 
 
-	#.mrc2 file should not be in mrc_list 
+	#.mrc2 file should not be in mrc_list
 	mrc_list = glob.glob(args.subtomo_dir+'/*.mrc')
-	mrc2_list = glob.glob(args.subtomo_dir+'/*.mrc2') 
+	mrc2_list = glob.glob(args.subtomo_dir+'/*.mrc2')
 
 	losses = []
 	for i in range(args.continue_iter, args.iterations):
@@ -56,9 +56,10 @@ def run(args):
 		logging.info("noise_factor:{}".format(noise_factor))
 		if (not args.continue_training) or (args.continue_from == "preprocessing"):
 			try:
-				shutil.rmtree(args.data_folder)
+				shutil.rmtree(args.data_dir)
 			except OSError:
-				logging.error("Create data folder error!")
+				# logging.error("Create data folder error!")
+				logging.debug("No previous data folder!")
 			get_cubes_list(args)
 			logging.info("Done getting cubes!")
 			args.continue_training = False
@@ -84,7 +85,7 @@ def run(args):
 				logging.warning('loss does not reduce in this iteration')
 
 		logging.info("Done Iteration{}!".format(i+1))
-		shutil.rmtree(args.data_folder)
+		shutil.rmtree(args.data_dir)
 	'''
 	losses = []
 	for i in range(settings.continue_iter, settings.iterations):
@@ -95,7 +96,7 @@ def run(args):
     if (not settings.continue_training) or (settings.continue_from == "preprocessing"):
         import shutil
         try:
-            shutil.rmtree(settings.data_folder)
+            shutil.rmtree(settings.data_dir)
         except OSError:
             print ("  " )
         get_cubes_list(settings)

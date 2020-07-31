@@ -77,11 +77,11 @@ def stdmask(tomo,side=10,threshold=1):
     tomo = tomo.astype(np.float32)
     tomosq = tomo**2
     ones = np.ones(tomo.shape)
-
+    eps = 0.0001
     kernel = np.ones((2*side+1, 2*side+1, 2*side+1))
     s = convolve(tomo, kernel, mode="same")
     s2 = convolve(tomosq, kernel, mode="same")
-    ns = convolve(ones, kernel, mode="same")
+    ns = convolve(ones, kernel, mode="same")+eps
 
     out = np.sqrt((s2 - s**2 / ns) / ns)
     out = out>np.std(tomo)*threshold
