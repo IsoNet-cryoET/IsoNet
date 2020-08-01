@@ -81,9 +81,9 @@ def stdmask(tomo,side=10,threshold=1):
     kernel = np.ones((2*side+1, 2*side+1, 2*side+1))
     s = convolve(tomo, kernel, mode="same")
     s2 = convolve(tomosq, kernel, mode="same")
-    ns = convolve(ones, kernel, mode="same")+eps
+    ns = convolve(ones, kernel, mode="same")
 
-    out = np.sqrt((s2 - s**2 / ns) / ns)
+    out = np.sqrt((s2 - s**2 / ns) / ns + eps)
     out = out>np.std(tomo)*threshold
     return out.astype(np.uint8)
 

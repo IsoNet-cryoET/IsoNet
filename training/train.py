@@ -32,7 +32,7 @@ def train3D_seq(outFile,
                 n_gpus=2):
 
     last_activation = 'linear'
-    optimizer = Adam(lr)
+    optimizer = Adam(lr=lr)
     metrics = ('mse', 'mae')
     _metrics = [eval('loss_%s()' % m) for m in metrics]
     residual = True
@@ -97,13 +97,14 @@ def train3D_continue(outFile,
                     data_dir = 'data',
                     result_folder='results',
                     epochs=40,
+                    lr=0.0004,
                     steps_per_epoch=128,
                     batch_size=64,
                     n_gpus=2):
 
     metrics = ('mse', 'mae')
     _metrics = [eval('loss_%s()' % m) for m in metrics]
-    optimizer = Adam(lr=0.0004)
+    optimizer = Adam(lr=lr)
 
     # json_file = open('{}/model.json'.format(result_folder), 'r')
     # loaded_model_json = json_file.read()
@@ -157,6 +158,7 @@ def train_data(settings):
                                     epochs = settings.epochs,
                                     steps_per_epoch = settings.steps_per_epoch,
                                     batch_size = settings.batch_size,
+                                    lr = settings.lr,
                                     dropout = settings.drop_out,
                                     depth=settings.unet_depth,
                                     convs_per_depth = settings.convs_per_depth,
@@ -171,6 +173,7 @@ def train_data(settings):
                                         epochs=settings.epochs,
                                         steps_per_epoch=settings.steps_per_epoch,
                                         batch_size=settings.batch_size,
+                                        lr = settings.lr,
                                         n_gpus=settings.ngpus)
 
     else:
