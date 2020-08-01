@@ -5,6 +5,22 @@ import mrcfile
 args = sys.argv
 from mwr.util.filter import stdmask_mpi,maxmask,stdmask
 import numpy as np
+import os
+
+def make_mask_dir(tomo_dir,mask_dir,side = 8,percentile=30,threshold=1):
+    tomo_list = ["{}/{}".format(tomo_dir,f) for f in os.listdir(tomo_dir)]
+    try:
+        os.makedirs(mask_dir)
+    except FileExistsError:
+        import shutil
+        shutil.rmtree(mask_dir)
+        os.makedirs(mask_dir)
+    mask_list = ["{}/{}_mask.mrc".format(mask_dir,f.split('.')[0]) for f in os.listdir(tomo_dir)]
+
+    for i,tomo in enumerate(tomo_list):
+        print('tomo and mask',tomo, mask_list[i])
+        make_mask(tomo, mask_list[i],side = side,percentile=percentile,threshold=threshold)
+
 
 def make_mask(tomo_path, mask_name,side = 8,percentile=30,threshold=1):
     from skimage.transform import resize

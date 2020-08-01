@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import fire
 import logging
+import os
 from mwr.util.dict2attr import Arg,check_args
 
 class MWR:
@@ -122,17 +123,25 @@ class MWR:
         d_args = Arg(d)
         predict(d_args)
 
-    def make_mask(self,tomo_path,mask_name: str = None,side: int=8,percentile: int=50,threshold: int=1):
+    def make_mask(self,tomo_path,mask_path: str = None,side: int=8,percentile: int=50,threshold: int=1):
         """
         generate a mask to constrain sampling area of the tomogram
-        :param tomo_path: path to the tomogram
-        :param mask_name: path and name of the mask to save as
+        :param tomo_path: path to the tomogram or tomogram folder
+        :param mask_path: path and name of the mask to save as
         :param side:
         :param percentile:
         :param threshold:
         """
-        from mwr.bin.maskGene import make_mask
-        make_mask(tomo_path,mask_name,side=side,percentile=percentile,threshold=threshold)
+        from mwr.bin.maskGene import make_mask,make_mask_dir
+        if os.path.isdir(tomo_path):
+            make_mask_dir(tomo_path,mask_path,side=side,percentile=percentile,threshold=threshold)
+        elif os.path.isfile(tomo_path):
+            if mask_path is None:
+                mask_path = tomo_path.split('.')[0]+'_mask.mrc'
+                print(mask_path)
+            make_mask(tomo_path,mask_path,side=side,percentile=percentile,threshold=threshold)
+        else:
+            print('make_mask tomo_path error')
         print('mask generated')
 
     def generate_noise(self,output_folder: str,number_volume: int, cubesize: int, minangle: int=-60,maxangle: int=60,
