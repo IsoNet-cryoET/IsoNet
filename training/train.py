@@ -87,8 +87,8 @@ def train3D_seq(outFile,
                                 verbose=1)
                                 # callbacks=callback_list)
 
-
-    model.set_weights(multi_model.get_weights())
+    weight = multi_model.get_weights()
+    model.set_weights(weight)
     model.save(outFile)
     return history
 
@@ -160,6 +160,7 @@ def train_data(settings):
                                     batch_size = settings.batch_size,
                                     lr = settings.lr,
                                     dropout = settings.drop_out,
+                                    filter_base = settings.filter_base,
                                     depth=settings.unet_depth,
                                     convs_per_depth = settings.convs_per_depth,
                                     batch_norm = settings.batch_normalization,

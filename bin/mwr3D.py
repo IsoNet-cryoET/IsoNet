@@ -18,10 +18,11 @@ from mwr.training.predict import predict
 def run(args):
 	args.reload_weight = True
 	args.result_dir = 'results'
-	args.continue_from = "training"
+	args.continue_from = "preprocessing"
 	args.predict_cropsize = args.crop_size
 	args.predict_batch_size = args.batch_size
 	args.lr = 0.0004
+	args.filter_base = 64
 	if args.log_level == "debug":
 		logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.DEBUG)
 	else:
@@ -46,8 +47,9 @@ def run(args):
 
 
 	#.mrc2 file should not be in mrc_list
-	mrc_list = glob.glob(args.subtomo_dir+'/*.mrc')
-	mrc2_list = glob.glob(args.subtomo_dir+'/*.mrc2')
+	args.mrc_list = glob.glob(args.subtomo_dir+'/*.mrc')
+	args.mrc2_list = glob.glob(args.subtomo_dir+'/*.mrc2')
+	args.tomogram2_list = None
 
 	losses = []
 	for i in range(args.continue_iter, args.iterations):

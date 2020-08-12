@@ -7,14 +7,14 @@ def Unet(filter_base=32,
         batch_norm=False,
         dropout=0.0,
         pool=(2,2)):
-    model = builder.build_unet(filter_base,depth,convs_per_depth,
-               kernel,
-               batch_norm,
-               dropout,
-               pool)
-#     model = builder_fullconv.build_unet(filter_base,depth,convs_per_depth,
-#             kernel,
-#             batch_norm,
-#             dropout,
-#             pool)
+    # model = builder.build_unet(filter_base,depth,convs_per_depth,
+    #            kernel,
+    #            batch_norm,
+    #            dropout,
+    #            pool)
+    model = builder_fullconv.build_unet(filter_base,depth,convs_per_depth,
+            kernel,
+            batch_norm,
+            dropout,
+            pool)
     return model

@@ -4,7 +4,7 @@ import mrcfile
 from mwr.preprocessing.img_processing import normalize
 import numpy as np
 import logging
-
+import keras.backend as K
 
 def predict(settings):
 
@@ -60,6 +60,7 @@ def predict(settings):
                     with mrcfile.new('{}/{}_iter{:0>2d}.mrc'.format(settings.result_dir,root_name,settings.iter_count+1), overwrite=True) as output_mrc:
                         output_mrc.set_data(-outData1)
             data = []
+    K.clear_session()
     # TODO: N2N required
     settings.tomogram2_list = None
     if settings.tomogram2_list is not None:

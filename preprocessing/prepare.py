@@ -8,7 +8,6 @@ from mwr.preprocessing.simulate import apply_wedge
 from multiprocessing import Pool
 import numpy as np
 from functools import partial
-from multiprocessing import Pool
 from mwr.util.rotations import rotation_list
 import logging
 from difflib import get_close_matches
@@ -40,7 +39,6 @@ def prepare_first_iter(settings):
     # settings = settings_out
     mkfolder(settings.result_dir)
     #if the input are tomograms
-    settings.tomogram2_list = None
     if not settings.datas_are_subtomos:
         mkfolder(settings.subtomo_dir)
         #load the mask
@@ -92,7 +90,9 @@ def prepare_first_iter(settings):
                 for j,s in enumerate(subtomos):
                     with mrcfile.new('{}/{}_{:0>6d}.mrc2'.format(settings.subtomo_dir, root_name,j), overwrite=True) as output_mrc:
                         output_mrc.set_data(s.astype(np.float32))
-
+    else:
+        settings.tomogram_list = None
+        settings.tomogram2_list = None
     settings.mrc_list = os.listdir(settings.subtomo_dir)
     settings.mrc_list = ['{}/{}'.format(settings.subtomo_dir,i) for i in settings.mrc_list]
     #need further test
@@ -210,8 +210,8 @@ def get_cubes_list(settings):
     if settings.preprocessing_ncpus > 1:
         
         func = partial(get_cubes, settings=settings)
-        pool = Pool(processes=settings.preprocessing_ncpus) 
-        res = pool.map(func,inp)
+        with Pool(settings.preprocessing_ncpus) as p:
+            res = p.map(func,inp)
     if settings.preprocessing_ncpus == 1:
         for i in inp:
             get_cubes(settings,i)

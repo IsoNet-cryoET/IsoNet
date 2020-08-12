@@ -99,7 +99,7 @@ class TwoDPsf:
             outData[i] = np.real(outData_i)#.astype(np.uint8)
         return outData
 
-'''
+
 class TrDPsf:
     def __init__(self,sideLen):
         self.sideLen=sideLen
@@ -109,16 +109,17 @@ class TrDPsf:
         self.mw=np.zeros([self.sideLen,self.sideLen,self.sideLen],dtype=np.float32)
         theta=np.pi/180*(90-missingAngle)
         for i in range(self.sideLen):
+            z = (i - self.sideLen // 2)
             for j in range(self.sideLen):
                 y = (j - self.sideLen // 2)
                 for k in range(self.sideLen):
                     x=(k-self.sideLen//2)
-                    if abs(y)<=abs(x*np.tan(theta)) and x*x+y*y<(self.sideLen//2)*(self.sideLen//2):
+                    if abs(y)<=abs(x*np.tan(theta)) and x*x+y*y+z*z<(self.sideLen//2)*(self.sideLen//2):
                         self.mw[j,i,k]=1
                     else:
                         self.mw[j,i,k]=0
         return self.mw
-
+'''
     def apply(self,data):
 
         data = np.expand_dims( data, axis=0)

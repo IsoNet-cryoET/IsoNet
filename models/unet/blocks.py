@@ -17,9 +17,9 @@ def conv_blocks(n_filter, kernel,
                         padding=padding,
                         kernel_initializer=init,**kwargs)(last_layer)
         if batch_norm:
-            conv=BatchNormalization()(conv)
+            conv=BatchNormalization()(conv, training=True)
         conv=Activation(activation)(conv)
         if dropout is not None and dropout>0:
-            conv=Dropout(dropout)(conv)
+            conv=Dropout(dropout)(conv,training=True)
         return conv
     return layer

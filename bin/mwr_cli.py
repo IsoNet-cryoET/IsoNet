@@ -30,7 +30,7 @@ class MWR:
         cube_size: int = 64,
         crop_size: int = 96,
         ncube: int = 50,
-        preprocessing_ncpus: int = 24,
+        preprocessing_ncpus: int = 16,
 
         epochs: int = 10,
         batch_size: int = 8,
@@ -123,7 +123,7 @@ class MWR:
         d_args = Arg(d)
         predict(d_args)
 
-    def make_mask(self,tomo_path,mask_path: str = None,side: int=8,percentile: int=50,threshold: int=1):
+    def make_mask(self,tomo_path,mask_path: str = None,side: int=8,percentile: int=99,threshold: int=1):
         """
         generate a mask to constrain sampling area of the tomogram
         :param tomo_path: path to the tomogram or tomogram folder
@@ -160,7 +160,7 @@ class MWR:
         from mwr.util.mwr3D_noise_generator import make_noise
         make_noise(output_folder=output_folder, number_volume=number_volume, cubesize=cubesize, minangle=minangle,maxangle=maxangle, anglestep=anglestep, start=start,ncpus=ncpus, mode=mode)
 
-    def check(self,para0, para1: str = '1',gpuID: str = '2'):
+    def check(self):
         from mwr.bin.mwr3D_predict import predict
         from mwr.bin.mwr3D import run
         print('MWR --version 0.9.9 installed')
