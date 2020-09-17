@@ -29,11 +29,16 @@ def train3D_seq(outFile,
                 pool = (2,2,2),
                 batch_norm = False,
                 depth = 3,
-                n_gpus=2):
+                n_gpus=2,
+                last_activation = 'linear',
+                loss = 'mae'):
 
-    last_activation = 'linear'
+    # last_activation = 'linear'
     optimizer = Adam(lr=lr)
-    metrics = ('mse', 'mae')
+    if loss == 'mae' or loss == 'mse':
+        metrics = ('mse', 'mae')
+    elif loss == 'binary_crossentropy':
+        metros = ('accuracy')
     _metrics = [eval('loss_%s()' % m) for m in metrics]
     residual = True
 
@@ -64,8 +69,8 @@ def train3D_seq(outFile,
     else:
         multi_model = clone_model(model)
 
-    model.compile(optimizer=optimizer, loss='mae', metrics=_metrics)
-    multi_model.compile(optimizer=optimizer, loss='mae', metrics=_metrics)
+    model.compile(optimizer=optimizer, loss=loss, metrics=_metrics)
+    multi_model.compile(optimizer=optimizer, loss=loss, metrics=_metrics)
 
     train_data, test_data = prepare_dataseq(data_dir, batch_size)
 
