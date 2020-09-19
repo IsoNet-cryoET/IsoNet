@@ -7,7 +7,7 @@ from mwr.util.filter import stdmask_mpi,maxmask,stdmask
 import numpy as np
 import os
 
-def make_mask_dir(tomo_dir,mask_dir,side = 8,percentile=30,threshold=1):
+def make_mask_dir(tomo_dir,mask_dir,side = 8,percentile=30,threshold=1,mask_type='statistical'):
     tomo_list = ["{}/{}".format(tomo_dir,f) for f in os.listdir(tomo_dir)]
     try:
         os.makedirs(mask_dir)
@@ -19,23 +19,32 @@ def make_mask_dir(tomo_dir,mask_dir,side = 8,percentile=30,threshold=1):
 
     for i,tomo in enumerate(tomo_list):
         print('tomo and mask',tomo, mask_list[i])
-        make_mask(tomo, mask_list[i],side = side,percentile=percentile,threshold=threshold)
+        make_mask(tomo, mask_list[i],side = side,percentile=percentile,threshold=threshold,mask_type=mask_type)
 
 
-def make_mask(tomo_path, mask_name,side = 8,percentile=30,threshold=1):
+def make_mask(tomo_path, mask_name,side = 8,percentile=30,threshold=1,mask_type='statistical'):
     from skimage.transform import resize
     with mrcfile.open(tomo_path) as n:
         tomo = n.data
     sp=np.array(tomo.shape)
-    sp2 = (sp/2).astype(int)
-    bintomo = resize(tomo,sp2,anti_aliasing=True)
-    mask1 = maxmask(bintomo,side=side, percentile=percentile)
-    mask2 = stdmask(bintomo,side=side,threshold=threshold)
-    out_mask = np.multiply(mask1,mask2)
-    out = resize(out_mask.astype(np.float32),sp,anti_aliasing=True)
-    out = out>0.5
-    with mrcfile.new(mask_name,overwrite=True) as n:
-        n.set_data(out.astype(np.uint8))
+    if mask_type == 'statistical':
+        sp2 = (sp/2).astype(int)
+        bintomo = resize(tomo,sp2,anti_aliasing=True)
+        mask1 = maxmask(bintomo,side=side, percentile=percentile)
+        mask2 = stdmask(bintomo,side=side,threshold=threshold)
+        out_mask = np.multiply(mask1,mask2)
+        out = resize(out_mask.astype(np.float32),sp,anti_aliasing=True)
+        out = out>0.5
+        with mrcfile.new(mask_name,overwrite=True) as n:
+            n.set_data(out.astype(np.uint8))
+    elif mask_type == 'surface':
+         mask = np.zeros(sp)
+
+         mask[int(sp[0]*0.15):int(sp[0]*0.85),:,:] = 1
+         with mrcfile.new(mask_name,overwrite=True) as n:
+            n.set_data(mask.astype(np.uint8))
+    else:
+        print("wrong mask type")
     # with mrcfile.new('./test_mask1.rec',overwrite=True) as n:
     #     n.set_data(mask1.astype(np.float32))    
     # with mrcfile.new('./test_mask2.rec',overwrite=True) as n:
