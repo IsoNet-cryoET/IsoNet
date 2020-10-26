@@ -131,7 +131,7 @@ class MWR:
         :param side:
         :param percentile:
         :param threshold:
-        :param mask_type: Masks can be generated based on the statistics or just take the middle part of tomograms
+        :param mask_type: 'statistical' or 'surface': Masks can be generated based on the statistics or just take the middle part of tomograms
         """
         from mwr.bin.maskGene import make_mask,make_mask_dir
         if os.path.isdir(tomo_path):
@@ -157,6 +157,7 @@ class MWR:
         :param maxangle: the maximal angle of your tilt series
         :param anglestep: the step of your tilt series' angles
         :param start: When you want to add additional noise volumes, you can specify the start value as the number of already generated noise volumes. So the alreaded generated volumes will not be ovewrited.
+        :param mode: mode=1, noise is reconstructed by back-projection algorithm; mode=2 or else, noise is gained by filtering gaussian noise volumes.
         """
         from mwr.util.mwr3D_noise_generator import make_noise
         make_noise(output_folder=output_folder, number_volume=number_volume, cubesize=cubesize, minangle=minangle,maxangle=maxangle, anglestep=anglestep, start=start,ncpus=ncpus, mode=mode)

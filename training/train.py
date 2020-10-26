@@ -31,16 +31,17 @@ def train3D_seq(outFile,
                 depth = 3,
                 n_gpus=2,
                 last_activation = 'linear',
+                residual = True,
                 loss = 'mae'):
 
     # last_activation = 'linear'
     optimizer = Adam(lr=lr)
     if loss == 'mae' or loss == 'mse':
         metrics = ('mse', 'mae')
+        _metrics = [eval('loss_%s()' % m) for m in metrics]
     elif loss == 'binary_crossentropy':
-        metros = ('accuracy')
-    _metrics = [eval('loss_%s()' % m) for m in metrics]
-    residual = True
+        _metrics = ['accuracy']
+    # residual = True
 
     inputs = Input((None, None,None, 1))
     unet = Unet(filter_base=filter_base,
@@ -63,7 +64,7 @@ def train3D_seq(outFile,
     # model_json = model.to_json()
     # with open("{}/model.json".format(result_folder), "w") as json_file:
     #     json_file.write(model_json)
-
+    print(model.summary())
     if n_gpus > 1:
         multi_model = multi_gpu_model(model, gpus=n_gpus, cpu_merge=True, cpu_relocation=False)
     else:
