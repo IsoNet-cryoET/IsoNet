@@ -96,6 +96,7 @@ def train3D_seq(outFile,
     weight = multi_model.get_weights()
     model.set_weights(weight)
     model.save(outFile)
+
     return history
 
 def train3D_continue(outFile,
