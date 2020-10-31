@@ -66,7 +66,6 @@ def predict(args):
     # loaded_model_json = json_file.read()
     # json_file.close()
     # model = model_from_json(loaded_model_json)
-
     model = load_model(args.model)
     logger.info('gpuID:{}'.format(args.gpuID))
     if ngpus >1:
@@ -75,10 +74,28 @@ def predict(args):
 
     logger.info("Loaded model from disk")
 
+    if os.path.isfile(args.mrc_file):
+        predict_one(args,args.mrc_file,model,output_file=args.output_file)
+    if os.path.isdir(args.mrc_file):
+        for tomo_str in os.listdir(args.mrc_file):
+            predict_one(args,args.mrc_file+'/'+tomo_str,model)
+
+
+def predict_one(args,one_tomo,model,output_file=None):
+    #predict one tomogram in mrc format INPUT: mrc_file string OUTPUT: output_file(str) or <root_name>_corrected.mrc
+    ngpus = len(args.gpuID.split(','))
     N = args.batch_size * ngpus
-    root_name = args.mrc_file.split('/')[-1].split('.')[0]
+    if_percentile = str2bool(args.norm)
+    root_name = one_tomo.split('/')[-1].split('.')[0]
+    if output_file is None:
+        if os.path.isdir(args.output_file):
+            output_file = args.output_file+'/'+root_name+'_corrected.mrc'
+        else:
+            output_file = root_name+'_corrected.mrc'
+    else:
+        pass
     print('predicting:{}'.format(root_name))
-    with mrcfile.open(args.mrc_file) as mrcData:
+    with mrcfile.open(one_tomo) as mrcData:
         real_data = mrcData.data.astype(np.float32)*-1
     real_data = normalize(real_data,percentile=if_percentile)
     data=np.expand_dims(real_data,axis=-1)
@@ -101,7 +118,7 @@ def predict(args):
     outData=reform_ins.restore_from_cubes_new(outData.reshape(outData.shape[0:-1]), args.cube_size, args.crop_size)
 
     outData = normalize(outData,percentile=if_percentile)
-    with mrcfile.new(args.output_file, overwrite=True) as output_mrc:
+    with mrcfile.new(output_file, overwrite=True) as output_mrc:
         output_mrc.set_data(-outData)
     print('Done predicting')
     # predict(args.model,args.weight,args.mrc_file,args.output_file, cubesize=args.cubesize, cropsize=args.cropsize, batch_size=args.batch_size, gpuID=args.gpuID, if_percentile=if_percentile)
