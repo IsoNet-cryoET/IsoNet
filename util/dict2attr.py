@@ -14,7 +14,7 @@ class Arg:
             # param_list.append(k)
         
 def check_args(args):
-    train_params = ['self','train','normalize_percentile', 'batch_normalization', 'unet_depth', 'kernel', 'convs_per_depth', 'drop_out', 'steps_per_epoch', 'batch_size', 'epochs', 'preprocessing_ncpus', 'ncube', 'crop_size', 'cube_size', 'noise_pause', 'noise_start_iter', 'noise_level', 'continue_iter', 'continue_training', 'log_level', 'pretrained_model', 'data_dir', 'subtomo_dir', 'datas_are_subtomos', 'iterations', 'noise_dir', 'mask_dir', 'gpuID', 'input_dir']
+    train_params = ['self','train','normalize_percentile', 'batch_normalization', 'unet_depth', 'kernel', 'convs_per_depth', 'drop_out', 'steps_per_epoch', 'batch_size', 'epochs', 'preprocessing_ncpus', 'ncube','filter_base', 'crop_size', 'cube_size', 'noise_pause', 'noise_start_iter', 'noise_level', 'continue_iter', 'continue_training', 'log_level', 'pretrained_model', 'data_dir', 'subtomo_dir', 'datas_are_subtomos', 'iterations', 'noise_dir', 'mask_dir', 'gpuID', 'input_dir']
     predict_params = ['self', 'predict','norm', 'batch_size', 'crop_size', 'cube_size', 'gpuID', 'model', 'output_file', 'mrc_file']
     mask_param = ['tomo_path','mask_name,side','percentile','threshold']
     noise_param = ['output_folder', 'number_volume', 'cubesize', 'minangle', 'maxangle','anglestep', 'start','ncpus', 'mode']

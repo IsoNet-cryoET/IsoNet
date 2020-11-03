@@ -40,6 +40,7 @@ class MWR:
         convs_per_depth: int = 3,
         kernel: tuple = (3,3,3),
         unet_depth: int = 3,
+        filter_base: int = 32,
         batch_normalization: bool = False,
         normalize_percentile: bool = True,
     ):
@@ -85,6 +86,7 @@ class MWR:
         :param convs_per_depth: Number of convolution layer for each depth.
         :param kernel: Kernel for convolution
         :param unet_depth: Number of convolution layer for each depth.
+        :param filter_base: The base number of channels after convolution
         :param batch_normalization: Sometimes batch normalization may induce artifacts for extreme pixels in the first several iterations. Those could be restored in further iterations.
         :param normalize_percentile:Normalize the 5 percent and 95 percent pixel intensity to 0 and 1 respectively. If this is set to False, normalize the input to 0 mean and 1 standard dievation.
         """
