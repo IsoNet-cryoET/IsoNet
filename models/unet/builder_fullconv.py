@@ -52,17 +52,21 @@ def build_unet(filter_base=32,depth=2,convs_per_depth=2,
             # TODO: stride (2,2) for 2D case
             layer = encoder_block(layer, filter_base*2**n, strides=(2,2,2),dropout=dropout,batchnorm=False,activation='linear')
 
-        for i in range(convs_per_depth -1):
-            layer = conv_blocks(filter_base*2**depth,kernel,
-                                dropout=dropout,batch_norm = batch_norm,name="middle_%s" % i)(layer)
-        layer = conv_blocks(filter_base*2**max(0,depth-1),kernel,dropout=dropout,
-                            batch_norm=batch_norm,name="middle_%s" % convs_per_depth)(layer)
+        # for i in range(convs_per_depth -1):
+        #     layer = conv_blocks(filter_base*2**depth,kernel,
+        #                         dropout=dropout,batch_norm = batch_norm,name="middle_%s" % i)(layer)
+        # layer = conv_blocks(filter_base*2**max(0,depth-1),kernel,dropout=dropout,
+        #                     batch_norm=batch_norm,name="middle_%s" % convs_per_depth)(layer)
+
+        b = Conv3D(filter_base*2**depth, (3,3,3), strides=(1,1,1), padding='same', kernel_initializer="glorot_uniform")(layer)
+        b = Activation('relu')(b)
+        layer = Conv3D(filter_base*2**(depth-1), (3,3,3), strides=(1,1,1), padding='same', kernel_initializer="glorot_uniform")(b)
 
         for n in reversed(range(depth)):
             # layer = Concatenate(axis=-1)([UpSampling(pool)(layer),concatenate[n]])
 
             layer = decoder_block(layer, concatenate[n], filter_base*2**n, dropout=dropout,batchnorm=False,activation='linear')
-            for i in range(convs_per_depth-1):
+            for i in range(convs_per_depth):
                 layer = conv_blocks(filter_base * 2 ** n, kernel, dropout=dropout,
                                     batch_norm=batch_norm,name="up_level_%s_no_%s" % (n, i))(layer)
             layer = conv_blocks(filter_base * 2 ** max(0,(n-1)), kernel, dropout=dropout,
