@@ -66,12 +66,11 @@ def train3D_seq(outFile,
     #     json_file.write(model_json)
     print(model.summary())
     if n_gpus > 1:
-        multi_model = multi_gpu_model(model, gpus=n_gpus, cpu_merge=True, cpu_relocation=False)
-    else:
-        multi_model = clone_model(model)
+        model = multi_gpu_model(model, gpus=n_gpus, cpu_merge=True, cpu_relocation=False)
+    
 
     model.compile(optimizer=optimizer, loss=loss, metrics=_metrics)
-    multi_model.compile(optimizer=optimizer, loss=loss, metrics=_metrics)
+
 
     train_data, test_data = prepare_dataseq(data_dir, batch_size)
 
@@ -86,16 +85,17 @@ def train3D_seq(outFile,
     # callback_list.append(check_point)
     tensor_board = TensorBoard(log_dir='./Graph', histogram_freq=0, write_graph=True, write_images=True)
     callback_list.append(tensor_board)
-    history = multi_model.fit_generator(generator=train_data,
+    history = model.fit_generator(generator=train_data,
                                 validation_data=test_data,
                                 epochs=epochs,
                                 steps_per_epoch=steps_per_epoch,
                                 verbose=1)
                                 # callbacks=callback_list)
 
-    weight = multi_model.get_weights()
-    model.set_weights(weight)
-    model.save(outFile)
+    if n_gpus>1:
+        model.get_layer('model_1').save(outFile)    
+    else:
+        model.save(outFile)
 
     return history
 
@@ -124,12 +124,11 @@ def train3D_continue(outFile,
     # model.load_weights(weights)
 
     if n_gpus > 1:
-        multi_model = multi_gpu_model(model, gpus=n_gpus, cpu_merge=True, cpu_relocation=False)
-    else:
-        multi_model = clone_model(model)
+        model = multi_gpu_model(model, gpus=n_gpus, cpu_merge=True, cpu_relocation=False)
+
 
     model.compile(optimizer=optimizer, loss='mae', metrics=_metrics)
-    multi_model.compile(optimizer=optimizer, loss='mae', metrics=_metrics)
+    # model.compile(optimizer=optimizer, loss='mae', metrics=_metrics)
     logging.info("Loaded model from disk")
 
 
@@ -147,12 +146,14 @@ def train3D_continue(outFile,
     tensor_board = TensorBoard(log_dir='./Graph', histogram_freq=0, write_graph=True, write_images=True)
     callback_list.append(tensor_board)
     logging.info("begin fitting")
-    history = multi_model.fit_generator(generator=train_data, validation_data=test_data,
+    history = model.fit_generator(generator=train_data, validation_data=test_data,
                                   epochs=epochs, steps_per_epoch=steps_per_epoch,
                                   verbose=1)
                                 #   callbacks=callback_list)
-    model.set_weights(multi_model.get_weights())
-    model.save(outFile)
+    if n_gpus>1:
+        model.get_layer('model_1').save(outFile)    
+    else:
+        model.save(outFile)
     return history
 
 
