@@ -1,5 +1,5 @@
 from mwr.models.unet.blocks import conv_blocks
-from keras.layers import MaxPooling2D, UpSampling2D, MaxPooling3D, UpSampling3D, AveragePooling3D,Conv2D,Conv2DTranspose,Conv3D,Conv3DTranspose,Dropout,BatchNormalization,Activation
+from keras.layers import MaxPooling2D, UpSampling2D, MaxPooling3D, UpSampling3D, AveragePooling3D,Conv2D,Conv2DTranspose,Conv3D,Conv3DTranspose,Dropout,BatchNormalization,Activation,LeakyReLU
 from keras.layers.merge import Concatenate
 
 def encoder_block(layer_in, n_filters, kernel=(3,3,3), strides=(2,2,2), dropout=0.5, batchnorm=True, activation='relu'):
@@ -12,7 +12,7 @@ def encoder_block(layer_in, n_filters, kernel=(3,3,3), strides=(2,2,2), dropout=
         g = BatchNormalization()(g, training=True)
     if dropout is not None and dropout>0:
         g=Dropout(dropout)(g, training=True)
-    g = Activation(activation)(g)
+    g = LeakyReLU(alpha=0.05)(g)
     return g
 
 # define a decoder block
@@ -31,7 +31,7 @@ def decoder_block(layer_in, skip_in, n_filters, kernel=(3,3,3), strides=(2,2,2),
     if skip_in is not None:
         g = Concatenate()([g, skip_in])
     # relu activation
-    g = Activation(activation)(g)
+    g = LeakyReLU(alpha=0.05)(g)
     return g
 
 def build_unet(filter_base=32,depth=2,convs_per_depth=2,
@@ -59,7 +59,7 @@ def build_unet(filter_base=32,depth=2,convs_per_depth=2,
         #                     batch_norm=batch_norm,name="middle_%s" % convs_per_depth)(layer)
 
         b = Conv3D(filter_base*2**depth, (3,3,3), strides=(1,1,1), padding='same', kernel_initializer="glorot_uniform")(layer)
-        b = Activation('relu')(b)
+        b = LeakyReLU(alpha=0.05)(b)
         layer = Conv3D(filter_base*2**(depth-1), (3,3,3), strides=(1,1,1), padding='same', kernel_initializer="glorot_uniform")(b)
 
         for n in reversed(range(depth)):
