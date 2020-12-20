@@ -4,10 +4,10 @@ tiffile
 keras
 scipy
 numpy
-argparse
 pycuda
 scikit-cuda
 six
 tensorflow
+fire
 
 ###### Requirements with Version Specifiers ######
