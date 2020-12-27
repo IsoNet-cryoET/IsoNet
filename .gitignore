@@ -4,3 +4,4 @@ data/
 *.pyc
 *.mrc
 ./util/__pycache__/
+*/__pycache__
