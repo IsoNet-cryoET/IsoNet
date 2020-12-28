@@ -52,10 +52,10 @@ def train3D_seq(outFile,
         dropout=dropout,
         pool=pool)(inputs)
 
-    if len(kernel) == 2:
-        outputs = Conv2D(1, (1, 1), activation='linear')(unet)
-    elif len(kernel) == 3:
-        outputs = Conv3D(1, (1, 1, 1), activation='linear')(unet)
+    # if len(kernel) == 2:
+    #     outputs = Conv2D(1, (1, 1), activation='linear')(unet)
+    # elif len(kernel) == 3:
+    #     outputs = Conv3D(1, (1, 1, 1), activation='linear')(unet)
     if residual:
         outputs = Add()([outputs, inputs])
 
