@@ -57,7 +57,7 @@ def train3D_seq(outFile,
     # elif len(kernel) == 3:
     #     outputs = Conv3D(1, (1, 1, 1), activation='linear')(unet)
     if residual:
-        outputs = Add()([outputs, inputs])
+        outputs = Add()([unet, inputs])
 
     outputs = Activation(activation=last_activation)(outputs)
     model = Model(inputs=inputs, outputs=outputs)
