@@ -34,14 +34,12 @@ def train3D_seq(outFile,
                 residual = True,
                 loss = 'mae'):
 
-    # last_activation = 'linear'
     optimizer = Adam(lr=lr)
     if loss == 'mae' or loss == 'mse':
         metrics = ('mse', 'mae')
         _metrics = [eval('loss_%s()' % m) for m in metrics]
     elif loss == 'binary_crossentropy':
         _metrics = ['accuracy']
-    # residual = True
 
     inputs = Input((None, None,None, 1))
     unet = Unet(filter_base=filter_base,
@@ -52,28 +50,17 @@ def train3D_seq(outFile,
         dropout=dropout,
         pool=pool)(inputs)
 
-    # if len(kernel) == 2:
-    #     outputs = Conv2D(1, (1, 1), activation='linear')(unet)
-    # elif len(kernel) == 3:
-    #     outputs = Conv3D(1, (1, 1, 1), activation='linear')(unet)
     if residual:
         outputs = Add()([unet, inputs])
 
     outputs = Activation(activation=last_activation)(outputs)
     model = Model(inputs=inputs, outputs=outputs)
-    # model_json = model.to_json()
-    # with open("{}/model.json".format(result_folder), "w") as json_file:
-    #     json_file.write(model_json)
-    print(model.summary())
     if n_gpus > 1:
         model = multi_gpu_model(model, gpus=n_gpus, cpu_merge=True, cpu_relocation=False)
     
-
     model.compile(optimizer=optimizer, loss=loss, metrics=_metrics)
-
-
     train_data, test_data = prepare_dataseq(data_dir, batch_size)
-
+    print('**train data size**',len(train_data))
     callback_list = []
     # check_point = ModelCheckpoint('{}/modellast.h5'.format(result_folder),
     #                             monitor='val_loss',
@@ -93,7 +80,9 @@ def train3D_seq(outFile,
                                 # callbacks=callback_list)
 
     if n_gpus>1:
-        model.get_layer('model_1').save(outFile)    
+        model_from_multimodel = model.get_layer('model_1')   
+        model_from_multimodel.compile(optimizer=optimizer, loss='mae', metrics=_metrics)
+        model_from_multimodel.save(outFile)
     else:
         model.save(outFile)
 
@@ -112,16 +101,7 @@ def train3D_continue(outFile,
     metrics = ('mse', 'mae')
     _metrics = [eval('loss_%s()' % m) for m in metrics]
     optimizer = Adam(lr=lr)
-
-    # json_file = open('{}/model.json'.format(result_folder), 'r')
-    # loaded_model_json = json_file.read()
-
-    # json_file.close()
-    # model = model_from_json(loaded_model_json)
     model = load_model( model_file) # weight is a model
-    # if n_gpus >1:
-    #     model = multi_gpu_model(model, gpus=n_gpus, cpu_merge=True, cpu_relocation=False)
-    # model.load_weights(weights)
 
     if n_gpus > 1:
         model = multi_gpu_model(model, gpus=n_gpus, cpu_merge=True, cpu_relocation=False)
@@ -151,7 +131,9 @@ def train3D_continue(outFile,
                                   verbose=1)
                                 #   callbacks=callback_list)
     if n_gpus>1:
-        model.get_layer('model_1').save(outFile)    
+        model_from_multimodel = model.get_layer('model_1')   
+        model_from_multimodel.compile(optimizer=optimizer, loss='mae', metrics=_metrics)
+        model_from_multimodel.save(outFile)
     else:
         model.save(outFile)
     return history

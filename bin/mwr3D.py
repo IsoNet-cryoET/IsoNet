@@ -1,8 +1,6 @@
 from mwr.preprocessing.cubes import prepare_cubes
 from mwr.preprocessing.img_processing import normalize
 from mwr.preprocessing.prepare import prepare_first_iter,get_cubes_list
-#from argparser import args
-
 import mrcfile
 import numpy as np
 import glob
@@ -63,6 +61,7 @@ def run(args):
 			except OSError:
 				# logging.error("Create data folder error!")
 				logging.debug("No previous data folder!")
+			#generate training set for next iteration combining original subtomo and subtomo predicted in the last iteration 
 			get_cubes_list(args)
 			logging.info("Done getting cubes!")
 			args.continue_training = False
@@ -89,37 +88,6 @@ def run(args):
 
 		logging.info("Done Iteration{}!".format(i+1))
 		shutil.rmtree(args.data_dir)
-	'''
-	losses = []
-	for i in range(settings.continue_iter, settings.iterations):
-		print('start iteration {}'.format(i+1))
-		settings.iter_count = i
-		noise_factor = ((settings.iter_count - settings.noise_start_iter)//settings.noise_pause)+1 if settings.iter_count > settings.noise_start_iter else 0
-    print('noise_factor',noise_factor)
-    if (not settings.continue_training) or (settings.continue_from == "preprocessing"):
-        import shutil
-        try:
-            shutil.rmtree(settings.data_dir)
-        except OSError:
-            print ("  " )
-        get_cubes_list(settings)
-        settings.continue_training = False
-
-    if (not settings.continue_training) or (settings.continue_from == "training"):
-        history = train_data(settings)
-        print(history.history['loss'])
-        losses.append(history.history['loss'][-1])
-        settings.continue_training = False
-
-    if (not settings.continue_training) or (settings.continue_from == "predicting"):
-        predict(settings)
-        settings.continue_training = False
-
-    if len(losses)>3:
-        if losses[-1]< losses[-2]:
-            print('loss does not reduce in this iteration')
-
-'''
 
 
 
