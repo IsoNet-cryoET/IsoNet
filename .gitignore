@@ -3,5 +3,5 @@ venv/
 data/
 *.pyc
 *.mrc
-./util/__pycache__/
-*/__pycache__
+*/__pycache_
+*/*/__pycache___
