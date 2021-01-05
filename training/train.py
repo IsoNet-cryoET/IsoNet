@@ -52,7 +52,8 @@ def train3D_seq(outFile,
 
     if residual:
         outputs = Add()([unet, inputs])
-
+    else:
+        outputs = unet
     outputs = Activation(activation=last_activation)(outputs)
     model = Model(inputs=inputs, outputs=outputs)
     if n_gpus > 1:

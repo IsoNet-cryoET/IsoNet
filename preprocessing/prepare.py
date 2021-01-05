@@ -17,7 +17,7 @@ def mkfolder(folder):
     try:
         os.makedirs(folder)
     except FileExistsError:
-        logging.warning("Waring, the {} folder already exists before the 1st iteration \n The old {} folder will be removed".format(folder,folder))
+        logging.warning("Warning, the {} folder already exists before the 1st iteration \n The old {} folder will be removed".format(folder,folder))
         import shutil
         shutil.rmtree(folder)
         os.makedirs(folder)
