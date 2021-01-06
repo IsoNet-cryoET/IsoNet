@@ -21,9 +21,11 @@ def encoder_block(layer_in, n_filters, kernel=(3,3,3), strides=(2,2,2), dropout=
     g = Conv3D(n_filters, kernel, strides=strides, padding='same', kernel_initializer=init)(layer_in)
     # conditionally add batch normalization
     if batchnorm:
-        g = BatchNormalization()(g, training=True)
+        # g = BatchNormalization()(g, training=True)
+        g = BatchNormalization()(g)
     if dropout is not None and dropout>0:
-        g=Dropout(dropout)(g, training=True)
+        # g=Dropout(dropout)(g, training=True)
+        g=Dropout(dropout)(g)
     g = LeakyReLU(alpha=0.05)(g)
     return g
 
@@ -35,10 +37,12 @@ def decoder_block(layer_in, skip_in, n_filters, kernel=(3,3,3), strides=(2,2,2),
     g = Conv3DTranspose(n_filters, kernel, strides=strides, padding='same', kernel_initializer=init)(layer_in)
     # add batch normalization
     if batchnorm:
-        g = BatchNormalization()(g, training=True)
+        # g = BatchNormalization()(g, training=True)
+        g = BatchNormalization()(g)
     # conditionally add dropout
     if dropout is not None and dropout>0:
-        g = Dropout(dropout)(g, training=True)
+        # g = Dropout(dropout)(g, training=True)
+        g=Dropout(dropout)(g)
     # merge with skip connection
     if skip_in is not None:
         g = Concatenate()([g, skip_in])
