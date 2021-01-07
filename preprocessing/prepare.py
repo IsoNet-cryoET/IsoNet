@@ -17,9 +17,10 @@ def mkfolder(folder):
     try:
         os.makedirs(folder)
     except FileExistsError:
-        logging.warning("Warning, the {} folder already exists before the 1st iteration \n The old {} folder will be removed".format(folder,folder))
+        logging.warning("Warning, the {} folder already exists before the 1st iteration \n The old {} folder will be renamed (to xxx~)".format(folder,folder))
         import shutil
-        shutil.rmtree(folder)
+        # shutil.rmtree(folder)
+        os.system('mv {} {}'.format(folder, folder+'~'))
         os.makedirs(folder)
 
 def generate_first_iter_mrc(mrc,settings):
