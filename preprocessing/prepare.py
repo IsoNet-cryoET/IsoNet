@@ -4,7 +4,7 @@ import sys
 import mrcfile
 from mwr.preprocessing.cubes import create_cube_seeds,crop_cubes,DataCubes
 from mwr.preprocessing.img_processing import normalize
-from mwr.preprocessing.simulate import apply_wedge
+from mwr.preprocessing.simulate import apply_wedge1 as  apply_wedge
 from multiprocessing import Pool
 import numpy as np
 from functools import partial

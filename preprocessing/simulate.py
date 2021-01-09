@@ -195,3 +195,21 @@ def apply_wedge(ori_data, ld1 = 1, ld2 =0):
     real = np.real(inv).astype(np.float32)
     out = np.rot90(real, k=3, axes=(0,1))
     return out
+
+def apply_wedge1(ori_data, ld1 = 1, ld2 =0):
+
+    data = np.rot90(ori_data, k=1, axes=(0,1)) #clock wise of counter clockwise??
+    mw = TwoDPsf(data.shape[1], data.shape[2]).getMW()
+
+    #if inverse:
+    #    mw = 1-mw
+    mw = mw * ld1 + (1-mw) * ld2
+
+    outData = np.zeros(data.shape,dtype=np.float32)
+    for i, item in enumerate(data):
+        outData_i=np.fft.ifft2(np.fft.fftshift(mw) * np.fft.fft2(item))
+        outData[i] = np.real(outData_i)
+
+    outData.astype(np.float32)
+    outData=np.rot90(outData, k=3, axes=(0,1))
+    return outData
