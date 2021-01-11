@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import keras
+import tensorflow as tf
 import numpy as np
 import os
 import logging
@@ -9,7 +9,7 @@ from mwr.util.norm import normalize
 from mwr.util.toTile import reform3D
 import mrcfile
 from mwr.util.image import *
-from keras.models import load_model
+from tensorflow.keras.models import load_model
 
 
 # def wedge_imposing(data):
@@ -61,7 +61,7 @@ def predict(args):
     logger.debug('percentile:{}'.format(if_percentile))
 
     ngpus = len(args.gpuID.split(','))
-    # from keras.models import model_from_json
+    # from tensorflow.keras.models import model_from_json
     # json_file = open(args.model, 'r')
     # loaded_model_json = json_file.read()
     # json_file.close()
@@ -69,7 +69,7 @@ def predict(args):
     model = load_model(args.model)
     logger.info('gpuID:{}'.format(args.gpuID))
     if ngpus >1:
-        from keras.utils import multi_gpu_model
+        from tensorflow.keras.utils import multi_gpu_model
         model = multi_gpu_model(model, gpus=ngpus, cpu_merge=True, cpu_relocation=False)
 
     logger.info("Loaded model from disk")

@@ -1,5 +1,5 @@
 import numpy as np
-from keras.utils import Sequence
+from tensorflow.keras.utils import Sequence
 
 
 class DataWrapper(Sequence):

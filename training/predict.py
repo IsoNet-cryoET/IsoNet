@@ -1,15 +1,21 @@
-from keras.models import model_from_json,load_model
-from keras.utils import multi_gpu_model
+from tensorflow.keras.models import model_from_json,load_model
+from tensorflow.keras.utils import multi_gpu_model
 import mrcfile
 from mwr.preprocessing.img_processing import normalize
 import numpy as np
 import logging
-import keras.backend as K
+import tensorflow.keras.backend as K
+import tensorflow as tf
 
 def predict(settings):    
-    model = load_model('{}/model_iter{:0>2d}.h5'.format(settings.result_dir,settings.iter_count+1))
+    # model = load_model('{}/model_iter{:0>2d}.h5'.format(settings.result_dir,settings.iter_count+1))
+    strategy = tf.distribute.MirroredStrategy()
     if settings.ngpus >1:
-        model = multi_gpu_model(model, gpus=settings.ngpus, cpu_merge=True, cpu_relocation=False)
+        with strategy.scope():
+            model = load_model('{}/model_iter{:0>2d}.h5'.format(settings.result_dir,settings.iter_count+1))
+        # model = multi_gpu_model(model, gpus=settings.ngpus, cpu_merge=True, cpu_relocation=False)
+    else:
+        model = load_model('{}/model_iter{:0>2d}.h5'.format(settings.result_dir,settings.iter_count+1))
     N = settings.predict_batch_size * settings.ngpus
 
     num_batches = len(settings.mrc_list)

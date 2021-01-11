@@ -1,15 +1,15 @@
-from keras.layers import Dropout, Activation, BatchNormalization,LeakyReLU
-from keras.layers import Add, Input, Conv2D, MaxPooling2D, UpSampling2D, Conv3D, MaxPooling3D, UpSampling3D, AveragePooling2D, AveragePooling3D, Conv3DTranspose
-from keras.initializers import RandomNormal
-from keras.layers.merge import Concatenate
-from keras.models import Model, load_model
-from keras.optimizers import Adam
-from keras.callbacks import TensorBoard, ModelCheckpoint
-from keras.utils import Sequence
-import keras.backend as K
+from tensorflow.keras.layers import Dropout, Activation, BatchNormalization,LeakyReLU
+from tensorflow.keras.layers import Add, Input, Conv2D, MaxPooling2D, UpSampling2D, Conv3D, MaxPooling3D, UpSampling3D, AveragePooling2D, AveragePooling3D, Conv3DTranspose
+from tensorflow.keras.initializers import RandomNormal
+from tensorflow.keras.layers import Concatenate
+from tensorflow.keras.models import Model, load_model
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.callbacks import TensorBoard, ModelCheckpoint
+from tensorflow.keras.utils import Sequence
+import tensorflow.keras.backend as K
 import numpy as np
-from keras.utils import multi_gpu_model
-from keras import regularizers
+from tensorflow.keras.utils import multi_gpu_model
+from tensorflow.keras import regularizers
 import mrcfile
 import os
 import sys

@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 import mrcfile
-from keras.models import Model
+import tensorflow as tf
+from tensorflow.keras.models import Model
 from mwr.util.norm import normalize
 
 def predict(settings):
-    from keras.models import model_from_json
+    from tensorflow.keras.models import model_from_json
     json_file = open(settings.model, 'r')
     loaded_model_json = json_file.read()
 
@@ -12,7 +13,7 @@ def predict(settings):
     model = model_from_json(loaded_model_json)
 
     if settings.ngpus >1:
-        from keras.utils import multi_gpu_model
+        from tensorflow.keras.utils import multi_gpu_model
         model = Model(model, gpus=settings.ngpus, cpu_merge=True, cpu_relocation=False)
     model.load_weights(settings.weight)
     with mrcfile.open(settings.mrcfile) as f:
