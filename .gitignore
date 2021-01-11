@@ -5,3 +5,4 @@ data/
 *.mrc
 */__pycache_
 */*/__pycache___
+.vscode
