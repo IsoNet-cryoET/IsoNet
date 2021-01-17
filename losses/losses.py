@@ -10,7 +10,6 @@ def loss_mae(mean=True):
     R = mean_or_not(mean)
     def mae(y_true, y_pred):
         n = K.shape(y_true)[-1]
-        print(y_pred)
         return R(K.abs(y_pred[...,:n] - y_true))
     return mae
 
@@ -24,5 +23,4 @@ def loss_mse(mean=True):
 def new_mae(y_true, y_pred):
     n = K.shape(y_true)[-1]
     np_true = y_true.numpy()
-    print(np_true.shape)
     return K.abs(y_pred[...,:n] - y_true)

@@ -51,6 +51,14 @@ class TwoDPsf:
         #norm_save('mw.tif',self._mw)
         return self._mw
 
+    def circleMask(self):
+        dim0 = self._dimension[0]
+        dim1 = self._dimension[1]
+        s0 = np.arange(-int(dim0/2),dim0-int(dim0/2))
+        s1 = np.arange(-int(dim1/2),dim1-int(dim1/2))
+        y,x = np.meshgrid(s1,s0)
+        circle = np.array(4*x**2/(dim0**2) + 4*y**2/(dim1**2) < 1)
+        return circle.astype(np.uint8)
 
     #
     # def apply(self,data,name):
