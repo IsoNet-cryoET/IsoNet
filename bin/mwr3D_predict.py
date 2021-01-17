@@ -61,16 +61,13 @@ def predict(args):
     logger.debug('percentile:{}'.format(if_percentile))
 
     ngpus = len(args.gpuID.split(','))
-    # from tensorflow.keras.models import model_from_json
-    # json_file = open(args.model, 'r')
-    # loaded_model_json = json_file.read()
-    # json_file.close()
-    # model = model_from_json(loaded_model_json)
-    model = load_model(args.model)
     logger.info('gpuID:{}'.format(args.gpuID))
     if ngpus >1:
-        from tensorflow.keras.utils import multi_gpu_model
-        model = multi_gpu_model(model, gpus=ngpus, cpu_merge=True, cpu_relocation=False)
+        strategy = tf.distribute.MirroredStrategy()
+        with strategy.scope():
+            model = load_model(args.model)
+    else:
+        model = load_model(args.model)
 
     logger.info("Loaded model from disk")
 
