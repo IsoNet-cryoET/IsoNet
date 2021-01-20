@@ -49,6 +49,23 @@ def make_noise(output_folder, number_volume, cubesize=64, minangle=-60,maxangle=
             with mrcfile.new('{}/n_{:0>5d}.mrc'.format(output_folder,count+i+start), overwrite=True) as output_mrc:
                 output_mrc.set_data(img)
 
+def make_noise_one(cubesize=64, minangle=-60,maxangle=60, anglestep=2, mode=1):
+    if mode==1:
+        noise_func = simulate_noise1
+    else:
+        noise_func = simulate_noise2
+    params = [cubesize, minangle, maxangle, anglestep]
+    simu_noise = noise_func(params)
+    return simu_noise
+
+
+# if __name__ == "__main__":
+#     import time
+#     import mrcfile
+#     start = time.time()
+#     a = make_noise_one(mode=1)
+#     end = time.time()
+#     print('Time consuming:',end-start)
 
 if __name__ == '__main__':
     import mrcfile

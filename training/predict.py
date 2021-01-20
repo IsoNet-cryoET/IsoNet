@@ -12,10 +12,10 @@ def predict(settings):
     strategy = tf.distribute.MirroredStrategy()
     if settings.ngpus >1:
         with strategy.scope():
-            model = load_model('{}/model_iter{:0>2d}.h5'.format(settings.result_dir,settings.iter_count+1))
+            model = load_model('{}/model_iter{:0>2d}.h5'.format(settings.result_dir,settings.iter_count))
         # model = multi_gpu_model(model, gpus=settings.ngpus, cpu_merge=True, cpu_relocation=False)
     else:
-        model = load_model('{}/model_iter{:0>2d}.h5'.format(settings.result_dir,settings.iter_count+1))
+        model = load_model('{}/model_iter{:0>2d}.h5'.format(settings.result_dir,settings.iter_count))
     N = settings.predict_batch_size * settings.ngpus
 
     num_batches = len(settings.mrc_list)
@@ -53,7 +53,7 @@ def predict(settings):
                     end_size = pad_size1+cube_size
                     outData1 = outData[pad_size1:end_size, pad_size1:end_size, pad_size1:end_size]
                     outData1 = normalize(outData1, percentile = settings.normalize_percentile)
-                    with mrcfile.new('{}/{}_iter{:0>2d}.mrc'.format(settings.result_dir,root_name,settings.iter_count+1), overwrite=True) as output_mrc:
+                    with mrcfile.new('{}/{}_iter{:0>2d}.mrc'.format(settings.result_dir,root_name,settings.iter_count), overwrite=True) as output_mrc:
                         output_mrc.set_data(-outData1)
             data = []
     K.clear_session()

@@ -16,6 +16,7 @@ import numpy as np
 import mrcfile
 
 from mwr.preprocessing.simulate import apply_wedge_dcube as apply_wedge
+from mwr.util.mwr3D_noise_generator import make_noise_one
 # from mwr.preprocessing.simulate import apply_wedge
 
 def create_cube_seeds(img3D,nCubesPerImg,cubeSideLen,mask=None):
@@ -78,7 +79,8 @@ def prepare_cubes(X,Y,size=32,num=500):
 
 class DataCubes:
 
-    def __init__(self, tomogram, tomogram2 = None, nCubesPerImg=32, cubeSideLen=32, cropsize=32, mask = None, validationSplit=0.1, noise_folder = None, noise_level = 0.5):
+    def __init__(self, tomogram, tomogram2 = None, nCubesPerImg=32, cubeSideLen=32, cropsize=32, mask = None, 
+    validationSplit=0.1, noise_folder = None, noise_level = 0, noise_mode = 1):
 
         #TODO nCubesPerImg is always 1. We should not use this variable @Zhang Heng.
         #TODO consider add gaussian filter here
@@ -136,8 +138,6 @@ class DataCubes:
 
             self.__cubesX = self.crop_to_size(self.cubesX_padded, self.cubeSideLen)
             if self.noise_folder is not None:
-                if not os.path.exists(self.noise_folder):
-                    os.makedirs(self.noise_folder)
                 path_noise = sorted([self.noise_folder+'/'+f for f in os.listdir(self.noise_folder)])
                 path_index = np.random.permutation(len(path_noise))[0:self.__cubesX.shape[0]]
                 def read_vol(f):
@@ -145,8 +145,12 @@ class DataCubes:
                         res = mf.data
                     return res
                 noise_volume = np.array([read_vol(path_noise[j]) for j in path_index])
-                self.__cubesX += self.noise_level * noise_volume / np.std(noise_volume)
-
+            elif self.noise_level > 1e-6:
+                noise_volume = make_noise_one(cubesize = self.cubeSideLen,mode=self.noise_level)
+            else:
+                noise_volume = 0 
+            
+            self.__cubesX += self.noise_level * noise_volume / np.std(noise_volume)
         return self.__cubesX
 
 

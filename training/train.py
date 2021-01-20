@@ -10,7 +10,7 @@ import tensorflow as tf
 from mwr.losses.losses import loss_mae,loss_mse
 
 from tensorflow.keras.models import model_from_json,load_model, clone_model
-
+import os
 import logging
 
 
@@ -109,7 +109,9 @@ def train3D_continue(outFile,
                     steps_per_epoch=128,
                     batch_size=64,
                     n_gpus=2):
-
+    
+    logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.DEBUG)
+    logging.debug('The tf message level {}'.format(os.environ['TF_CPP_MIN_LOG_LEVEL']))
     # metrics = ('mse', 'mae')
     # _metrics = [eval('loss_%s()' % m) for m in metrics]
     # optimizer = Adam(lr=lr)
@@ -154,27 +156,26 @@ def train3D_continue(outFile,
     model.save(outFile)
     return history
 
+def prepare_first_model(settings):
+    model = Unet(filter_base=settings.filter_base, 
+            depth=settings.unet_depth, 
+            convs_per_depth=settings.convs_per_depth,
+            kernel=settings.kernel,
+            batch_norm=settings.batch_normalization, 
+            dropout=settings.drop_out,
+            pool=(2,2,2),
+            residual = True,
+            last_activation = 'linear',
+            loss = 'mae',
+            lr = settings.lr)
+    init_model_name = settings.result_dir+'/model_init.h5'
+    model.save(init_model_name)
+    settings.init_model = init_model_name
+    return settings
 
 def train_data(settings):
-
-    if settings.iter_count == 0 and settings.pretrained_model is None :
-        history = train3D_seq('{}/model_iter{:0>2d}.h5'.format(settings.result_dir,settings.iter_count+1),
-                                    data_dir = settings.data_dir,
-                                    result_folder = settings.result_dir,
-                                    epochs = settings.epochs,
-                                    steps_per_epoch = settings.steps_per_epoch,
-                                    batch_size = settings.batch_size,
-                                    lr = settings.lr,
-                                    dropout = settings.drop_out,
-                                    filter_base = settings.filter_base,
-                                    depth=settings.unet_depth,
-                                    convs_per_depth = settings.convs_per_depth,
-                                    batch_norm = settings.batch_normalization,
-                                    kernel = settings.kernel,
-                                    n_gpus = settings.ngpus)
-    elif settings.iter_count == 0 and settings.pretrained_model is not None:
-        history = train3D_continue('{}/model_iter{:0>2d}.h5'.format(settings.result_dir,settings.iter_count+1),
-                                        settings.pretrained_model,
+    history = train3D_continue('{}/model_iter{:0>2d}.h5'.format(settings.result_dir,settings.iter_count),
+                                        settings.init_model,
                                         data_dir = settings.data_dir,
                                         result_folder = settings.result_dir,
                                         epochs=settings.epochs,
@@ -183,14 +184,40 @@ def train_data(settings):
                                         lr = settings.lr,
                                         n_gpus=settings.ngpus)
 
-    else:
-        history = train3D_continue('{}/model_iter{:0>2d}.h5'.format(settings.result_dir,settings.iter_count+1),
-                                        '{}/model_iter{:0>2d}.h5'.format(settings.result_dir,settings.iter_count),
-                                        data_dir = settings.data_dir,
-                                        result_folder = settings.result_dir,
-                                        epochs=settings.epochs,
-                                        steps_per_epoch=settings.steps_per_epoch,
-                                        batch_size=settings.batch_size,
-                                        n_gpus=settings.ngpus)
+    # if settings.iter_count == 0 and settings.pretrained_model is None :
+    #     history = train3D_seq('{}/model_iter{:0>2d}.h5'.format(settings.result_dir,settings.iter_count+1),
+    #                                 data_dir = settings.data_dir,
+    #                                 result_folder = settings.result_dir,
+    #                                 epochs = settings.epochs,
+    #                                 steps_per_epoch = settings.steps_per_epoch,
+    #                                 batch_size = settings.batch_size,
+    #                                 lr = settings.lr,
+    #                                 dropout = settings.drop_out,
+    #                                 filter_base = settings.filter_base,
+    #                                 depth=settings.unet_depth,
+    #                                 convs_per_depth = settings.convs_per_depth,
+    #                                 batch_norm = settings.batch_normalization,
+    #                                 kernel = settings.kernel,
+    #                                 n_gpus = settings.ngpus)
+    # elif settings.iter_count == 0 and settings.pretrained_model is not None:
+    #     history = train3D_continue('{}/model_iter{:0>2d}.h5'.format(settings.result_dir,settings.iter_count+1),
+    #                                     settings.pretrained_model,
+    #                                     data_dir = settings.data_dir,
+    #                                     result_folder = settings.result_dir,
+    #                                     epochs=settings.epochs,
+    #                                     steps_per_epoch=settings.steps_per_epoch,
+    #                                     batch_size=settings.batch_size,
+    #                                     lr = settings.lr,
+    #                                     n_gpus=settings.ngpus)
 
-    return history
+    # else:
+    #     history = train3D_continue('{}/model_iter{:0>2d}.h5'.format(settings.result_dir,settings.iter_count+1),
+    #                                     '{}/model_iter{:0>2d}.h5'.format(settings.result_dir,settings.iter_count),
+    #                                     data_dir = settings.data_dir,
+    #                                     result_folder = settings.result_dir,
+    #                                     epochs=settings.epochs,
+    #                                     steps_per_epoch=settings.steps_per_epoch,
+    #                                     batch_size=settings.batch_size,
+    #                                     n_gpus=settings.ngpus)
+
+    # return history

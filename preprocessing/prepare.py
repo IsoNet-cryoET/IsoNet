@@ -12,6 +12,7 @@ from mwr.util.rotations import rotation_list
 import logging
 from difflib import get_close_matches
 #Make a new folder. If exist, nenew it
+logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.DEBUG)
 def mkfolder(folder):
     import os
     try:
@@ -19,7 +20,8 @@ def mkfolder(folder):
     except FileExistsError:
         logging.warning("Warning, the {} folder already exists before the 1st iteration \n The old {} folder will be renamed (to xxx~)".format(folder,folder))
         import shutil
-        # shutil.rmtree(folder)
+        if os.path.exists(folder+'~'):
+            shutil.rmtree(folder+'~')
         os.system('mv {} {}'.format(folder, folder+'~'))
         os.makedirs(folder)
 
@@ -44,28 +46,28 @@ def prepare_first_iter(settings):
     and feed to generate_first_iter_mrc to generate xx_iter00.xx
     '''
     mkfolder(settings.result_dir)
-    #if the input are tomograms
-    if not settings.datas_are_subtomos:
-        mkfolder(settings.subtomo_dir)
-        #load the mask
-        if settings.mask_dir is not None:
-            mask_list = ["{}/{}".format(settings.mask_dir,f) for f in os.listdir(settings.mask_dir) if f.split(".")[-1]=="mrc" or f.split(".")[-1]=="rec" ]
-        else:
-            mask_list=[]
-        #use all the mrc files in the input folder
-        if settings.input_dir[-1] == '\\' or settings.input_dir[-1] == '/':
-            settings.input_dir= settings.input_dir[:-1]
+    mkfolder(settings.subtomo_dir)
 
-        settings.tomogram_list = ["{}/{}".format(settings.input_dir,f) for f in os.listdir(settings.input_dir) if f.split(".")[-1]=="mrc" or f.split(".")[-1]=="rec" ]
-        settings.tomogram_list_items = [f for f in os.listdir(settings.input_dir) if f.split(".")[-1]=="mrc" or f.split(".")[-1]=="rec"]
-    
-        if len(settings.tomogram_list) <= 0:
-            sys.exit("No input exists. Please check it in input folder!")
-        for tomo_count, tomogram in enumerate(settings.tomogram_list):
-            root_name = settings.tomogram_list_items[tomo_count].split('.')[0]
-            with mrcfile.open(tomogram) as mrcData:
-                orig_data = mrcData.data.astype(np.float32)
-            #find corresponding mask from mask_list
+    #load the mask
+    if settings.mask_dir is not None:
+        mask_list = ["{}/{}".format(settings.mask_dir,f) for f in os.listdir(settings.mask_dir) if f.split(".")[-1]=="mrc" or f.split(".")[-1]=="rec" ]
+    else:
+        mask_list=[]
+    #use all the mrc files in the input folder
+    if settings.input_dir[-1] == '\\' or settings.input_dir[-1] == '/':
+        settings.input_dir= settings.input_dir[:-1]
+
+    settings.tomogram_list = ["{}/{}".format(settings.input_dir,f) for f in os.listdir(settings.input_dir) if f.split(".")[-1]=="mrc" or f.split(".")[-1]=="rec" ]
+    settings.tomogram_list_items = [f for f in os.listdir(settings.input_dir) if f.split(".")[-1]=="mrc" or f.split(".")[-1]=="rec"]
+
+    if len(settings.tomogram_list) <= 0:
+        sys.exit("No input exists. Please check it in input folder!")
+    for tomo_count, tomogram in enumerate(settings.tomogram_list):
+        root_name = settings.tomogram_list_items[tomo_count].split('.')[0]
+        with mrcfile.open(tomogram) as mrcData:
+            orig_data = mrcData.data.astype(np.float32)
+        #find corresponding mask from mask_list
+        if len(mask_list)>0:
             close_mask = get_close_matches(root_name,os.listdir(settings.mask_dir),cutoff=0.6)# a list
             if len(close_mask)>0:
                 with mrcfile.open(settings.mask_dir + '/' + close_mask[0]) as m:
@@ -78,16 +80,16 @@ def prepare_first_iter(settings):
             else:
                 logging.debug("{} mask not found!".format(root_name))
                 mask_data = None
-            seeds=create_cube_seeds(orig_data,settings.ncube,settings.crop_size,mask=mask_data)
-            subtomos=crop_cubes(orig_data,seeds,settings.crop_size)
+        else:
+            mask_data =None
+        seeds=create_cube_seeds(orig_data,settings.ncube,settings.crop_size,mask=mask_data)
+        subtomos=crop_cubes(orig_data,seeds,settings.crop_size)
 
-            for j,s in enumerate(subtomos):
-                with mrcfile.new('{}/{}_{:0>6d}.mrc'.format(settings.subtomo_dir, root_name,j), overwrite=True) as output_mrc:
-                    output_mrc.set_data(s.astype(np.float32))
+        # save sampled subtomo to {results_dir}/subtomos instead of subtomo_dir (as previously does)
+        for j,s in enumerate(subtomos):
+            with mrcfile.new('{}/{}_{:0>6d}.mrc'.format(settings.subtomo_dir,root_name,j), overwrite=True) as output_mrc:
+                output_mrc.set_data(s.astype(np.float32))
 
-
-    else:
-        settings.tomogram_list = None
     settings.mrc_list = os.listdir(settings.subtomo_dir)
     settings.mrc_list = ['{}/{}'.format(settings.subtomo_dir,i) for i in settings.mrc_list]
     #need further test
@@ -109,9 +111,8 @@ def get_cubes_one(data, settings, start = 0, mask = None, add_noise = 0):
     crop out one subtomo and missing wedge simulated one from input data,
     and save them as train set
     '''
-    noise_factor = ((settings.iter_count - settings.noise_start_iter) // settings.noise_pause) +1 if settings.iter_count > settings.noise_start_iter else 0
-    data_cubes = DataCubes(data, nCubesPerImg=1, cubeSideLen = settings.cube_size, cropsize = settings.crop_size, mask = mask, noise_folder = settings.noise_dir,
-    noise_level = settings.noise_level*noise_factor)
+    data_cubes = DataCubes(data, nCubesPerImg=1, cubeSideLen = settings.cube_size, cropsize = settings.crop_size, 
+    mask = mask, noise_folder = settings.noise_dir,noise_level = settings.noise_level*settings.noise_factor,noise_mode = settings.noise_mode)
     for i,img in enumerate(data_cubes.cubesX):
         with mrcfile.new('{}/train_x/x_{}.mrc'.format(settings.data_dir, i+start), overwrite=True) as output_mrc:
             output_mrc.set_data(img.astype(np.float32))
@@ -128,7 +129,7 @@ def get_cubes(inp,settings):
     '''
     mrc, start = inp
     root_name = mrc.split('/')[-1].split('.')[0]
-    current_mrc = '{}/{}_iter{:0>2d}.mrc'.format(settings.result_dir,root_name,settings.iter_count)
+    current_mrc = '{}/{}_iter{:0>2d}.mrc'.format(settings.result_dir,root_name,settings.iter_count-1)
 
     with mrcfile.open(current_mrc) as mrcData:
         ow_data = mrcData.data.astype(np.float32)*-1
@@ -149,6 +150,7 @@ def get_cubes(inp,settings):
 
 def get_cubes_list(settings):
     '''
+    generate new training dataset:
     map function 'get_cubes' to mrc_list from subtomo_dir
     seperate 10% generated cubes into test set.
     '''
@@ -183,3 +185,5 @@ def get_cubes_list(settings):
         os.rename('{}/train_x/{}'.format(settings.data_dir, all_path_x[i]), '{}/test_x/{}'.format(settings.data_dir, all_path_x[i]) )
         os.rename('{}/train_y/{}'.format(settings.data_dir, all_path_y[i]), '{}/test_y/{}'.format(settings.data_dir, all_path_y[i]) )
         #os.rename('data/train_y/'+all_path_y[i], 'data/test_y/'+all_path_y[i])
+
+

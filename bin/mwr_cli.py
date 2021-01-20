@@ -14,8 +14,6 @@ class MWR:
         mask_dir: str= None,
         noise_dir: str = None,
         iterations: int = 40,
-        datas_are_subtomos: bool = False,
-        subtomo_dir: str='subtomo',
         data_dir: str = "data",
         pretrained_model = None,
         log_level: str = "debug",
@@ -23,13 +21,14 @@ class MWR:
         continue_training: bool = False,
         continue_iter: int = 0,
 
+        noise_mode: int=1,
         noise_level:  float= 0.05,
         noise_start_iter: int = 15,
         noise_pause: int = 5,
 
         cube_size: int = 64,
         crop_size: int = 96,
-        ncube: int = 50,
+        ncube: int = 1,
         preprocessing_ncpus: int = 16,
 
         epochs: int = 10,
@@ -89,12 +88,14 @@ class MWR:
         :param filter_base: The base number of channels after convolution
         :param batch_normalization: Sometimes batch normalization may induce artifacts for extreme pixels in the first several iterations. Those could be restored in further iterations.
         :param normalize_percentile:Normalize the 5 percent and 95 percent pixel intensity to 0 and 1 respectively. If this is set to False, normalize the input to 0 mean and 1 standard dievation.
+        
+        Typical training strategy:
+        1. Train tomo with no pretrained model 
+        2. Continue train with previous interupted model
+        3. Continue train with pre-trained model
         """
-        #from mwr.argparser import args
-        # import warnings
-        # with warnings.catch_warnings():
-        #     warnings.filterwarnings("ignore",category=FutureWarning)
-        from mwr.bin.mwr3D import run
+        
+        from mwr.bin.mwr3D_clean import run
 
         d = locals()
         d_args = Arg(d)
