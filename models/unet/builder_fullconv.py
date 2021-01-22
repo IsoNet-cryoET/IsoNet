@@ -27,11 +27,12 @@ def decoder_block(layer_in, skip_in, n_filters, kernel=(3,3,3), strides=(2,2,2),
     # conditionally add dropout
     if dropout is not None and dropout>0:
         g = Dropout(dropout)(g, training=True)
+
+    g = LeakyReLU(alpha=0.05)(g)
     # merge with skip connection
     if skip_in is not None:
         g = Concatenate()([g, skip_in])
     # relu activation
-    g = LeakyReLU(alpha=0.05)(g)
     return g
 
 def build_unet(filter_base=32,depth=2,convs_per_depth=2,
@@ -40,7 +41,6 @@ def build_unet(filter_base=32,depth=2,convs_per_depth=2,
                dropout=0.0,
                pool=(2,2)):
 
-    # TODO: defaut is 3D, consider 2D
     def _func(inputs):
         concatenate = []
         layer = inputs
@@ -49,16 +49,12 @@ def build_unet(filter_base=32,depth=2,convs_per_depth=2,
                 layer = conv_blocks(filter_base*2**n,kernel,dropout=dropout,
                                     batch_norm=batch_norm,name="down_level_%s_no_%s" % (n, i))(layer)
             concatenate.append(layer)
-            # TODO: stride (2,2) for 2D case
-            layer = encoder_block(layer, filter_base*2**n, strides=(2,2,2),dropout=dropout,batchnorm=False,activation='linear')
-
-        # for i in range(convs_per_depth -1):
-        #     layer = conv_blocks(filter_base*2**depth,kernel,
-        #                         dropout=dropout,batch_norm = batch_norm,name="middle_%s" % i)(layer)
-        # layer = conv_blocks(filter_base*2**max(0,depth-1),kernel,dropout=dropout,
-        #                     batch_norm=batch_norm,name="middle_%s" % convs_per_depth)(layer)
-
+            layer = encoder_block(layer, filter_base*2**n, strides=(2,2,2),dropout=None,batchnorm=False,activation='linear')
         b = Conv3D(filter_base*2**depth, (3,3,3), strides=(1,1,1), padding='same', kernel_initializer="glorot_uniform")(layer)
+        if batch_norm:
+            b = BatchNormalization()(b)
+        if dropout is not None and dropout>0:
+            b = Dropout(dropout)(b)
         b = LeakyReLU(alpha=0.05)(b)
         layer = Conv3D(filter_base*2**(depth-1), (3,3,3), strides=(1,1,1), padding='same', kernel_initializer="glorot_uniform")(b)
 
@@ -69,8 +65,8 @@ def build_unet(filter_base=32,depth=2,convs_per_depth=2,
             for i in range(convs_per_depth):
                 layer = conv_blocks(filter_base * 2 ** n, kernel, dropout=dropout,
                                     batch_norm=batch_norm,name="up_level_%s_no_%s" % (n, i))(layer)
-            layer = conv_blocks(filter_base * 2 ** max(0,(n-1)), kernel, dropout=dropout,
-                                batch_norm=batch_norm,name="up_level_%s_no_%s" % (n, convs_per_depth))(layer)
-
-        return layer
+            # layer = conv_blocks(filter_base * 2 ** max(0,(n-1)), kernel, dropout=dropout,
+            #                     batch_norm=batch_norm,name="up_level_%s_no_%s" % (n, convs_per_depth))(layer)
+        final = Conv3D(1,(1,1,1), strides=(1,1,1), padding='same', kernel_initializer="glorot_uniform")(layer)
+        return final
     return _func

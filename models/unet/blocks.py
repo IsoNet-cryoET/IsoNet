@@ -1,4 +1,4 @@
-from tensorflow.keras.layers import Dropout, Activation, BatchNormalization, Conv2D, Conv3D
+from tensorflow.keras.layers import Dropout, Activation, BatchNormalization, Conv2D, Conv3D, LeakyReLU
 
 def conv_blocks(n_filter, kernel,
                 activation="relu",
@@ -17,9 +17,10 @@ def conv_blocks(n_filter, kernel,
                         padding=padding,
                         kernel_initializer=init,**kwargs)(last_layer)
         if batch_norm:
-            conv=BatchNormalization()(conv, training=True)
-        conv=Activation(activation)(conv)
+            conv=BatchNormalization()(conv)
         if dropout is not None and dropout>0:
-            conv=Dropout(dropout)(conv,training=True)
+            conv=Dropout(dropout)(conv)
+        # conv=Activation(activation)(conv)
+        conv = LeakyReLU(alpha=0.05)(conv)
         return conv
     return layer

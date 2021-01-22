@@ -96,6 +96,7 @@ class DataCubes:
         self.__cubesX = None
         self.noise_folder = noise_folder
         self.noise_level = noise_level
+        self.noise_mode = noise_mode
 
         #if we have two sub-tomograms for denoising (noise to noise), we will enable the parameter tomogram2, tomogram1 and 2 should be in same size
         #Using tomogram1 for X and tomogram2 for Y.
@@ -145,10 +146,8 @@ class DataCubes:
                         res = mf.data
                     return res
                 noise_volume = np.array([read_vol(path_noise[j]) for j in path_index])
-            elif self.noise_level > 1e-6:
-                noise_volume = make_noise_one(cubesize = self.cubeSideLen,mode=self.noise_level)
             else:
-                noise_volume = 0 
+                noise_volume = make_noise_one(cubesize = self.cubeSideLen,mode=self.noise_mode)
             
             self.__cubesX += self.noise_level * noise_volume / np.std(noise_volume)
         return self.__cubesX

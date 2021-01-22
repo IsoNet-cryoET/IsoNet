@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 import fire
 import logging
 import os
@@ -13,7 +13,7 @@ class MWR:
         gpuID: str = '0,1,2,3',
         mask_dir: str= None,
         noise_dir: str = None,
-        iterations: int = 40,
+        iterations: int = 50,
         data_dir: str = "data",
         pretrained_model = None,
         log_level: str = "debug",
@@ -33,9 +33,9 @@ class MWR:
 
         epochs: int = 10,
         batch_size: int = 8,
-        steps_per_epoch: int = 200,
+        steps_per_epoch: int = 150,
 
-        drop_out: float = 0.5,
+        drop_out: float = 0.3,
         convs_per_depth: int = 3,
         kernel: tuple = (3,3,3),
         unet_depth: int = 3,

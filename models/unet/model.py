@@ -20,11 +20,11 @@ def Unet(filter_base=32,
     #            batch_norm,
     #            dropout,
     #            pool)
-#     model = builder_fullconv.build_unet(filter_base,depth,convs_per_depth,
-#             kernel,
-#             batch_norm,
-#             dropout,
-#             pool)
+    # model = builder_fullconv.build_unet(filter_base,depth,convs_per_depth,
+    #         kernel,
+    #         batch_norm,
+    #         dropout,
+    #         pool)
     import os
     import sys
     cwd = os.getcwd()
@@ -49,3 +49,16 @@ def Unet(filter_base=32,
         _metrics = ['accuracy']
     model.compile(optimizer=optimizer, loss=loss, metrics=_metrics)
     return model
+
+if __name__ == "__main__":
+    keras_model = Unet(filter_base=64,
+        depth=3,
+        convs_per_depth=3,
+        kernel=(3,3,3),
+        batch_norm=True,
+        dropout=0.5,
+        pool=(2,2,2),residual = True,
+        last_activation = 'linear',
+        loss = 'mae',
+        lr = 0.0004)
+    print(keras_model.summary())

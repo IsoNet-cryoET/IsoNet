@@ -220,4 +220,4 @@ def train_data(settings):
     #                                     batch_size=settings.batch_size,
     #                                     n_gpus=settings.ngpus)
 
-    # return history
+    return history

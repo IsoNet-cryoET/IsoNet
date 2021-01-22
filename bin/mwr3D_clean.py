@@ -86,3 +86,9 @@ def run(args):
 
         logging.info("Done Iteration{}!".format(num_iter+1))
 
+if __name__ == "__main__":
+    from mwr.util.dict2attr import Arg
+    arg = {'input_dir': 'subtomos676/', 'gpuID': '0', 'mask_dir': None, 'noise_dir': None, 'iterations': 50, 'data_dir': 'data', 'pretrained_model': None, 'log_level': 'debug', 'continue_training': False, 'continue_iter': 0, 'noise_mode': 1, 'noise_level': 0.05, 'noise_start_iter': 15, 'noise_pause': 5, 'cube_size': 64, 'crop_size': 96, 'ncube': 1, 'preprocessing_ncpus': 16, 'epochs': 10, 'batch_size': 8, 'steps_per_epoch': 150, 'drop_out': 0.3, 'convs_per_depth': 3, 'kernel': (3, 3, 3), 'unet_depth': 3, 'filter_base': 32, 'batch_normalization': False, 'normalize_percentile': True}
+    d_args = Arg(arg)
+    print(mrcfile.__file__)
+    run(d_args)
