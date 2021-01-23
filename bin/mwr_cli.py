@@ -3,7 +3,8 @@ import fire
 import logging
 import os
 from mwr.util.dict2attr import Arg,check_args
-
+import sys
+from fire import core
 class MWR:
     """
     MWR: Train on tomograms and Predict to restore missing-wedge
@@ -106,7 +107,7 @@ class MWR:
         logger = logging.getLogger('mwr.bin.mwr3D')
         run(d_args)
 
-    def predict(self, mrc_file: str, output_file: str, model: str, gpuID: str = None, cube_size:int=64,crop_size:int=96, batch_size:int=16,norm: bool=True,log_level: str="debug"):
+    def predict(self, mrc_file: str, output_file: str, model: str, gpuID: str = None, cube_size:int=64,crop_size:int=96, batch_size:int=8,norm: bool=True,log_level: str="debug"):
         """
         Predict tomograms using trained model including model.json and weight(xxx.h5)
         :param mrc_file: path to tomogram, format: .mwr or .rec
@@ -170,9 +171,10 @@ class MWR:
         from mwr.bin.mwr3D import run
         print('MWR --version 0.9.9 installed')
 
+def Display(lines, out):
+    text = "\n".join(lines) + "\n"
+    out.write(text)
+
 if __name__ == "__main__":
-    import sys
-    # args = sys.argv
-    # print('***:',args)
-    # check_args(args)
+    core.Display = Display
     fire.Fire(MWR)

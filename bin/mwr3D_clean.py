@@ -45,7 +45,7 @@ def run(args):
             args.init_model = args.pretrained_model
         else:
             args = prepare_first_model(args)
-    else:
+    else: #mush has pretrained model and continue_iter >0
         args.init_model = args.pretrained_model
 
     args.mrc_list = os.listdir(args.subtomo_dir)
@@ -58,6 +58,8 @@ def run(args):
     for num_iter in range(args.continue_iter,args.iterations):
         args.iter_count = num_iter
         logger.warning("Start Iteration{}!".format(num_iter))
+        if num_iter > args.continue_iter: # set the previous iteration's result model as the init_model 
+            args.init_model = '{}/model_iter{:0>2d}.h5'.format(args.result_dir,args.iter_count-1)
         args.noise_factor = ((num_iter - args.noise_start_iter)//args.noise_pause)+1 if num_iter >= args.noise_start_iter else 0
         logging.info("noise_factor:{}".format(args.noise_factor))
 
@@ -70,7 +72,7 @@ def run(args):
             get_cubes_list(args)
             logging.info("Done getting cubes!")
             logging.info("Start training!")
-            history = train_data(args)
+            history = train_data(args) #train based on init model and save new one as model_iter{num_iter}.h5
             # losses.append(history.history['loss'][-1])
             logging.info("Done training!")
             logging.info("Start cube predicting!")
@@ -88,7 +90,17 @@ def run(args):
 
 if __name__ == "__main__":
     from mwr.util.dict2attr import Arg
-    arg = {'input_dir': 'subtomos676/', 'gpuID': '0', 'mask_dir': None, 'noise_dir': None, 'iterations': 50, 'data_dir': 'data', 'pretrained_model': None, 'log_level': 'debug', 'continue_training': False, 'continue_iter': 0, 'noise_mode': 1, 'noise_level': 0.05, 'noise_start_iter': 15, 'noise_pause': 5, 'cube_size': 64, 'crop_size': 96, 'ncube': 1, 'preprocessing_ncpus': 16, 'epochs': 10, 'batch_size': 8, 'steps_per_epoch': 150, 'drop_out': 0.3, 'convs_per_depth': 3, 'kernel': (3, 3, 3), 'unet_depth': 3, 'filter_base': 32, 'batch_normalization': False, 'normalize_percentile': True}
+    arg = {'input_dir': 'subtomo/', 'gpuID': '4,5,6,7', 
+    'mask_dir': None, 'noise_dir': None, 'iterations': 50, 
+    'data_dir': 'data', 'pretrained_model': './results/model_iter35.h5', 
+    'log_level': 'debug', 'continue_training': False, 
+    'continue_iter': 36, 'noise_mode': 1, 'noise_level': 0.05, 
+    'noise_start_iter': 15, 'noise_pause': 5, 'cube_size': 64, 
+    'crop_size': 96, 'ncube': 1, 'preprocessing_ncpus': 16, 
+    'epochs': 10, 'batch_size': 8, 'steps_per_epoch': 150, 
+    'drop_out': 0.3, 'convs_per_depth': 3, 'kernel': (3, 3, 3),
+     'unet_depth': 3, 'filter_base': 32, 'batch_normalization': False, 
+     'normalize_percentile': True}
     d_args = Arg(arg)
     print(mrcfile.__file__)
     run(d_args)
