@@ -144,7 +144,7 @@ def train3D_continue(outFile,
     tensor_board = TensorBoard(log_dir='./Graph', histogram_freq=0, write_graph=True, write_images=True)
     callback_list.append(tensor_board)
     logging.info("begin fitting")
-    history = model.fit(generator=train_data, validation_data=test_data,
+    history = model.fit(train_data, validation_data=test_data,
                                   epochs=epochs, steps_per_epoch=steps_per_epoch,
                                   verbose=1)
                                 #   callbacks=callback_list)
