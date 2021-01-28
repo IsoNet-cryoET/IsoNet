@@ -26,6 +26,7 @@ def run(args):
         logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.INFO)
     logger = logging.getLogger('mwr.preprocessing.prepare')
     # Specify GPU(s) to be used
+    args.gpuID = str(args.gpuID)
     args.ngpus = len(args.gpuID.split(','))
     os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
     os.environ["CUDA_VISIBLE_DEVICES"]=args.gpuID
