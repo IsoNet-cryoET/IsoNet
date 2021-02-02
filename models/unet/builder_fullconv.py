@@ -5,12 +5,12 @@ from tensorflow.keras.layers import Concatenate
 # define a decoder block
 
 def build_unet(filter_base=32,depth=2,convs_per_depth=2,
-               kernel=(3,3),
+               kernel=(3,3,3),
                batch_norm=False,
                dropout=0.0,
                pool=None):
-    resnet = True
-    pool = (2,2,2)
+    resnet = False
+    # pool = (2,2,2)
     def _func(inputs):
         concatenate = []
         layer = inputs

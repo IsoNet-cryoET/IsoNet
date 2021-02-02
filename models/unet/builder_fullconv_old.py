@@ -14,7 +14,7 @@ import mrcfile
 import os
 import sys
 
-def encoder_block(layer_in, n_filters, kernel, strides=(2,2,2), dropout=0.5, batchnorm=True, activation='relu'):
+def encoder_block(layer_in, n_filters, kernel=(3,3,3), strides=(2,2,2), dropout=0.5, batchnorm=True, activation='relu'):
     # weight initialization
     init = RandomNormal(stddev=0.02)
     # add downsampling layer

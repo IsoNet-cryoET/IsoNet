@@ -163,7 +163,7 @@ def prepare_first_model(settings):
             kernel=settings.kernel,
             batch_norm=settings.batch_normalization, 
             dropout=settings.drop_out,
-            pool=(2,2,2),
+            pool=settings.pool,
             residual = True,
             last_activation = 'linear',
             loss = 'mae',

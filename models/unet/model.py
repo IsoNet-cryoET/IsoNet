@@ -6,11 +6,11 @@ from mwr.losses.wedge_power import wedge_power_gain
 from tensorflow.keras.optimizers import Adam
 def Unet(filter_base=32,
         depth=2,
-        convs_per_depth=2,
-        kernel=(3,3),
+        convs_per_depth=3,
+        kernel=(3,3,3),
         batch_norm=False,
         dropout=0.0,
-        pool=(2,2),residual = True,
+        pool=(2,2,2),residual = True,
         last_activation = 'linear',
         loss = 'mae',
         lr = 0.0004):

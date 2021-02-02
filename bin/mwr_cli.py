@@ -3,6 +3,7 @@ import fire
 import logging
 import os
 from mwr.util.dict2attr import Arg,check_args
+from mwr.util.deconvolution import tom_deconv_tomo
 import sys
 from fire import core
 class MWR:
@@ -39,6 +40,7 @@ class MWR:
         drop_out: float = 0.3,
         convs_per_depth: int = 3,
         kernel: tuple = (3,3,3),
+        pool: tuple = None,
         unet_depth: int = 3,
         filter_base: int = 32,
         batch_normalization: bool = False,
@@ -132,7 +134,7 @@ class MWR:
         generate a mask to constrain sampling area of the tomogram
         :param tomo_path: path to the tomogram or tomogram folder
         :param mask_path: path and name of the mask to save as
-        :param side:
+        :param side: 
         :param percentile:
         :param threshold:
         :param mask_type: 'statistical' or 'surface': Masks can be generated based on the statistics or just take the middle part of tomograms
@@ -170,6 +172,69 @@ class MWR:
         from mwr.bin.mwr3D_predict import predict
         from mwr.bin.mwr3D import run
         print('MWR --version 0.9.9 installed')
+
+    def generate_command(self, tomo_dir: str, mask_dir: str=None, ncpu: int=10, gpu_memory: int=10, ngpu: int=4, also_denoise: bool= True): 
+        import mrcfile
+        import numpy as np   
+        s="mwr_cli.py train --input_dir {} ".format(tomo_dir)
+        s+="--preprocessing_ncpus {} ".format(ncpu) 
+        if mask_dir is not None:
+            s+="--mask_dir {} ".format(mask_dir)
+            m=os.listdir(mask_dir)
+            with mrcfile.open(mask_dir+"/"+m[0]) as mrcData:
+                mask_data = mrcData.data
+            vsize=np.count_nonzero(mask_data)
+        else:
+            m=os.listdir(tomo_dir)
+            with mrcfile.open(tomo_dir+"/"+m[0]) as mrcData:
+                tomo_data = mrcData.data
+            sh=tomo_data.shape
+            vsize=sh[0]*sh[1]*sh[2]
+        num_tomo = len(m)
+
+        s+="--gpuID "
+        for i in range(ngpu-1):
+            s+=str(i)
+            s+=","
+        s+=str(ngpu-1)
+        s+=" "
+
+        if ngpu < 3:
+            batch_size = 4
+            s+="--batch_size 4 "
+        elif ngpu == 3:
+            batch_size = 6
+            s+="--batch_size 6 "
+        else:
+            batch_size = ngpu
+            s+="--batch_size {} ".format(ngpu) 
+
+        cube_size = int(gpu_memory**(1/3.0) / (batch_size/ngpu)) * 32
+
+        if cube_size == 0:
+            print("Please use larger memory GPU or use more GPUs")
+
+        s+="--cube_size {} --crop_size {} ".format(cube_size, int(cube_size*1.5))
+
+        num_per_tomo = int(vsize/(cube_size**3) * 0.4)
+        s+="--ncube {} ".format(num_per_tomo)
+    
+        num_particles = int(num_per_tomo * num_tomo * 16 * 0.9)
+        s+="--epochs 10 --steps_per_epoch {} ".format(int(num_particles/batch_size*0.2))
+
+        if also_denoise:
+            s+="--iterations 30 --noise_level 0.1 --noise_start_iter 15 --noise_pause 3"
+        else:
+            s+="--iterations 15 --noise_level 0 --noise_start_iter 100"
+        print(s)
+
+    def deconv(self,tomo,defocus,pixel_size,snrfalloff: float=1.0, deconvstrength: float=1.0):
+        with mrcfile.open(mrcFile) as mrc:
+            vol = mrc.data
+        result = tom_deconv_tomo(vol, angpix=pixel_size, defocus=defocus, snrfalloff=snrfalloff, deconvstrength=deconvstrength, highpassnyquist=0.1, phaseflipped=False, phaseshift=0 )
+        outname = tomo.split('.')[0] +'-deconv.rec'
+        with mrcfile.new(outname, overwrite=True) as mrc:
+            mrc.set_data(result)
 
 def Display(lines, out):
     text = "\n".join(lines) + "\n"
