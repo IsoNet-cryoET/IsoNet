@@ -3,3 +3,6 @@ venv/
 data/
 *.pyc
 *.mrc
+*/__pycache_
+*/*/__pycache___
+.vscode

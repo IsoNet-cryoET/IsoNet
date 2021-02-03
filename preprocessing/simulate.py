@@ -51,6 +51,14 @@ class TwoDPsf:
         #norm_save('mw.tif',self._mw)
         return self._mw
 
+    def circleMask(self):
+        dim0 = self._dimension[0]
+        dim1 = self._dimension[1]
+        s0 = np.arange(-int(dim0/2),dim0-int(dim0/2))
+        s1 = np.arange(-int(dim1/2),dim1-int(dim1/2))
+        y,x = np.meshgrid(s1,s0)
+        circle = np.array(4*x**2/(dim0**2) + 4*y**2/(dim1**2) < 1)
+        return circle.astype(np.uint8)
 
     #
     # def apply(self,data,name):
@@ -99,7 +107,7 @@ class TwoDPsf:
             outData[i] = np.real(outData_i)#.astype(np.uint8)
         return outData
 
-'''
+
 class TrDPsf:
     def __init__(self,sideLen):
         self.sideLen=sideLen
@@ -109,16 +117,17 @@ class TrDPsf:
         self.mw=np.zeros([self.sideLen,self.sideLen,self.sideLen],dtype=np.float32)
         theta=np.pi/180*(90-missingAngle)
         for i in range(self.sideLen):
+            z = (i - self.sideLen // 2)
             for j in range(self.sideLen):
                 y = (j - self.sideLen // 2)
                 for k in range(self.sideLen):
                     x=(k-self.sideLen//2)
-                    if abs(y)<=abs(x*np.tan(theta)) and x*x+y*y<(self.sideLen//2)*(self.sideLen//2):
+                    if abs(y)<=abs(x*np.tan(theta)) and x*x+y*y+z*z<(self.sideLen//2)*(self.sideLen//2):
                         self.mw[j,i,k]=1
                     else:
                         self.mw[j,i,k]=0
         return self.mw
-
+'''
     def apply(self,data):
 
         data = np.expand_dims( data, axis=0)
@@ -194,3 +203,21 @@ def apply_wedge(ori_data, ld1 = 1, ld2 =0):
     real = np.real(inv).astype(np.float32)
     out = np.rot90(real, k=3, axes=(0,1))
     return out
+
+def apply_wedge1(ori_data, ld1 = 1, ld2 =0):
+
+    data = np.rot90(ori_data, k=1, axes=(0,1)) #clock wise of counter clockwise??
+    mw = TwoDPsf(data.shape[1], data.shape[2]).getMW()
+
+    #if inverse:
+    #    mw = 1-mw
+    mw = mw * ld1 + (1-mw) * ld2
+
+    outData = np.zeros(data.shape,dtype=np.float32)
+    for i, item in enumerate(data):
+        outData_i=np.fft.ifft2(np.fft.fftshift(mw) * np.fft.fft2(item))
+        outData[i] = np.real(outData_i)
+
+    outData.astype(np.float32)
+    outData=np.rot90(outData, k=3, axes=(0,1))
+    return outData

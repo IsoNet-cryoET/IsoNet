@@ -1,7 +1,5 @@
 import numpy as np
-from tifffile import imsave,imread
-from .mrcfile import *
-from .filter import no_background_patches
+
 
 
 def toUint8(data):
@@ -23,9 +21,6 @@ def toUint16(data):
     data=data.astype(np.uint16)
     return data
 
-def norm_save(filename,data):
-    print('here')
-    imsave(filename, toUint8(data))
 
 def crop_center(img,cropx,cropy,cropz):
     z,y,x = img.shape[0],img.shape[1],img.shape[2]
@@ -41,8 +36,8 @@ def create_seed_2D(img2D,nPatchesPerSlice,patchSideLen):
     seedy = np.random.rand(nPatchesPerSlice)*(y-patchSideLen)+patchSideLen//2
     seedx = seedx.astype(int)
     seedy = seedy.astype(int)
-
     return seedx,seedy
+
 def print_filter_mask(img3D,nPatchesPerSlice,patchSideLen,threshold=0.4,percentile=99.9):
     sp=img3D.shape
     mask=np.zeros(sp).astype(np.uint8)
@@ -76,7 +71,7 @@ def create_cube_seeds(img3D,nCubesPerImg,cubeSideLen,mask=None):
     sample_inds = np.random.choice(len(valid_inds[0]), nCubesPerImg, replace=len(valid_inds[0]) < nCubesPerImg)
     rand_inds = [v[sample_inds] for v in valid_inds]
     return (rand_inds[0],rand_inds[1], rand_inds[2])
-    #return (seedz,seedy,seedx)
+
 
 def crop_seed2D(img2D,seedx,seedy,cropx,cropy):
     y,x = img2D.shape[0],img2D.shape[1]
