@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import fire
 import logging
 import os
@@ -19,8 +19,6 @@ class MWR:
         data_dir: str = "data",
         pretrained_model = None,
         log_level: str = "debug",
-
-        continue_training: bool = False,
         continue_iter: int = 0,
 
         noise_mode: int=1,
@@ -91,13 +89,13 @@ class MWR:
         :param filter_base: The base number of channels after convolution
         :param batch_normalization: Sometimes batch normalization may induce artifacts for extreme pixels in the first several iterations. Those could be restored in further iterations.
         :param normalize_percentile:Normalize the 5 percent and 95 percent pixel intensity to 0 and 1 respectively. If this is set to False, normalize the input to 0 mean and 1 standard dievation.
-        
+
         Typical training strategy:
-        1. Train tomo with no pretrained model 
+        1. Train tomo with no pretrained model
         2. Continue train with previous interupted model
         3. Continue train with pre-trained model
         """
-        
+
         from mwr.bin.mwr3D_clean import run
 
         d = locals()
@@ -134,7 +132,7 @@ class MWR:
         generate a mask to constrain sampling area of the tomogram
         :param tomo_path: path to the tomogram or tomogram folder
         :param mask_path: path and name of the mask to save as
-        :param side: 
+        :param side:
         :param percentile:
         :param threshold:
         :param mask_type: 'statistical' or 'surface': Masks can be generated based on the statistics or just take the middle part of tomograms
@@ -173,11 +171,11 @@ class MWR:
         from mwr.bin.mwr3D import run
         print('MWR --version 0.9.9 installed')
 
-    def generate_command(self, tomo_dir: str, mask_dir: str=None, ncpu: int=10, gpu_memory: int=10, ngpu: int=4, also_denoise: bool= True): 
+    def generate_command(self, tomo_dir: str, mask_dir: str=None, ncpu: int=10, gpu_memory: int=10, ngpu: int=4, also_denoise: bool= True):
         import mrcfile
-        import numpy as np   
+        import numpy as np
         s="mwr_cli.py train --input_dir {} ".format(tomo_dir)
-        s+="--preprocessing_ncpus {} ".format(ncpu) 
+        s+="--preprocessing_ncpus {} ".format(ncpu)
         if mask_dir is not None:
             s+="--mask_dir {} ".format(mask_dir)
             m=os.listdir(mask_dir)
@@ -207,7 +205,7 @@ class MWR:
             s+="--batch_size 6 "
         else:
             batch_size = ngpu
-            s+="--batch_size {} ".format(ngpu) 
+            s+="--batch_size {} ".format(ngpu)
 
         cube_size = int(gpu_memory**(1/3.0) / (batch_size/ngpu)) * 32
 
@@ -218,7 +216,7 @@ class MWR:
 
         num_per_tomo = int(vsize/(cube_size**3) * 0.4)
         s+="--ncube {} ".format(num_per_tomo)
-    
+
         num_particles = int(num_per_tomo * num_tomo * 16 * 0.9)
         s+="--epochs 10 --steps_per_epoch {} ".format(int(num_particles/batch_size*0.2))
 

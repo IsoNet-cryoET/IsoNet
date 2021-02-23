@@ -30,6 +30,7 @@ def run(args):
     args.ngpus = len(args.gpuID.split(','))
     os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
     os.environ["CUDA_VISIBLE_DEVICES"]=args.gpuID
+    os.environ["TF_FORCE_GPU_ALLOW_GROWTH"] = "true"
     #TODO to fix the tensorflow log level
     # if args.log_level == 'debug':
     #     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'

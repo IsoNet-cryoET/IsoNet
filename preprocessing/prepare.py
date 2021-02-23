@@ -138,9 +138,11 @@ def get_cubes(inp,settings):
         iw_data = mrcData.data.astype(np.float32)*-1
     iw_data = normalize(iw_data, percentile = settings.normalize_percentile)
 
-
-    orig_data = apply_wedge(ow_data, ld1=0, ld2=1) + apply_wedge(iw_data, ld1 = 1, ld2=0)
-    orig_data = normalize(orig_data, percentile = settings.normalize_percentile)
+    if settings.iter_count <= settings.iterations:
+        orig_data = apply_wedge(ow_data, ld1=0, ld2=1) + apply_wedge(iw_data, ld1 = 1, ld2=0)
+        orig_data = normalize(orig_data, percentile = settings.normalize_percentile)
+    else:
+        orig_data = ow_data
 
     for r in rotation_list:
         data = np.rot90(orig_data, k=r[0][1], axes=r[0][0])
