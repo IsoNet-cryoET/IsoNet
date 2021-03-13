@@ -1,4 +1,4 @@
-from mwr.models.unet.blocks import conv_blocks, activation_my, decoder_block
+from IsoNet.models.unet.blocks import conv_blocks, activation_my, decoder_block
 from tensorflow.keras.layers import MaxPooling2D, UpSampling2D, MaxPooling3D, UpSampling3D, AveragePooling3D,Conv2D,Add,Conv2DTranspose,Conv3D,Conv3DTranspose,Dropout,BatchNormalization,Activation,LeakyReLU
 from tensorflow.keras.layers import Concatenate
 

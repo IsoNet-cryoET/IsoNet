@@ -15,9 +15,9 @@ import glob
 import numpy as np
 import mrcfile
 
-from mwr.preprocessing.simulate import apply_wedge_dcube as apply_wedge
-from mwr.util.mwr3D_noise_generator import make_noise_one
-# from mwr.preprocessing.simulate import apply_wedge
+from IsoNet.preprocessing.simulate import apply_wedge_dcube as apply_wedge
+from IsoNet.util.noise_generator import make_noise_one
+# from IsoNet.preprocessing.simulate import apply_wedge
 
 def create_cube_seeds(img3D,nCubesPerImg,cubeSideLen,mask=None):
     sp=img3D.shape

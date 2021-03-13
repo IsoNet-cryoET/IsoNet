@@ -4,11 +4,9 @@ from tensorflow.keras.initializers import RandomNormal
 from tensorflow.keras.layers import Concatenate
 from tensorflow.keras.models import Model, load_model
 from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.callbacks import TensorBoard, ModelCheckpoint
 from tensorflow.keras.utils import Sequence
 import tensorflow.keras.backend as K
 import numpy as np
-from tensorflow.keras.utils import multi_gpu_model
 from tensorflow.keras import regularizers
 import mrcfile
 import os

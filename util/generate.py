@@ -222,7 +222,7 @@ class DataCubes:
     def cubesX_padded(self):
         if self.__cubesX_padded is None:
             self.__cubesX_padded=crop_cubes(self.tomogram,self.seeds,self.cropsize).astype(np.float32)
-            from mwr.simulation.simulate import apply_wedge
+            from IsoNet.simulation.simulate import apply_wedge
             self.__cubesX_padded = np.array(list(map(apply_wedge, self.__cubesX_padded)), dtype = np.float32)
         return self.__cubesX_padded
 

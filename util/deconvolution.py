@@ -44,8 +44,8 @@ def tom_deconv_tomo(vol, angpix, defocus, snrfalloff, deconvstrength, highpassny
     data = np.arange(0,1+1/2047.,1/2047.)
     highpass = np.minimum(np.ones(data.shape[0]), data/highpassnyquist) * np.pi;
     highpass = 1-np.cos(highpass);
-
-    snr = np.exp(-data * snrfalloff * 100 / angpix) * (10^(3 * deconvstrength)) * highpass;
+    eps = 1e-10;
+    snr = np.exp(-data * snrfalloff * 100 / angpix) * np.power(10.0,(3.0 * deconvstrength)) * highpass + eps; 
     #snr[0] = -1
     ctf = tom_ctf1d(angpix*1e-10, 300e3, 2.7e-3, -defocus*1e-6, 0.07, phaseshift / 180 * np.pi, 0);
     if phaseflipped:

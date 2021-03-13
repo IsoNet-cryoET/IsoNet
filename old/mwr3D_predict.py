@@ -4,12 +4,12 @@ import numpy as np
 import os
 import logging
 
-from mwr.simulation.simulate import apply_wedge
-from mwr.util.norm import normalize
-from mwr.util.toTile import reform3D
+from IsoNet.simulation.simulate import apply_wedge
+from IsoNet.util.norm import normalize
+from IsoNet.util.toTile import reform3D
 import mrcfile
-from mwr.simulation.simulate import apply_wedge1
-from mwr.util.image import *
+from IsoNet.simulation.simulate import apply_wedge1
+from IsoNet.util.image import *
 
 
 # def wedge_imposing(data):

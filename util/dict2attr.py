@@ -3,7 +3,7 @@ class Arg:
         import logging
         logging.basicConfig(level=logging.DEBUG,format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
         datefmt='%Y-%m-%d:%H:%M:%S')
-        logger = logging.getLogger('mwr.util.dict2attr')
+        logger = logging.getLogger('IsoNet.util.dict2attr')
         for k, v in dictionary.items():
             # if k not in param_list:
             #     logging.warning("{} not recognized!".format(k))

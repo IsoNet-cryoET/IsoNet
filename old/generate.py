@@ -38,7 +38,7 @@ class DataPairs2D(DataPairs):
     def create_patches(self,patchSideLen=128,nPatchesPerSlice=100):
         #TODO patch_filter norm_percentile
         
-        from mwr.util.image import create_patch_image_2D,create_seed_2D
+        from IsoNet.util.image import create_patch_image_2D,create_seed_2D
         self._PatchesX = np.zeros([self._dataX.shape[0],nPatchesPerSlice,patchSideLen,patchSideLen])
         self._PatchesY = np.zeros([self._dataY.shape[0],nPatchesPerSlice,patchSideLen,patchSideLen])
         SliceNum = self._dataX.shape[0]

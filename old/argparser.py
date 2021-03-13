@@ -58,8 +58,8 @@ parser.add_argument("--continue_from",
                     help="Continue from either 'preprocessing', 'training' or 'predicting'.")
 
 parser.add_argument("--log_level", 
-                    choices=["debug" or "warning"],
-                    default="debug",
+                    choices=["debug" or "info"],
+                    default="info",
                     help="logging level")
 
 parser.add_argument("--reload_weight",

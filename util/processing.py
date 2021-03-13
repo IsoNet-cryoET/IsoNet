@@ -74,7 +74,7 @@ class DataCubes:
     def cubesX(self):
         if self.__cubesX is None:
             #print('here', self.tomogram)
-            from mwr.simulation.simulate import apply_wedge
+            from IsoNet.simulation.simulate import apply_wedge
 
             res = list(map(apply_wedge, self.cubesY_padded))
 

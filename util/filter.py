@@ -42,7 +42,7 @@ def stdmask_old(tomo,cubelen=20,std=None):
     return mask
 
 def stdmask_mpi(tomo,cubelen=20,cubesize=50,ncpu=20,if_rescale=True):
-    from mwr.util.toTile import reform3D
+    from IsoNet.util.toTile import reform3D
     from skimage.transform import resize
     from functools import partial
 

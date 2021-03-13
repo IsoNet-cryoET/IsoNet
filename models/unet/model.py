@@ -1,8 +1,8 @@
-from mwr.models.unet import builder,builder_fullconv,builder_fullconv_old
+from IsoNet.models.unet import builder,builder_fullconv,builder_fullconv_old
 from tensorflow.keras.layers import Input,Add,Activation
 from tensorflow.keras.models import Model
-from mwr.losses.losses import loss_mae,loss_mse
-from mwr.losses.wedge_power import wedge_power_gain
+from IsoNet.losses.losses import loss_mae,loss_mse
+from IsoNet.losses.wedge_power import wedge_power_gain
 from tensorflow.keras.optimizers import Adam
 def Unet(filter_base=32,
         depth=2,

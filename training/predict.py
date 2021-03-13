@@ -1,7 +1,6 @@
 from tensorflow.keras.models import model_from_json,load_model
-from tensorflow.keras.utils import multi_gpu_model
 import mrcfile
-from mwr.preprocessing.img_processing import normalize
+from IsoNet.preprocessing.img_processing import normalize
 import numpy as np
 import logging
 import tensorflow.keras.backend as K
@@ -13,7 +12,6 @@ def predict(settings):
     if settings.ngpus >1:
         with strategy.scope():
             model = load_model('{}/model_iter{:0>2d}.h5'.format(settings.result_dir,settings.iter_count))
-        # model = multi_gpu_model(model, gpus=settings.ngpus, cpu_merge=True, cpu_relocation=False)
     else:
         model = load_model('{}/model_iter{:0>2d}.h5'.format(settings.result_dir,settings.iter_count))
     N = settings.predict_batch_size * settings.ngpus

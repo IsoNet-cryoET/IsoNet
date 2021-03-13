@@ -4,19 +4,19 @@ import numpy as np
 import os
 import logging
 
-from mwr.preprocessing.simulate import apply_wedge
-from mwr.util.norm import normalize
-from mwr.util.toTile import reform3D
+from IsoNet.preprocessing.simulate import apply_wedge
+from IsoNet.util.norm import normalize
+from IsoNet.util.toTile import reform3D
 import mrcfile
-from mwr.util.image import *
+from IsoNet.util.image import *
 from tensorflow.keras.models import load_model
     
 
 def predict(args):
-    if args.log_level == 'debug':
-        os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
-    else:
-        os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
+    # if args.log_level == 'debug':
+    #     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+    # else:
+    #     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
     logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
     datefmt='%Y-%m-%d:%H:%M:%S')
     if args.log_level == "debug":

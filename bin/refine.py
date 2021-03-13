@@ -1,15 +1,15 @@
 import logging
-from mwr.preprocessing.cubes import prepare_cubes
-from mwr.preprocessing.img_processing import normalize
-from mwr.preprocessing.prepare import prepare_first_iter,get_cubes_list
+from IsoNet.preprocessing.cubes import prepare_cubes
+from IsoNet.preprocessing.img_processing import normalize
+from IsoNet.preprocessing.prepare import prepare_first_iter,get_cubes_list
 import glob
 import mrcfile
 import numpy as np
 import glob
 import os
 import shutil
-from mwr.training.train import train_data, prepare_first_model
-from mwr.training.predict import predict
+from IsoNet.training.train import train_data, prepare_first_model
+from IsoNet.training.predict import predict
 
 def run(args):
     #*******set fixed parameters*******
@@ -24,7 +24,7 @@ def run(args):
         logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.DEBUG)
     else:
         logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.INFO)
-    logger = logging.getLogger('mwr.preprocessing.prepare')
+    logger = logging.getLogger('IsoNet.preprocessing.prepare')
     # Specify GPU(s) to be used
     args.gpuID = str(args.gpuID)
     args.ngpus = len(args.gpuID.split(','))
@@ -36,12 +36,12 @@ def run(args):
     #     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
     # else:
     #     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
-    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+    # os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
     #*************************************
     #****prepare for first iteration******
     if args.continue_iter == 0 or args.pretrained_model is None:
         args = prepare_first_iter(args)
-        logging.warning("Done preperation for the first iteration!")
+        logging.info("Done preperation for the first iteration!")
         args.continue_iter = 1
         if args.pretrained_model is not None:
             args.init_model = args.pretrained_model
@@ -59,7 +59,7 @@ def run(args):
     #************************************
     for num_iter in range(args.continue_iter,args.iterations):
         args.iter_count = num_iter
-        logger.warning("Start Iteration{}!".format(num_iter))
+        logger.info("Start Iteration{}!".format(num_iter))
         if num_iter > args.continue_iter: # set the previous iteration's result model as the init_model 
             args.init_model = '{}/model_iter{:0>2d}.h5'.format(args.result_dir,args.iter_count-1)
         args.noise_factor = ((num_iter - args.noise_start_iter)//args.noise_pause)+1 if num_iter >= args.noise_start_iter else 0
@@ -69,17 +69,17 @@ def run(args):
             try:
                 shutil.rmtree(args.data_dir)
             except OSError:
-                logging.debug("No previous data folder!")
-            logging.info('Maybe stack at getting cube?')
+                pass
+                # logging.debug("No previous data folder!")
             get_cubes_list(args)
-            logging.info("Done getting cubes!")
+            logging.info("Done preparing subtomograms!")
             logging.info("Start training!")
             history = train_data(args) #train based on init model and save new one as model_iter{num_iter}.h5
             # losses.append(history.history['loss'][-1])
             logging.info("Done training!")
-            logging.info("Start cube predicting!")
+            logging.info("Start predicting subtomograms!")
             predict(args)
-            logging.info("Done cube predicting!")
+            logging.info("Done predicting subtomograms!")
         
         else:
             logging.info("Model for iteration {} exists".format(args.continue_iter))
@@ -91,7 +91,7 @@ def run(args):
         logging.info("Done Iteration{}!".format(num_iter+1))
 
 if __name__ == "__main__":
-    from mwr.util.dict2attr import Arg
+    from IsoNet.util.dict2attr import Arg
     arg = {'input_dir': 'subtomo/', 'gpuID': '4,5,6,7', 
     'mask_dir': None, 'noise_dir': None, 'iterations': 50, 
     'data_dir': 'data', 'pretrained_model': './results/model_iter35.h5', 
