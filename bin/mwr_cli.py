@@ -5,6 +5,7 @@ import os
 from mwr.util.dict2attr import Arg,check_args
 from mwr.util.deconvolution import tom_deconv_tomo
 import sys
+from mwr.preprocessing.cubes import mask_mesh_seeds
 from fire import core
 class MWR:
     """
@@ -171,57 +172,65 @@ class MWR:
         from mwr.bin.mwr3D import run
         print('MWR --version 0.9.9 installed')
 
-    def generate_command(self, tomo_dir: str, mask_dir: str=None, ncpu: int=10, gpu_memory: int=10, ngpu: int=4, also_denoise: bool= True):
+    def generate_command(self, tomo_dir: str, mask_dir: str=None, ncpu: int=10, gpu_memory: int=10, ngpu: int=4, pixel_size: float=10, also_denoise: bool=True):
         import mrcfile
         import numpy as np
         s="mwr_cli.py train --input_dir {} ".format(tomo_dir)
-        s+="--preprocessing_ncpus {} ".format(ncpu)
         if mask_dir is not None:
             s+="--mask_dir {} ".format(mask_dir)
             m=os.listdir(mask_dir)
             with mrcfile.open(mask_dir+"/"+m[0]) as mrcData:
                 mask_data = mrcData.data
-            vsize=np.count_nonzero(mask_data)
+            # vsize=np.count_nonzero(mask_data)
         else:
             m=os.listdir(tomo_dir)
             with mrcfile.open(tomo_dir+"/"+m[0]) as mrcData:
                 tomo_data = mrcData.data
             sh=tomo_data.shape
-            vsize=sh[0]*sh[1]*sh[2]
+            mask_data = np.ones(sh)
         num_tomo = len(m)
 
+        s+="--preprocessing_ncpus {} ".format(ncpu)
         s+="--gpuID "
         for i in range(ngpu-1):
             s+=str(i)
             s+=","
         s+=str(ngpu-1)
         s+=" "
-
-        if ngpu < 3:
-            batch_size = 4
-            s+="--batch_size 4 "
-        elif ngpu == 3:
-            batch_size = 6
-            s+="--batch_size 6 "
+        if pixel_size < 15.0:
+            filter_base = 64
+            s+="--filter_base 64 "
+        else:
+            filter_base = 32
+            s+="--filter_base 32"
+        if ngpu < 6:
+            batch_size = 2 * ngpu
+            s+="--batch_size {} ".format(batch_size)
+        # elif ngpu == 3:
+        #     batch_size = 6
+        #     s+="--batch_size 6 "
         else:
             batch_size = ngpu
             s+="--batch_size {} ".format(ngpu)
-
-        cube_size = int(gpu_memory**(1/3.0) / (batch_size/ngpu)) * 32
+        if filter_base==64:
+            cube_size = int((gpu_memory/(batch_size/ngpu)) ** (1/3.0) *40 /16)*16
+        elif filter_base ==32:
+            cube_size = int((gpu_memory*3/(batch_size/ngpu)) ** (1/3.0) *40 /16)*16
 
         if cube_size == 0:
             print("Please use larger memory GPU or use more GPUs")
 
         s+="--cube_size {} --crop_size {} ".format(cube_size, int(cube_size*1.5))
 
-        num_per_tomo = int(vsize/(cube_size**3) * 0.4)
+        # num_per_tomo = int(vsize/(cube_size**3) * 0.5)
+        num_per_tomo = len(mask_mesh_seeds(mask_data,cube_size,int(cube_size*1.5),threshold=0.01,indx=0)[0] )
         s+="--ncube {} ".format(num_per_tomo)
 
         num_particles = int(num_per_tomo * num_tomo * 16 * 0.9)
-        s+="--epochs 10 --steps_per_epoch {} ".format(int(num_particles/batch_size*0.2))
+        s+="--epochs 10 --steps_per_epoch {} ".format(int(num_particles/batch_size*0.4))
 
         if also_denoise:
-            s+="--iterations 30 --noise_level 0.1 --noise_start_iter 15 --noise_pause 3"
+            s+="--iterations 40 --noise_level 0.05 --noise_start_iter 15 --noise_pause 3"
         else:
             s+="--iterations 15 --noise_level 0 --noise_start_iter 100"
         print(s)
