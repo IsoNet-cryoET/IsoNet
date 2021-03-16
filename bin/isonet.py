@@ -110,6 +110,7 @@ class ISONET:
         #if d_args.log_level == "debug":
         # logging.basicConfig(level=logging.DEBUG)
         logger = logging.getLogger('IsoNet.bin.refine')
+        d_args.only_extract_subtomos = False
         run(d_args)
 
     def predict(self, mrc_file: str, output_file: str, model: str, gpuID: str = None, cube_size:int=64,crop_size:int=96, batch_size:int=8,norm: bool=True,log_level: str="debug"):
@@ -177,6 +178,10 @@ class ISONET:
         print('IsoNet --version 0.9.9 installed')
 
     def generate_command(self, tomo_dir: str, mask_dir: str=None, ncpu: int=10, gpu_memory: int=10, ngpu: int=4, pixel_size: float=10, also_denoise: bool=True):
+        """
+        G
+        :param pixel_size: pixel size in anstrom
+        """
         import mrcfile
         import numpy as np
         s="isonet.py refine --input_dir {} ".format(tomo_dir)
@@ -227,7 +232,7 @@ class ISONET:
         s+="--cube_size {} --crop_size {} ".format(cube_size, int(cube_size*1.5))
 
         # num_per_tomo = int(vsize/(cube_size**3) * 0.5)
-        num_per_tomo = len(mask_mesh_seeds(mask_data,cube_size,int(cube_size*1.5),threshold=0.01,indx=0)[0] )
+        num_per_tomo = len(mask_mesh_seeds(mask_data,cube_size)[0] )
         s+="--ncube {} ".format(num_per_tomo)
 
         num_particles = int(num_per_tomo * num_tomo * 16 * 0.9)
@@ -247,6 +252,18 @@ class ISONET:
         outname = tomo.split('.')[0] +'-deconv.rec'
         with mrcfile.new(outname, overwrite=True) as mrc:
             mrc.set_data(result)
+
+    def extract(self,
+        input_dir: str = None,
+        mask_dir: str= None,
+        crop_size: int = 96,
+        ncube: int = 1,
+    ):
+        from IsoNet.preprocessing.prepare import extract_subtomos
+        d = locals()
+        d_args = Arg(d)
+        d_args.only_extract_subtomos = True
+        extract_subtomos(d_args)
 
 def Display(lines, out):
     text = "\n".join(lines) + "\n"
