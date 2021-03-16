@@ -2,13 +2,13 @@ import os
 import logging
 import sys
 import mrcfile
-from mwr.preprocessing.cubes import create_cube_seeds,crop_cubes,DataCubes
-from mwr.preprocessing.img_processing import normalize
-from mwr.preprocessing.simulate import apply_wedge1 as  apply_wedge
+from IsoNet.preprocessing.cubes import create_cube_seeds,crop_cubes,DataCubes
+from IsoNet.preprocessing.img_processing import normalize
+from IsoNet.preprocessing.simulate import apply_wedge1 as  apply_wedge
 from multiprocessing import Pool
 import numpy as np
 from functools import partial
-from mwr.util.rotations import rotation_list
+from IsoNet.util.rotations import rotation_list
 import logging
 from difflib import get_close_matches
 #Make a new folder. If exist, nenew it
@@ -73,12 +73,12 @@ def prepare_first_iter(settings):
                 with mrcfile.open(settings.mask_dir + '/' + close_mask[0]) as m:
                     mask_data = m.data
                 if mask_data.shape == orig_data.shape:
-                    logging.debug("{} mask load!".format(root_name))
+                    logging.info("{} mask loaded!".format(root_name))
                 else:
                     mask_data = None
-                    logging.debug("{}:mask match error!".format(root_name))
+                    logging.warning("{}:mask match error!".format(root_name))
             else:
-                logging.debug("{} mask not found!".format(root_name))
+                logging.warning("{} mask not found!".format(root_name))
                 mask_data = None
         else:
             mask_data =None
@@ -138,9 +138,11 @@ def get_cubes(inp,settings):
         iw_data = mrcData.data.astype(np.float32)*-1
     iw_data = normalize(iw_data, percentile = settings.normalize_percentile)
 
-
-    orig_data = apply_wedge(ow_data, ld1=0, ld2=1) + apply_wedge(iw_data, ld1 = 1, ld2=0)
-    orig_data = normalize(orig_data, percentile = settings.normalize_percentile)
+    if settings.iter_count <= settings.iterations:
+        orig_data = apply_wedge(ow_data, ld1=0, ld2=1) + apply_wedge(iw_data, ld1 = 1, ld2=0)
+        orig_data = normalize(orig_data, percentile = settings.normalize_percentile)
+    else:
+        orig_data = ow_data
 
     for r in rotation_list:
         data = np.rot90(orig_data, k=r[0][1], axes=r[0][0])

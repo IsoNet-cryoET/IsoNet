@@ -3,7 +3,7 @@
 import sys
 import mrcfile
 args = sys.argv
-from mwr.util.filter import stdmask_mpi,maxmask,stdmask
+from IsoNet.util.filter import stdmask_mpi,maxmask,stdmask
 import numpy as np
 import os
 

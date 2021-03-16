@@ -4,17 +4,15 @@ from tensorflow.keras.initializers import RandomNormal
 from tensorflow.keras.layers import Concatenate
 from tensorflow.keras.models import Model, load_model
 from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.callbacks import TensorBoard, ModelCheckpoint
 from tensorflow.keras.utils import Sequence
 import tensorflow.keras.backend as K
 import numpy as np
-from tensorflow.keras.utils import multi_gpu_model
 from tensorflow.keras import regularizers
 import mrcfile
 import os
 import sys
 
-def encoder_block(layer_in, n_filters, kernel, strides=(2,2,2), dropout=0.5, batchnorm=True, activation='relu'):
+def encoder_block(layer_in, n_filters, kernel=(3,3,3), strides=(2,2,2), dropout=0.5, batchnorm=True, activation='relu'):
     # weight initialization
     init = RandomNormal(stddev=0.02)
     # add downsampling layer

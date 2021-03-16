@@ -1,13 +1,17 @@
+import tensorflow as tf
+import logging
+tf.get_logger().setLevel(logging.ERROR)
+# gpus = tf.config.experimental.list_physical_devices('GPU')
+# if gpus:
+#     for gpu in gpus:
+#         tf.config.experimental.set_memory_growth(gpu, True)
 from tensorflow.keras.layers import Activation, Add, Input, Conv2D, Conv3D
 from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.callbacks import TensorBoard, ModelCheckpoint
 from tensorflow.keras.utils import Sequence
-from tensorflow.keras.utils import multi_gpu_model
-from mwr.training.data_sequence import prepare_dataseq
-from mwr.models.unet.model import Unet
-import tensorflow as tf
-from mwr.losses.losses import loss_mae,loss_mse
+from IsoNet.training.data_sequence import prepare_dataseq
+from IsoNet.models.unet.model import Unet
+from IsoNet.losses.losses import loss_mae,loss_mse
 
 from tensorflow.keras.models import model_from_json,load_model, clone_model
 import os
@@ -43,8 +47,7 @@ def train3D_seq(outFile,
 
     strategy = tf.distribute.MirroredStrategy()
     if n_gpus > 1:
-        with strategy.scope():
-            # model = multi_gpu_model(model, gpus=n_gpus, cpu_merge=True, cpu_relocation=False)    
+        with strategy.scope(): 
             model = Unet(filter_base=filter_base, 
                 depth=depth, 
                 convs_per_depth=convs_per_depth,
@@ -82,8 +85,8 @@ def train3D_seq(outFile,
     #                             mode='auto',
     #                             period=1)
     # callback_list.append(check_point)
-    tensor_board = TensorBoard(log_dir='./Graph', histogram_freq=0, write_graph=True, write_images=True)
-    callback_list.append(tensor_board)
+    # tensor_board = TensorBoard(log_dir='./Graph', histogram_freq=0, write_graph=True, write_images=True)
+    # callback_list.append(tensor_board)
     history = model.fit_generator(generator=train_data,
                                 validation_data=test_data,
                                 epochs=epochs,
@@ -110,8 +113,9 @@ def train3D_continue(outFile,
                     batch_size=64,
                     n_gpus=2):
     
-    logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.DEBUG)
-    logging.debug('The tf message level {}'.format(os.environ['TF_CPP_MIN_LOG_LEVEL']))
+    # logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.DEBUG)
+    # logging.debug('The tf message level {}'.format(os.environ['TF_CPP_MIN_LOG_LEVEL']))
+
     # metrics = ('mse', 'mae')
     # _metrics = [eval('loss_%s()' % m) for m in metrics]
     # optimizer = Adam(lr=lr)
@@ -121,7 +125,6 @@ def train3D_continue(outFile,
     if n_gpus > 1:
         with strategy.scope():
             model = load_model( model_file)
-        # model = multi_gpu_model(model, gpus=n_gpus, cpu_merge=True, cpu_relocation=False)
     else:
         model = load_model( model_file)
 
@@ -141,8 +144,8 @@ def train3D_continue(outFile,
     #                             mode='auto',
     #                             period=1)
     # callback_list.append(check_point)
-    tensor_board = TensorBoard(log_dir='./Graph', histogram_freq=0, write_graph=True, write_images=True)
-    callback_list.append(tensor_board)
+    # tensor_board = TensorBoard(log_dir='./Graph', histogram_freq=0, write_graph=True, write_images=True)
+    # callback_list.append(tensor_board)
     logging.info("begin fitting")
     history = model.fit(train_data, validation_data=test_data,
                                   epochs=epochs, steps_per_epoch=steps_per_epoch,
@@ -163,7 +166,7 @@ def prepare_first_model(settings):
             kernel=settings.kernel,
             batch_norm=settings.batch_normalization, 
             dropout=settings.drop_out,
-            pool=(2,2,2),
+            pool=settings.pool,
             residual = True,
             last_activation = 'linear',
             loss = 'mae',

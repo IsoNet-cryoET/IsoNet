@@ -2,14 +2,16 @@
 import fire
 import logging
 import os
-from mwr.util.dict2attr import Arg,check_args
+from IsoNet.util.dict2attr import Arg,check_args
+from IsoNet.util.deconvolution import tom_deconv_tomo
 import sys
+from IsoNet.preprocessing.cubes import mask_mesh_seeds
 from fire import core
-class MWR:
+class ISONET:
     """
-    MWR: Train on tomograms and Predict to restore missing-wedge
+    ISONET: Train on tomograms and Predict to restore missing-wedge
     """
-    def train(self,
+    def refine(self,
         input_dir: str = None,
         gpuID: str = '0,1,2,3',
         mask_dir: str= None,
@@ -17,9 +19,7 @@ class MWR:
         iterations: int = 50,
         data_dir: str = "data",
         pretrained_model = None,
-        log_level: str = "debug",
-
-        continue_training: bool = False,
+        log_level: str = "info",
         continue_iter: int = 0,
 
         noise_mode: int=1,
@@ -39,6 +39,7 @@ class MWR:
         drop_out: float = 0.3,
         convs_per_depth: int = 3,
         kernel: tuple = (3,3,3),
+        pool: tuple = None,
         unet_depth: int = 3,
         filter_base: int = 32,
         batch_normalization: bool = False,
@@ -46,7 +47,7 @@ class MWR:
     ):
         """
         Preprocess tomogram and train u-net model on generated subtomos
-        :param input_dir: path to tomogram from which subtomos are sampled; format: .mwr or .rec
+        :param input_dir: path to tomogram from which subtomos are sampled; format: .mrc or .rec
         :param mask: (None) folder of  mask files
         :param gpuID: (0,1,2,3) The gpuID to used during the training. e.g 0,1,2,3.
         :param datas_are_subtomos: (False) Is your trainin data subtomograms?
@@ -68,10 +69,10 @@ class MWR:
         :param data_folder: (data)Temperary folder to save the generated data used for training.
         :param cube_sidelen: Size of training cubes, this size should be divisible by 2^unet_depth.
         :param cropsize: Size of cubes to impose missing wedge. Should be same or larger than size of cubes.
-        :param ncube: Number of cubes generated for each (sub)tomos. Because each (sub)tomo rotates 16 times, the actual number of cubes for trainings should be ncube*16.
+        :param ncube: Number of cubes generated for each tomogram. Because each sampled subtomogram rotates 16 times, the actual number of subtomograms for trainings should be ncube*16.
         :param epochs: Number of epoch for each iteraction.
         :param batch_size:Size of the minibatch.
-        :param steps_per_epoch:Step per epoch. A good estimation of this value is (sub)tomos * ncube * 16 / batch_size *0.9.")
+        :param steps_per_epoch:Step per epoch. A good estimation of this value is tomograms * ncube * 16 / batch_size *0.9.")
 
         ************************network settings************************
 
@@ -89,28 +90,32 @@ class MWR:
         :param filter_base: The base number of channels after convolution
         :param batch_normalization: Sometimes batch normalization may induce artifacts for extreme pixels in the first several iterations. Those could be restored in further iterations.
         :param normalize_percentile:Normalize the 5 percent and 95 percent pixel intensity to 0 and 1 respectively. If this is set to False, normalize the input to 0 mean and 1 standard dievation.
-        
+
         Typical training strategy:
-        1. Train tomo with no pretrained model 
+        1. Train tomo with no pretrained model
         2. Continue train with previous interupted model
         3. Continue train with pre-trained model
         """
-        
-        from mwr.bin.mwr3D_clean import run
+
+        from IsoNet.bin.refine import run
 
         d = locals()
         d_args = Arg(d)
-        logging.basicConfig(level=logging.DEBUG,format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
-        datefmt='%Y-%m-%d:%H:%M:%S')
+        if d_args.log_level == "debug":
+            logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.DEBUG)
+        else:
+            logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.INFO)
+        # logging.basicConfig(level=logging.WARNING,format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
+        # datefmt='%Y-%m-%d:%H:%M:%S')
         #if d_args.log_level == "debug":
         # logging.basicConfig(level=logging.DEBUG)
-        logger = logging.getLogger('mwr.bin.mwr3D')
+        logger = logging.getLogger('IsoNet.bin.refine')
         run(d_args)
 
     def predict(self, mrc_file: str, output_file: str, model: str, gpuID: str = None, cube_size:int=64,crop_size:int=96, batch_size:int=8,norm: bool=True,log_level: str="debug"):
         """
         Predict tomograms using trained model including model.json and weight(xxx.h5)
-        :param mrc_file: path to tomogram, format: .mwr or .rec
+        :param mrc_file: path to tomogram, format: .mrc or .rec
         :param output_file: file_name of predicted tomograms
         :param model: path to trained model
         :param gpuID: (0,1,2,3) The gpuID to used during the training. e.g 0,1,2,3.
@@ -121,7 +126,7 @@ class MWR:
         :param log_level: ("debug") level of message to be displayed
         :raises: AttributeError, KeyError
         """
-        from mwr.bin.mwr3D_predict import predict
+        from IsoNet.bin.predict import predict
         d = locals()
 
         d_args = Arg(d)
@@ -137,7 +142,7 @@ class MWR:
         :param threshold:
         :param mask_type: 'statistical' or 'surface': Masks can be generated based on the statistics or just take the middle part of tomograms
         """
-        from mwr.bin.maskGene import make_mask,make_mask_dir
+        from IsoNet.bin.make_mask import make_mask,make_mask_dir
         if os.path.isdir(tomo_path):
             make_mask_dir(tomo_path,mask_path,side=side,percentile=percentile,threshold=threshold,mask_type=mask_type)
         elif os.path.isfile(tomo_path):
@@ -163,13 +168,85 @@ class MWR:
         :param start: When you want to add additional noise volumes, you can specify the start value as the number of already generated noise volumes. So the alreaded generated volumes will not be ovewrited.
         :param mode: mode=1, noise is reconstructed by back-projection algorithm; mode=2 or else, noise is gained by filtering gaussian noise volumes.
         """
-        from mwr.util.mwr3D_noise_generator import make_noise
+        from IsoNet.util.noise_generator import make_noise
         make_noise(output_folder=output_folder, number_volume=number_volume, cubesize=cubesize, minangle=minangle,maxangle=maxangle, anglestep=anglestep, start=start,ncpus=ncpus, mode=mode)
 
     def check(self):
-        from mwr.bin.mwr3D_predict import predict
-        from mwr.bin.mwr3D import run
-        print('MWR --version 0.9.9 installed')
+        from IsoNet.bin.predict import predict
+        from IsoNet.bin.refine import run
+        print('IsoNet --version 0.9.9 installed')
+
+    def generate_command(self, tomo_dir: str, mask_dir: str=None, ncpu: int=10, gpu_memory: int=10, ngpu: int=4, pixel_size: float=10, also_denoise: bool=True):
+        import mrcfile
+        import numpy as np
+        s="isonet.py refine --input_dir {} ".format(tomo_dir)
+        if mask_dir is not None:
+            s+="--mask_dir {} ".format(mask_dir)
+            m=os.listdir(mask_dir)
+            with mrcfile.open(mask_dir+"/"+m[0]) as mrcData:
+                mask_data = mrcData.data
+            # vsize=np.count_nonzero(mask_data)
+        else:
+            m=os.listdir(tomo_dir)
+            with mrcfile.open(tomo_dir+"/"+m[0]) as mrcData:
+                tomo_data = mrcData.data
+            sh=tomo_data.shape
+            mask_data = np.ones(sh)
+        num_tomo = len(m)
+
+        s+="--preprocessing_ncpus {} ".format(ncpu)
+        s+="--gpuID "
+        for i in range(ngpu-1):
+            s+=str(i)
+            s+=","
+        s+=str(ngpu-1)
+        s+=" "
+        if pixel_size < 15.0:
+            filter_base = 64
+            s+="--filter_base 64 "
+        else:
+            filter_base = 32
+            s+="--filter_base 32"
+        if ngpu < 6:
+            batch_size = 2 * ngpu
+            s+="--batch_size {} ".format(batch_size)
+        # elif ngpu == 3:
+        #     batch_size = 6
+        #     s+="--batch_size 6 "
+        else:
+            batch_size = ngpu
+            s+="--batch_size {} ".format(ngpu)
+        if filter_base==64:
+            cube_size = int((gpu_memory/(batch_size/ngpu)) ** (1/3.0) *40 /16)*16
+        elif filter_base ==32:
+            cube_size = int((gpu_memory*3/(batch_size/ngpu)) ** (1/3.0) *40 /16)*16
+
+        if cube_size == 0:
+            print("Please use larger memory GPU or use more GPUs")
+
+        s+="--cube_size {} --crop_size {} ".format(cube_size, int(cube_size*1.5))
+
+        # num_per_tomo = int(vsize/(cube_size**3) * 0.5)
+        num_per_tomo = len(mask_mesh_seeds(mask_data,cube_size,int(cube_size*1.5),threshold=0.01,indx=0)[0] )
+        s+="--ncube {} ".format(num_per_tomo)
+
+        num_particles = int(num_per_tomo * num_tomo * 16 * 0.9)
+        s+="--epochs 10 --steps_per_epoch {} ".format(int(num_particles/batch_size*0.4))
+
+        if also_denoise:
+            s+="--iterations 40 --noise_level 0.05 --noise_start_iter 15 --noise_pause 3"
+        else:
+            s+="--iterations 15 --noise_level 0 --noise_start_iter 100"
+        print(s)
+
+    def deconv(self,tomo, defocus: float=1.0, pixel_size: float=1.0,snrfalloff: float=1.0, deconvstrength: float=1.0):
+        import mrcfile
+        with mrcfile.open(tomo) as mrc:
+            vol = mrc.data
+        result = tom_deconv_tomo(vol, angpix=pixel_size, defocus=defocus, snrfalloff=snrfalloff, deconvstrength=deconvstrength, highpassnyquist=0.1, phaseflipped=False, phaseshift=0 )
+        outname = tomo.split('.')[0] +'-deconv.rec'
+        with mrcfile.new(outname, overwrite=True) as mrc:
+            mrc.set_data(result)
 
 def Display(lines, out):
     text = "\n".join(lines) + "\n"
@@ -177,4 +254,4 @@ def Display(lines, out):
 
 if __name__ == "__main__":
     core.Display = Display
-    fire.Fire(MWR)
+    fire.Fire(ISONET)

@@ -2,7 +2,7 @@
 import numpy as np
 import random
 from scipy.ndimage import rotate
-from mwr.preprocessing.simulate import apply_wedge
+from IsoNet.preprocessing.simulate import apply_wedge
 import os
 import mrcfile
 

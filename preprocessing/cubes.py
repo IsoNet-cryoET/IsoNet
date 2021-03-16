@@ -15,9 +15,9 @@ import glob
 import numpy as np
 import mrcfile
 
-from mwr.preprocessing.simulate import apply_wedge_dcube as apply_wedge
-from mwr.util.mwr3D_noise_generator import make_noise_one
-# from mwr.preprocessing.simulate import apply_wedge
+from IsoNet.preprocessing.simulate import apply_wedge_dcube as apply_wedge
+from IsoNet.util.noise_generator import make_noise_one
+# from IsoNet.preprocessing.simulate import apply_wedge
 
 def create_cube_seeds(img3D,nCubesPerImg,cubeSideLen,mask=None):
     sp=img3D.shape
@@ -31,6 +31,27 @@ def create_cube_seeds(img3D,nCubesPerImg,cubeSideLen,mask=None):
     sample_inds = np.random.choice(len(valid_inds[0]), nCubesPerImg, replace=len(valid_inds[0]) < nCubesPerImg)
     rand_inds = [v[sample_inds] for v in valid_inds]
     return (rand_inds[0],rand_inds[1], rand_inds[2])
+
+def mask_mesh_seeds(mask,sidelen,threshold=0.01):
+    # Count the masked points in the box centered at mesh grid point, if greater than threshold*sidelen^3, Take the grid point as seed.
+    sp = mask.shape
+    ni = [i//sidelen for i in sp]
+    res = [(i%sidelen)//2 for i in sp]
+    ind_list =[]
+    for z in range(ni[0]):
+        for y in range(ni[1]):
+            for x in range(ni[2]):
+                if np.sum(mask[res[0]+sidelen*z:res[0]+sidelen*(z+1),
+                res[1]+sidelen*y:res[1]+sidelen*(y+1),
+                res[2]+sidelen*x:res[2]+sidelen*(x+1)]) > sidelen**3*threshold:
+                    ind_list.append((res[0]+sidelen//2+sidelen*z, res[1]+sidelen//2+sidelen*y,
+                res[2]+sidelen//2+sidelen*x))
+    ind0 = [i[0] for i in ind_list]
+    ind1 = [i[1] for i in ind_list]
+    ind2 = [i[2] for i in ind_list]
+    return ind_list
+
+
 
 
 def crop_cubes(img3D,seeds,cubeSideLen):
