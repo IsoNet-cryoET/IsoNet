@@ -206,21 +206,21 @@ class ISONET:
             s+=","
         s+=str(ngpu-1)
         s+=" "
-        if pixel_size < 15.0:
-            filter_base = 64
-            s+="--filter_base 64 "
-        else:
-            filter_base = 32
-            s+="--filter_base 32"
-        if ngpu < 6:
-            batch_size = 2 * ngpu
-            s+="--batch_size {} ".format(batch_size)
+#        if pixel_size < 15.0:
+#            filter_base = 64
+#            s+="--filter_base 64 "
+#        else:
+#            filter_base = 32
+#            s+="--filter_base 32"
+#        if ngpu < 6:
+#            batch_size = 2 * ngpu
+#            s+="--batch_size {} ".format(batch_size)
         # elif ngpu == 3:
         #     batch_size = 6
         #     s+="--batch_size 6 "
-        else:
-            batch_size = ngpu
-            s+="--batch_size {} ".format(ngpu)
+ #       else:
+        batch_size = (int(ngpu/7.0)+1) * ngpu
+        s+="--batch_size {} ".format(ngpu)
         if filter_base==64:
             cube_size = int((gpu_memory/(batch_size/ngpu)) ** (1/3.0) *40 /16)*16
         elif filter_base ==32:

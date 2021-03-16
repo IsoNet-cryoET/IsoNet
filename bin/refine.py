@@ -58,6 +58,7 @@ def run(args):
 
     #************************************
     for num_iter in range(args.continue_iter,args.iterations):
+        args.lr = 0.0001*0.9**args.continue_iter + 0.0003
         args.iter_count = num_iter
         logger.info("Start Iteration{}!".format(num_iter))
         if num_iter > args.continue_iter: # set the previous iteration's result model as the init_model 
