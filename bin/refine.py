@@ -14,10 +14,12 @@ from IsoNet.training.predict import predict
 def run(args):
     #*******set fixed parameters*******
     args.reload_weight = True
+    args.noise_mode = 1
     args.result_dir = 'results'
     args.continue_from = "training"
     args.predict_cropsize = args.crop_size
     args.predict_batch_size = args.batch_size
+    args.noise_dir = None,
     args.lr = 0.0004
     args.subtomo_dir = args.result_dir + '/subtomo'
     if args.log_level == "debug":
@@ -58,7 +60,6 @@ def run(args):
 
     #************************************
     for num_iter in range(args.continue_iter,args.iterations):
-        args.lr = 0.0001*0.9**args.continue_iter + 0.0003
         args.iter_count = num_iter
         logger.info("Start Iteration{}!".format(num_iter))
         if num_iter > args.continue_iter: # set the previous iteration's result model as the init_model 
