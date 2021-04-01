@@ -3,7 +3,7 @@ import fire
 import logging
 import os
 from IsoNet.util.dict2attr import Arg,check_args
-from IsoNet.util.deconvolution import tom_deconv_tomo
+from IsoNet.util.deconv_gpu import tom_deconv_tomo,Chunks
 import sys
 from IsoNet.preprocessing.cubes import mask_mesh_seeds
 from fire import core
@@ -112,7 +112,7 @@ class ISONET:
         logger = logging.getLogger('IsoNet.bin.refine')
         run(d_args)
 
-    def predict(self, mrc_file: str, output_file: str, model: str, gpuID: str = None, cube_size:int=64,crop_size:int=96, batch_size:int=8,norm: bool=True,log_level: str="debug"):
+    def predict(self, mrc_file: str, output_file: str, model: str, gpuID: str = None, cube_size:int=48,crop_size:int=64, batch_size:int=8,norm: bool=True,log_level: str="debug",Ntile:int=1):
         """
         Predict tomograms using trained model including model.json and weight(xxx.h5)
         :param mrc_file: path to tomogram, format: .mrc or .rec
@@ -124,6 +124,7 @@ class ISONET:
         :param batch_size: The batch size of the cubes grouped into for network predicting
         :param norm: (True) if normalize the tomograms by percentile
         :param log_level: ("debug") level of message to be displayed
+        :param Ntile: divide data into Ntile part and then predict. 
         :raises: AttributeError, KeyError
         """
         from IsoNet.bin.predict import predict
@@ -239,14 +240,27 @@ class ISONET:
             s+="--iterations 15 --noise_level 0 --noise_start_iter 100"
         print(s)
 
-    def deconv(self,tomo, defocus: float=1.0, pixel_size: float=1.0,snrfalloff: float=1.0, deconvstrength: float=1.0):
+    def deconv(self,tomo, defocus: float=1.0, pixel_size: float=1.0,snrfalloff: float=1.0, deconvstrength: float=1.0,num_gpu: int=1):
         import mrcfile
+        from multiprocessing import Pool
+        from functools import partial
         with mrcfile.open(tomo) as mrc:
             vol = mrc.data
-        result = tom_deconv_tomo(vol, angpix=pixel_size, defocus=defocus, snrfalloff=snrfalloff, deconvstrength=deconvstrength, highpassnyquist=0.1, phaseflipped=False, phaseshift=0 )
+        c = Chunks(num=(1,4,4),overlap=0.25)
+        chunks_list = c.get_chunks(vol)
+        chunks_gpu_num_list = [[array,j%num_gpu] for j,array in enumerate(chunks_list)]
+        with Pool(num_gpu) as p:
+            partial_func = partial(tom_deconv_tomo,angpix=pixel_size, defocus=defocus, snrfalloff=snrfalloff, 
+                deconvstrength=deconvstrength, highpassnyquist=0.1, phaseflipped=False, phaseshift=0 )
+            results = p.map(partial_func,chunks_gpu_num_list,chunksize=1)
+        chunks_deconv_list = list(results)
+        vol_restored = c.restore(chunks_deconv_list)
         outname = tomo.split('.')[0] +'-deconv.rec'
         with mrcfile.new(outname, overwrite=True) as mrc:
-            mrc.set_data(result)
+            mrc.set_data(vol_restored)
+        
+    
+        
 
 def Display(lines, out):
     text = "\n".join(lines) + "\n"
