@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import fire
-import logging
+#import logging
 import os
 from IsoNet.util.dict2attr import Arg,check_args
 from IsoNet.util.deconvolution import tom_deconv_tomo
@@ -98,19 +98,19 @@ class ISONET:
 
         d = locals()
         d_args = Arg(d)
-        if d_args.log_level == "debug":
-            logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.DEBUG)
-        else:
-            logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.INFO)
+        #if d_args.log_level == "debug":
+        #    logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.DEBUG)
+        #else:
+        #    logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.INFO)
         # logging.basicConfig(level=logging.WARNING,format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
         # datefmt='%Y-%m-%d:%H:%M:%S')
         #if d_args.log_level == "debug":
         # logging.basicConfig(level=logging.DEBUG)
-        logger = logging.getLogger('IsoNet.bin.refine')
+        #logger = logging.getLogger('IsoNet.bin.refine')
         d_args.only_extract_subtomos = False
         run(d_args)
 
-    def predict(self, mrc_file: str, output_file: str, model: str, gpuID: str = None, cube_size:int=64,crop_size:int=96, batch_size:int=8,norm: bool=True,log_level: str="debug"):
+    def predict(self, mrc_file: str, output_file: str, model: str, gpuID: str = None, cube_size:int=64,crop_size:int=96, batch_size:int=4,norm: bool=True,log_level: str="debug"):
         """
         Predict tomograms using trained model including model.json and weight(xxx.h5)
         :param mrc_file: path to tomogram, format: .mrc or .rec

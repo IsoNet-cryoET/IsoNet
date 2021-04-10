@@ -19,7 +19,7 @@ def run(args):
     args.continue_from = "training"
     args.predict_cropsize = args.crop_size
     args.predict_batch_size = args.batch_size
-    args.noise_dir = None,
+    args.noise_dir = None
     args.lr = 0.0004
     args.subtomo_dir = args.result_dir + '/subtomo'
     if args.log_level == "debug":

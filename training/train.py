@@ -177,6 +177,8 @@ def prepare_first_model(settings):
     return settings
 
 def train_data(settings):
+    logger_tf = tf.get_logger()
+    logger_tf.setLevel(logging.ERROR)
     history = train3D_continue('{}/model_iter{:0>2d}.h5'.format(settings.result_dir,settings.iter_count),
                                         settings.init_model,
                                         data_dir = settings.data_dir,
