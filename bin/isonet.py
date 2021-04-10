@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 import fire
-#import logging
+import logging
 import os
 from IsoNet.util.dict2attr import Arg,check_args
-from IsoNet.util.deconvolution import tom_deconv_tomo
 import sys
-from IsoNet.preprocessing.cubes import mask_mesh_seeds
 from fire import core
 class ISONET:
     """
@@ -95,22 +93,18 @@ class ISONET:
         """
 
         from IsoNet.bin.refine import run
-
         d = locals()
         d_args = Arg(d)
-        #if d_args.log_level == "debug":
-        #    logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.DEBUG)
-        #else:
-        #    logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.INFO)
-        # logging.basicConfig(level=logging.WARNING,format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
-        # datefmt='%Y-%m-%d:%H:%M:%S')
-        #if d_args.log_level == "debug":
-        # logging.basicConfig(level=logging.DEBUG)
-        #logger = logging.getLogger('IsoNet.bin.refine')
+        if d_args.log_level == "debug":
+            logging.basicConfig(format='%(asctime)s, %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.DEBUG)
+        else:
+            logging.basicConfig(format='%(asctime)s, %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO)
+
+        logger = logging.getLogger('IsoNet.bin.refine')
         d_args.only_extract_subtomos = False
         run(d_args)
 
-    def predict(self, mrc_file: str, output_file: str, model: str, gpuID: str = None, cube_size:int=64,crop_size:int=96, batch_size:int=4,norm: bool=True,log_level: str="debug"):
+    def predict(self, mrc_file: str, output_file: str, model: str, gpuID: str = None, cube_size:int=64,crop_size:int=96, batch_size:int=4,norm: bool=True,log_level: str="info"):
         """
         Predict tomograms using trained model including model.json and weight(xxx.h5)
         :param mrc_file: path to tomogram, format: .mrc or .rec
@@ -236,6 +230,7 @@ class ISONET:
         s+="--cube_size {} --crop_size {} ".format(cube_size, int(cube_size*1.5))
 
         # num_per_tomo = int(vsize/(cube_size**3) * 0.5)
+        from IsoNet.preprocessing.cubes import mask_mesh_seeds
         num_per_tomo = len(mask_mesh_seeds(mask_data,cube_size)[0] )
         s+="--ncube {} ".format(num_per_tomo)
 
@@ -260,6 +255,7 @@ class ISONET:
         import mrcfile
         with mrcfile.open(tomo) as mrc:
             vol = mrc.data
+        from IsoNet.util.deconvolution import tom_deconv_tomo
         result = tom_deconv_tomo(vol, angpix=pixel_size, defocus=defocus, snrfalloff=snrfalloff, deconvstrength=deconvstrength, highpassnyquist=0.1, phaseflipped=False, phaseshift=0 )
         outname = tomo.split('.')[0] +'-deconv.rec'
         with mrcfile.new(outname, overwrite=True) as mrc:

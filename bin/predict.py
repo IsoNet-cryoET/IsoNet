@@ -1,23 +1,21 @@
 #!/usr/bin/env python3
-import tensorflow as tf
 import numpy as np
 import os
 import logging
-
 from IsoNet.preprocessing.simulate import apply_wedge
 from IsoNet.util.norm import normalize
 from IsoNet.util.toTile import reform3D
 import mrcfile
 from IsoNet.util.image import *
-from tensorflow.keras.models import load_model
-    
+
 
 def predict(args):
-    # if args.log_level == 'debug':
-    #     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
-    # else:
-    #     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
-
+    if args.log_level == 'debug':
+        os.environ['TF_CPP_MIN_LOG_LEVEL'] = '0'
+    else:
+        os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+    import tensorflow as tf
+    from tensorflow.keras.models import load_model
     logger = tf.get_logger()
     logger.setLevel(logging.ERROR)
 

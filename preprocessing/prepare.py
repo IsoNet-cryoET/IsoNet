@@ -9,16 +9,16 @@ from multiprocessing import Pool
 import numpy as np
 from functools import partial
 from IsoNet.util.rotations import rotation_list
-import logging
 from difflib import get_close_matches
 #Make a new folder. If exist, nenew it
-logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.DEBUG)
+# Do not set basic config for logging here
+# logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.DEBUG)
 def mkfolder(folder):
     import os
     try:
         os.makedirs(folder)
     except FileExistsError:
-        logging.warning("Warning, the {} folder already exists before the 1st iteration \n The old {} folder will be renamed (to xxx~)".format(folder,folder))
+        logging.warning("The {0} folder already exists before the 1st iteration \n The old {0} folder will be renamed (to {0}~)".format(folder))
         import shutil
         if os.path.exists(folder+'~'):
             shutil.rmtree(folder+'~')
@@ -58,7 +58,6 @@ def extract_subtomos(settings):
 
     settings.tomogram_list = ["{}/{}".format(settings.input_dir,f) for f in os.listdir(settings.input_dir) if f.split(".")[-1]=="mrc" or f.split(".")[-1]=="rec" ]
     settings.tomogram_list_items = [f for f in os.listdir(settings.input_dir) if f.split(".")[-1]=="mrc" or f.split(".")[-1]=="rec"]
-
     if len(settings.tomogram_list) <= 0:
         sys.exit("No input exists. Please check it in input folder!")
     for tomo_count, tomogram in enumerate(settings.tomogram_list):
@@ -89,8 +88,8 @@ def extract_subtomos(settings):
         for j,s in enumerate(subtomos):
             with mrcfile.new('{}/{}_{:0>6d}.mrc'.format(settings.subtomo_dir,root_name,j), overwrite=True) as output_mrc:
                 output_mrc.set_data(s.astype(np.float32))
-
-        return settings
+    # indent changed here
+    return settings
 
 #preparation files for the first iteration
 def prepare_first_iter(settings):

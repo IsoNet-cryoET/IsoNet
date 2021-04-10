@@ -1,10 +1,6 @@
 import tensorflow as tf
 import logging
 tf.get_logger().setLevel(logging.ERROR)
-# gpus = tf.config.experimental.list_physical_devices('GPU')
-# if gpus:
-#     for gpu in gpus:
-#         tf.config.experimental.set_memory_growth(gpu, True)
 from tensorflow.keras.layers import Activation, Add, Input, Conv2D, Conv3D
 from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam
@@ -15,7 +11,6 @@ from IsoNet.losses.losses import loss_mae,loss_mse
 
 from tensorflow.keras.models import model_from_json,load_model, clone_model
 import os
-import logging
 
 
 def train3D_seq(outFile,
@@ -177,8 +172,6 @@ def prepare_first_model(settings):
     return settings
 
 def train_data(settings):
-    logger_tf = tf.get_logger()
-    logger_tf.setLevel(logging.ERROR)
     history = train3D_continue('{}/model_iter{:0>2d}.h5'.format(settings.result_dir,settings.iter_count),
                                         settings.init_model,
                                         data_dir = settings.data_dir,

@@ -8,8 +8,6 @@ import numpy as np
 import glob
 import os
 import shutil
-from IsoNet.training.train import train_data, prepare_first_model
-from IsoNet.training.predict import predict
 
 def run(args):
     #*******set fixed parameters*******
@@ -22,28 +20,30 @@ def run(args):
     args.noise_dir = None
     args.lr = 0.0004
     args.subtomo_dir = args.result_dir + '/subtomo'
-    if args.log_level == "debug":
-        logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.DEBUG)
-    else:
-        logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.INFO)
-    logger = logging.getLogger('IsoNet.preprocessing.prepare')
+    #if args.log_level == "debug":
+    #    logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.DEBUG)
+    #else:
+    #    logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.INFO)
+    logger = logging.getLogger('IsoNet.refine')
     # Specify GPU(s) to be used
     args.gpuID = str(args.gpuID)
     args.ngpus = len(args.gpuID.split(','))
     os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
     os.environ["CUDA_VISIBLE_DEVICES"]=args.gpuID
     os.environ["TF_FORCE_GPU_ALLOW_GROWTH"] = "true"
-    #TODO to fix the tensorflow log level
-    # if args.log_level == 'debug':
-    #     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
-    # else:
-    #     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
-    # os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-    #*************************************
-    #****prepare for first iteration******
+
+    if args.log_level == 'debug':
+        os.environ['TF_CPP_MIN_LOG_LEVEL'] = '0'
+    else:
+        os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+
+    #import tensorflow related modules after setting environment
+    from IsoNet.training.predict import predict
+    from IsoNet.training.train import prepare_first_model, train_data
+
     if args.continue_iter == 0 or args.pretrained_model is None:
         args = prepare_first_iter(args)
-        logging.info("Done preperation for the first iteration!")
+        logger.info("Done preperation for the first iteration!")
         args.continue_iter = 1
         if args.pretrained_model is not None:
             args.init_model = args.pretrained_model
@@ -74,23 +74,23 @@ def run(args):
                 pass
                 # logging.debug("No previous data folder!")
             get_cubes_list(args)
-            logging.info("Done preparing subtomograms!")
-            logging.info("Start training!")
+            logger.info("Done preparing subtomograms!")
+            logger.info("Start training!")
             history = train_data(args) #train based on init model and save new one as model_iter{num_iter}.h5
             # losses.append(history.history['loss'][-1])
-            logging.info("Done training!")
-            logging.info("Start predicting subtomograms!")
+            logger.info("Done training!")
+            logger.info("Start predicting subtomograms!")
             predict(args)
-            logging.info("Done predicting subtomograms!")
+            logger.info("Done predicting subtomograms!")
         
         else:
-            logging.info("Model for iteration {} exists".format(args.continue_iter))
-            logging.info("Start cube predicting!")
+            logger.info("Model for iteration {} exists".format(args.continue_iter))
+            logger.info("Start cube predicting!")
             predict(args)
-            logging.info("Done cube predicting!")
+            logger.info("Done cube predicting!")
             continue_from_training = True
 
-        logging.info("Done Iteration{}!".format(num_iter+1))
+        logger.info("Done Iteration{}!".format(num_iter+1))
 
 if __name__ == "__main__":
     from IsoNet.util.dict2attr import Arg
