@@ -6,6 +6,7 @@ from IsoNet.util.dict2attr import Arg,check_args
 from IsoNet.util.deconv_gpu import tom_deconv_tomo,Chunks
 import sys
 from fire import core
+import time
 
 class ISONET:
     """
@@ -140,10 +141,12 @@ class ISONET:
         from IsoNet.bin.make_mask import make_mask,make_mask_dir
         if os.path.isdir(tomo_path):
             make_mask_dir(tomo_path,mask_path,side=side,percentile=percentile,threshold=threshold,mask_type=mask_type)
+        
         elif os.path.isfile(tomo_path):
             if mask_path is None:
                 mask_path = tomo_path.split('.')[0]+'_mask.mrc'
                 print(mask_path)
+
             make_mask(tomo_path,mask_path,side=side,percentile=percentile,threshold=threshold,mask_type=mask_type)
         else:
             print('make_mask tomo_path error')

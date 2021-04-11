@@ -90,7 +90,7 @@ def run(args):
             logger.info("Done cube predicting!")
             continue_from_training = True
 
-        logger.info("Done Iteration{}!".format(num_iter+1))
+        logger.info("Done Iteration{}!".format(num_iter))
 
 if __name__ == "__main__":
     from IsoNet.util.dict2attr import Arg

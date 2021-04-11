@@ -5,6 +5,7 @@ import mrcfile
 args = sys.argv
 from IsoNet.util.filter import stdmask_mpi,maxmask,stdmask
 import numpy as np
+import cupy as cp
 import os
 
 def make_mask_dir(tomo_dir,mask_dir,side = 8,percentile=30,threshold=1,mask_type='statistical'):
@@ -29,14 +30,24 @@ def make_mask(tomo_path, mask_name,side = 8,percentile=30,threshold=1,mask_type=
     sp=np.array(tomo.shape)
     if mask_type == 'statistical':
         sp2 = (sp/2).astype(int)
-        bintomo = resize(tomo,sp2,anti_aliasing=True)
+        bintomo = tomo[0:-1:2,0:-1:2,0:-1:2]
         mask1 = maxmask(bintomo,side=side, percentile=percentile)
         mask2 = stdmask(bintomo,side=side,threshold=threshold)
-        out_mask = np.multiply(mask1,mask2)
-        out = resize(out_mask.astype(np.float32),sp,anti_aliasing=True)
-        out = out>0.5
+        out_mask_bin = np.multiply(mask1,mask2)
+        out_mask = np.zeros(sp)
+        out_mask[0:-1:2,0:-1:2,0:-1:2] = out_mask_bin
+        out_mask[0:-1:2,0:-1:2,1::2] = out_mask_bin
+        out_mask[0:-1:2,1::2,0:-1:2] = out_mask_bin
+        out_mask[0:-1:2,1::2,1::2] = out_mask_bin
+        out_mask[1::2,0:-1:2,0:-1:2] = out_mask_bin
+        out_mask[1::2,0:-1:2,1::2] = out_mask_bin
+        out_mask[1::2,1::2,0:-1:2] = out_mask_bin
+        out_mask[1::2,1::2,1::2] = out_mask_bin
+        # out = resize(out_mask.astype(np.float32),sp,anti_aliasing=True)
+        out_mask = (out_mask>0.5).astype(np.uint8)
         with mrcfile.new(mask_name,overwrite=True) as n:
-            n.set_data(out.astype(np.uint8))
+            n.set_data(out_mask)
+
     elif mask_type == 'surface':
          mask = np.zeros(sp)
 
