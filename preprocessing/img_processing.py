@@ -41,10 +41,6 @@ def toUint16(data):
     data=data.astype(np.uint16)
     return data
 
-def norm_save(filename,data):
-    print('here')
-    imsave(filename, toUint8(data))
-
 def crop_center(img,cropx,cropy,cropz):
     z,y,x = img.shape[0],img.shape[1],img.shape[2]
     startx = x//2-(cropx//2)

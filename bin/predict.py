@@ -1,32 +1,38 @@
 #!/usr/bin/env python3
-import tensorflow as tf
 import numpy as np
 import os
 import logging
-
 from IsoNet.preprocessing.simulate import apply_wedge
 from IsoNet.util.norm import normalize
 from IsoNet.util.toTile import reform3D
 import mrcfile
 from IsoNet.util.image import *
-from tensorflow.keras.models import load_model
-    
+
 
 def predict(args):
-    # if args.log_level == 'debug':
-    #     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
-    # else:
-    #     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
-    logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
-    datefmt='%Y-%m-%d:%H:%M:%S')
-    if args.log_level == "debug":
-        logging.basicConfig(level=logging.DEBUG)
-    logger = logging.getLogger(__name__)
+    if args.log_level == 'debug':
+        os.environ['TF_CPP_MIN_LOG_LEVEL'] = '0'
+    else:
+        os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+    import tensorflow as tf
+    from tensorflow.keras.models import load_model
+    logger = tf.get_logger()
+    logger.setLevel(logging.ERROR)
+
+    #logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
+    #datefmt='%Y-%m-%d:%H:%M:%S')
+    #if args.log_level == "debug":
+    #    logging.basicConfig(level=logging.DEBUG)
+    #logger = logging.getLogger(__name__)
+
+    args.gpuID = str(args.gpuID)
+    ngpus = len(args.gpuID.split(','))
     os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
     os.environ["CUDA_VISIBLE_DEVICES"]=args.gpuID 
+
+
     logger.debug('percentile:{}'.format(args.norm))
 
-    ngpus = len(args.gpuID.split(','))
     logger.info('gpuID:{}'.format(args.gpuID))
     if ngpus >1:
         strategy = tf.distribute.MirroredStrategy()
@@ -46,17 +52,17 @@ def predict(args):
 
 def predict_one(args,one_tomo,model,output_file=None):
     #predict one tomogram in mrc format INPUT: mrc_file string OUTPUT: output_file(str) or <root_name>_corrected.mrc
-    ngpus = len(args.gpuID.split(','))
-    N = args.batch_size * ngpus
+
     root_name = one_tomo.split('/')[-1].split('.')[0]
+
     if output_file is None:
         if os.path.isdir(args.output_file):
             output_file = args.output_file+'/'+root_name+'_corrected.mrc'
         else:
             output_file = root_name+'_corrected.mrc'
-    else:
-        pass
+
     print('predicting:{}'.format(root_name))
+
     with mrcfile.open(one_tomo) as mrcData:
         real_data = mrcData.data.astype(np.float32)*-1
     real_data = normalize(real_data,percentile=args.norm)
@@ -67,16 +73,22 @@ def predict_one(args,one_tomo,model,output_file=None):
     #imposing wedge to every cubes
     #data=wedge_imposing(data)
 
-    num_batches = data.shape[0]
-    if num_batches%N == 0:
+    ngpus = len(args.gpuID.split(','))
+    N = args.batch_size * ngpus
+    num_patches = data.shape[0]
+    if num_patches%N == 0:
         append_number = 0
     else:
-        append_number = N - num_batches%N
+        append_number = N - num_patches%N
     data = np.append(data, data[0:append_number], axis = 0)
 
-    outData=model.predict(data, batch_size= args.batch_size,verbose=1)
+    #outData = np.zeros(data.shape)
+    #for count in range(data.shape[0]//N):
+    #    outData[count*N:count*N+N]=model.predict(data, batch_size= args.batch_size,verbose=1)
 
-    outData = outData[0:num_batches]
+    outData=model.predict(data, batch_size= args.batch_size,verbose=1)
+    outData = outData[0:num_patches]
+
     outData=reform_ins.restore_from_cubes_new(outData.reshape(outData.shape[0:-1]), args.cube_size, args.crop_size)
 
     outData = normalize(outData,percentile=args.norm)

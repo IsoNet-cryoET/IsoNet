@@ -9,16 +9,16 @@ from multiprocessing import Pool
 import numpy as np
 from functools import partial
 from IsoNet.util.rotations import rotation_list
-import logging
 from difflib import get_close_matches
 #Make a new folder. If exist, nenew it
-logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.DEBUG)
+# Do not set basic config for logging here
+# logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.DEBUG)
 def mkfolder(folder):
     import os
     try:
         os.makedirs(folder)
     except FileExistsError:
-        logging.warning("Warning, the {} folder already exists before the 1st iteration \n The old {} folder will be renamed (to xxx~)".format(folder,folder))
+        logging.warning("The {0} folder already exists before the 1st iteration \n The old {0} folder will be renamed (to {0}~)".format(folder))
         import shutil
         if os.path.exists(folder+'~'):
             shutil.rmtree(folder+'~')
@@ -39,8 +39,7 @@ def generate_first_iter_mrc(mrc,settings):
     with mrcfile.new('{}/{}_iter00.{}'.format(settings.result_dir,root_name, extension), overwrite=True) as output_mrc:
         output_mrc.set_data(-orig_data)
 
-#preparation files for the first iteration
-def prepare_first_iter(settings):
+def extract_subtomos(settings):
     '''
     extract subtomo from whole tomogram based on mask
     and feed to generate_first_iter_mrc to generate xx_iter00.xx
@@ -59,7 +58,6 @@ def prepare_first_iter(settings):
 
     settings.tomogram_list = ["{}/{}".format(settings.input_dir,f) for f in os.listdir(settings.input_dir) if f.split(".")[-1]=="mrc" or f.split(".")[-1]=="rec" ]
     settings.tomogram_list_items = [f for f in os.listdir(settings.input_dir) if f.split(".")[-1]=="mrc" or f.split(".")[-1]=="rec"]
-
     if len(settings.tomogram_list) <= 0:
         sys.exit("No input exists. Please check it in input folder!")
     for tomo_count, tomogram in enumerate(settings.tomogram_list):
@@ -78,10 +76,11 @@ def prepare_first_iter(settings):
                     mask_data = None
                     logging.warning("{}:mask match error!".format(root_name))
             else:
-                logging.warning("{} mask not found!".format(root_name))
+                logging.info("{} no mask used!".format(root_name))
                 mask_data = None
         else:
             mask_data =None
+
         seeds=create_cube_seeds(orig_data,settings.ncube,settings.crop_size,mask=mask_data)
         subtomos=crop_cubes(orig_data,seeds,settings.crop_size)
 
@@ -89,23 +88,29 @@ def prepare_first_iter(settings):
         for j,s in enumerate(subtomos):
             with mrcfile.new('{}/{}_{:0>6d}.mrc'.format(settings.subtomo_dir,root_name,j), overwrite=True) as output_mrc:
                 output_mrc.set_data(s.astype(np.float32))
+    # indent changed here
+    return settings
 
+#preparation files for the first iteration
+def prepare_first_iter(settings):
+    settings = extract_subtomos(settings)
     settings.mrc_list = os.listdir(settings.subtomo_dir)
     settings.mrc_list = ['{}/{}'.format(settings.subtomo_dir,i) for i in settings.mrc_list]
     #need further test
     #with Pool(settings.preprocessing_ncpus) as p:
     #    func = partial(generate_first_iter_mrc, settings)
     #    res = p.map(func, settings.mrc_list)
-    if settings.preprocessing_ncpus >1:
+    if settings.preprocessing_ncpus >1 and not settings.only_extract_subtomos:
         with Pool(settings.preprocessing_ncpus) as p:
             func = partial(generate_first_iter_mrc, settings=settings)
             res = p.map(func, settings.mrc_list)
             # res = p.map(generate_first_iter_mrc, settings.mrc_list)
-    else:
+    elif not settings.only_extract_subtomos:
         for i in settings.mrc_list:
             generate_first_iter_mrc(i,settings)
 
     return settings
+    
 def get_cubes_one(data, settings, start = 0, mask = None, add_noise = 0):
     '''
     crop out one subtomo and missing wedge simulated one from input data,
