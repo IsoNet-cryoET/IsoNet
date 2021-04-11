@@ -3,7 +3,7 @@
 import sys
 import mrcfile
 args = sys.argv
-from IsoNet.util.filter import stdmask_mpi,maxmask,stdmask
+from IsoNet.util.filter import maxmask,stdmask
 import numpy as np
 import cupy as cp
 import os
@@ -24,7 +24,6 @@ def make_mask_dir(tomo_dir,mask_dir,side = 8,percentile=30,threshold=1,mask_type
 
 
 def make_mask(tomo_path, mask_name,side = 8,percentile=30,threshold=1,mask_type='statistical'):
-    from skimage.transform import resize
     with mrcfile.open(tomo_path) as n:
         tomo = n.data
     sp=np.array(tomo.shape)
@@ -43,7 +42,6 @@ def make_mask(tomo_path, mask_name,side = 8,percentile=30,threshold=1,mask_type=
         out_mask[1::2,0:-1:2,1::2] = out_mask_bin
         out_mask[1::2,1::2,0:-1:2] = out_mask_bin
         out_mask[1::2,1::2,1::2] = out_mask_bin
-        # out = resize(out_mask.astype(np.float32),sp,anti_aliasing=True)
         out_mask = (out_mask>0.5).astype(np.uint8)
         with mrcfile.new(mask_name,overwrite=True) as n:
             n.set_data(out_mask)

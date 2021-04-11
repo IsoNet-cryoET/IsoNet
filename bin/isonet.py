@@ -237,7 +237,7 @@ class ISONET:
 
         # num_per_tomo = int(vsize/(cube_size**3) * 0.5)
         from IsoNet.preprocessing.cubes import mask_mesh_seeds
-        num_per_tomo = len(mask_mesh_seeds(mask_data,cube_size)[0] )
+        num_per_tomo = len(mask_mesh_seeds(mask_data,cube_size,threshold=0.1))
         s+="--ncube {} ".format(num_per_tomo)
 
         num_particles = int(num_per_tomo * num_tomo * 16 * 0.9)
