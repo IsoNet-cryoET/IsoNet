@@ -3,7 +3,6 @@ import fire
 import logging
 import os
 from IsoNet.util.dict2attr import Arg,check_args
-from IsoNet.util.deconv_gpu import tom_deconv_tomo,Chunks
 import sys
 from fire import core
 import time
@@ -249,7 +248,7 @@ class ISONET:
             s+="--iterations 15 --noise_level 0 --noise_start_iter 100"
         print(s)
 
-    def deconv(self,tomo, defocus: float=1.0, pixel_size: float=1.0,snrfalloff: float=1.0, deconvstrength: float=1.0):
+    def deconv(self,tomo, defocus: float=1.0, pixel_size: float=1.0,snrfalloff: float=1.0, deconvstrength: float=1.0,tile: tuple=(1,4,4),num_gpu:int=0,ncpu:int=4):
         """
         \nCTF deconvolutin with weiner filter\n
         :param tomo: tomogram file
@@ -261,22 +260,67 @@ class ISONET:
         import mrcfile
         from multiprocessing import Pool
         from functools import partial
-        with mrcfile.open(tomo) as mrc:
-            vol = mrc.data
-        c = Chunks(num=(1,4,4),overlap=0.25)
-        chunks_list = c.get_chunks(vol)
-        chunks_gpu_num_list = [[array,j%num_gpu] for j,array in enumerate(chunks_list)]
-        with Pool(num_gpu) as p:
-            partial_func = partial(tom_deconv_tomo,angpix=pixel_size, defocus=defocus, snrfalloff=snrfalloff, 
-                deconvstrength=deconvstrength, highpassnyquist=0.1, phaseflipped=False, phaseshift=0 )
-            results = p.map(partial_func,chunks_gpu_num_list,chunksize=1)
-        chunks_deconv_list = list(results)
+        from IsoNet.util.deconvolution import tom_deconv_tomo,Chunks
+        if os.path.isdir('./deconv_temp'):
+            shutil.rmtree('./deconv_temp')
+        os.mkdir('./deconv_temp')
+        
+
+        root_name = os.path.splitext(os.path.basename(tomo))[0]
+        outname = root_name +'-deconv.rec'
+        print('outName: ',outname)
+        print('angpix:',pixel_size, 'defocus',defocus, 'snrfalloff',snrfalloff)
+        c = Chunks(num=tile,overlap=0.25)
+        chunks_list = c.get_chunks(tomo) # list of name of subtomograms
+        # chunks_gpu_num_list = [[array,j%num_gpu] for j,array in enumerate(chunks_list)]
+        print(chunks_list)
+        chunks_deconv_list = []
+        partial_func = partial(tom_deconv_tomo,angpix=pixel_size, defocus=defocus, snrfalloff=snrfalloff, 
+                    deconvstrength=deconvstrength, highpassnyquist=0.1, phaseflipped=False, phaseshift=0 )
+        with Pool(ncpu) as p:
+            # results = p.map(partial_func,chunks_gpu_num_list,chunksize=1)
+            chunks_deconv_list = list(p.map(partial_func,chunks_list))
+        # pool_process(partial_func,chunks_list_single_pool,ncpu)
+            # chunks_deconv_list += results
         vol_restored = c.restore(chunks_deconv_list)
-        outname = tomo.split('.')[0] +'-deconv.rec'
         with mrcfile.new(outname, overwrite=True) as mrc:
             mrc.set_data(vol_restored)
-        
+        shutil.rmtree('./deconv_temp')
     
+    def deconv_gpu(self,tomo, defocus: float=1.0, pixel_size: float=1.0,snrfalloff: float=1.0, deconvstrength: float=1.0,tile: tuple=(1,4,4),num_gpu:int=0,ncpu:int=4):
+        """
+        \nCTF deconvolutin with weiner filter\n
+        :param tomo: tomogram file
+        :param defocus: (1) defocus in um
+        :param pixel_size: (10) pixel size in anstroms
+        :param: snrfalloff: (1.0) The larger this values, more high frequency informetion are filtered out. 
+        :param deconvstrength: (1.0) 
+        """
+        import mrcfile
+        from multiprocessing import Pool
+        from functools import partial
+        from IsoNet.util.deconv_gpu import Chunks,tom_deconv_tomo
+        import sys
+        # from IsoNet.util.deconvolution import 
+        with mrcfile.open(tomo) as mrc:
+            vol = mrc.data
+
+        outname = os.path.splitext(os.path.basename(tomo))[0] +'-deconv.rec'
+        print('outName: ',outname)
+        print('angpix:',pixel_size, 'defocus',defocus, 'snrfalloff',snrfalloff)
+        c = Chunks(num=tile,overlap=0.25)
+        chunks_list = c.get_chunks(vol)
+        chunks_gpu_num_list = [[array,j%num_gpu] for j,array in enumerate(chunks_list)]
+        print('chunks_list',chunks_list.__sizeof__())
+        with Pool(ncpu) as p:
+            partial_func = partial(tom_deconv_tomo,angpix=pixel_size, defocus=defocus, snrfalloff=snrfalloff, 
+                deconvstrength=deconvstrength, highpassnyquist=0.1, phaseflipped=False, phaseshift=0 )
+            # chunks_deconv_list = list(p.map(partial_func,chunks_gpu_num_list,chunksize=1))
+            # results = p.map(partial_func,chunks_list)
+            p.map(partial_func,chunks_gpu_num_list,chunksize=1)
+        # vol_restored = c.restore(chunks_deconv_list)
+        # with mrcfile.new(outname, overwrite=True) as mrc:
+        #     mrc.set_data(vol_restored)
         
 
     def extract(self,
@@ -306,6 +350,13 @@ def Display(lines, out):
     text = "\n".join(lines) + "\n"
     out.write(text)
 
+def pool_process(p_func,chunks_list,ncpu):
+    from multiprocessing import Pool
+    with Pool(ncpu,maxtasksperchild=1000) as p:
+        # results = p.map(partial_func,chunks_gpu_num_list,chunksize=1)
+        results = list(p.map(p_func,chunks_list))
+    # return results
+    
 if __name__ == "__main__":
     core.Display = Display
     fire.Fire(ISONET)

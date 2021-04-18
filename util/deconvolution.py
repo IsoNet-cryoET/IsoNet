@@ -1,5 +1,6 @@
 import numpy as np
-
+import mrcfile
+import os
 def tom_ctf1d(pixelsize, voltage, cs, defocus, amplitude, phaseshift, bfactor, length=2048):
 
     ny = 1 / pixelsize
@@ -39,8 +40,9 @@ def wiener1d(angpix, defocus, snrfalloff, deconvstrength, highpassnyquist, phase
     wiener = ctf/(ctf*ctf+1/snr)
     return ctf, wiener
 
-def tom_deconv_tomo(vol, angpix, defocus, snrfalloff, deconvstrength, highpassnyquist, phaseflipped, phaseshift):
-
+def tom_deconv_tomo(vol_file, angpix, defocus, snrfalloff, deconvstrength, highpassnyquist, phaseflipped, phaseshift):
+    with mrcfile.open(vol_file) as f:
+        vol = f.data
     data = np.arange(0,1+1/2047.,1/2047.)
     highpass = np.minimum(np.ones(data.shape[0]), data/highpassnyquist) * np.pi
     highpass = 1-np.cos(highpass)
@@ -92,5 +94,75 @@ def tom_deconv_tomo(vol, angpix, defocus, snrfalloff, deconvstrength, highpassny
     #ramp = np.interp(data,wiener,r);
     deconv = np.real(np.fft.ifftn(np.fft.fftn(vol) * ramp))
 
+    with mrcfile.new(os.path.splitext(vol_file)[0]+'_deconv.mrc',overwrite=True) as n:
+        n.set_data(deconv.astype(type(vol[0,0,0])))
     #return real(ifftn(fftn(single(vol)).*ramp));
-    return deconv.astype(np.float32)
+    return os.path.splitext(vol_file)[0]+'_deconv.mrc'
+
+class Chunks:
+    def __init__(self,num=2,overlap=0.25):
+        self.overlap = overlap
+        #num can be either int or tuple
+        if type(num) is int:
+            self.num = (num,num,num)
+        else:
+            self.num = num
+
+    def get_chunks(self,tomo_name):
+        #side*(1-overlap)*(num-1)+side = sp + side*overlap -> side *(1-overlap) * num = side
+        root_name = os.path.splitext(os.path.basename(tomo_name))[0]
+        with mrcfile.open(tomo_name) as f:
+            vol = f.data
+        cube_size = np.round(np.array(vol.shape)/((1-self.overlap)*np.array(self.num))).astype(np.int16)
+        overlap_len = np.round(cube_size*self.overlap).astype(np.int16)
+        overlap_len = overlap_len + overlap_len %2
+        eff_len = cube_size-overlap_len
+        padded_vol = np.pad(vol,pad_width=[(ol//2,ol//2) for ol in overlap_len],mode='symmetric')
+        sp = padded_vol.shape
+        chunks_file_list = []
+        slice1 = [(i*eff_len[0],i*eff_len[0]+cube_size[0]) for i in range(self.num[0]-1)]
+        slice1.append(((self.num[0]-1)*eff_len[0],sp[0]))
+        slice2 = [(i*eff_len[1],i*eff_len[1]+cube_size[1]) for i in range(self.num[1]-1)]
+        slice2.append(((self.num[1]-1)*eff_len[1],sp[1]))
+        slice3 = [(i*eff_len[2],i*eff_len[2]+cube_size[2]) for i in range(self.num[2]-1)]
+        slice3.append(((self.num[2]-1)*eff_len[2],sp[2]))
+        # print(slice1)
+        # print(slice2)
+        # print(slice3)
+        for n1,i in enumerate(slice1):
+            for n2,j in enumerate(slice2):
+                for n3,k in enumerate(slice3):
+                    one_chunk = padded_vol[i[0]:i[1],j[0]:j[1],k[0]:k[1]]
+                    file_name = './deconv_temp/'+root_name+'_{}_{}_{}.mrc'.format(n1,n2,n3)
+                    with mrcfile.new(file_name,overwrite=True) as n:
+                        n.set_data(one_chunk)
+                    chunks_file_list.append(file_name)
+        self.shape = vol.shape
+        self.padded_shape = sp
+        self.slice1 = slice1
+        self.slice2 = slice2
+        self.slice3 = slice3
+        self.overlap_len = overlap_len
+        self.datatype = type(vol[0,0,0])
+        return chunks_file_list
+
+    def restore(self,new_file_list):
+        overlap_len = self.overlap_len
+        new_vol = np.zeros(self.padded_shape,self.datatype)
+        for n1,i in enumerate(self.slice1):
+            for n2,j in enumerate(self.slice2):
+                for n3,k in enumerate(self.slice3):
+                    print(n1,n2,n3)
+                    one_chunk_file = new_file_list[n1*len(self.slice2)*len(self.slice3)+n2*len(self.slice3)+n3]
+                    with mrcfile.open(one_chunk_file) as f:
+                        one_chuck = f.data
+                    print(one_chuck[overlap_len[0]//2:-(overlap_len[0]//2),overlap_len[1]//2:-(overlap_len[1]//2),overlap_len[2]//2:-(overlap_len[2]//2)].shape)
+                    print(one_chuck.shape)
+                    new_vol[i[0]+overlap_len[0]//2:i[1]-overlap_len[0]//2,j[0]+overlap_len[1]//2:j[1]-overlap_len[1]//2, 
+                    k[0]+overlap_len[2]//2:k[1]-overlap_len[2]//2] = one_chuck[overlap_len[0]//2:-(overlap_len[0]//2),overlap_len[1]//2:-(overlap_len[1]//2),overlap_len[2]//2:-(overlap_len[2]//2)]
+                    
+         
+        # return np.multiply(new_vol,1/factor_vol)
+        return new_vol[overlap_len[0]//2:-(overlap_len[0]//2),
+                    overlap_len[1]//2:-(overlap_len[1]//2),
+                    overlap_len[2]//2:-(overlap_len[2]//2)]
