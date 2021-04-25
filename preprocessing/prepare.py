@@ -1,4 +1,5 @@
 import os 
+import sys
 import logging
 import sys
 import mrcfile
@@ -9,7 +10,8 @@ from multiprocessing import Pool
 import numpy as np
 from functools import partial
 from IsoNet.util.rotations import rotation_list
-from difflib import get_close_matches
+# from difflib import get_close_matches
+from IsoNet.util.metadata import MetaData, Item, Label
 #Make a new folder. If exist, nenew it
 # Do not set basic config for logging here
 # logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.DEBUG)
@@ -44,71 +46,77 @@ def extract_subtomos(settings):
     extract subtomo from whole tomogram based on mask
     and feed to generate_first_iter_mrc to generate xx_iter00.xx
     '''
-    mkfolder(settings.result_dir)
-    mkfolder(settings.subtomo_dir)
-
-    #load the mask
-    if settings.mask_dir is not None:
-        mask_list = ["{}/{}".format(settings.mask_dir,f) for f in os.listdir(settings.mask_dir) if f.split(".")[-1]=="mrc" or f.split(".")[-1]=="rec" ]
-    else:
-        mask_list=[]
-    #use all the mrc files in the input folder
-    if settings.input_dir[-1] == '\\' or settings.input_dir[-1] == '/':
-        settings.input_dir= settings.input_dir[:-1]
-
-    settings.tomogram_list = ["{}/{}".format(settings.input_dir,f) for f in os.listdir(settings.input_dir) if f.split(".")[-1]=="mrc" or f.split(".")[-1]=="rec" ]
-    settings.tomogram_list_items = [f for f in os.listdir(settings.input_dir) if f.split(".")[-1]=="mrc" or f.split(".")[-1]=="rec"]
-    if len(settings.tomogram_list) <= 0:
+    #mkfolder(settings.result_dir)
+    #mkfolder(settings.subtomo_dir)
+    md = MetaData()
+    md.read(settings.star_file)
+    if len(md)==0:
         sys.exit("No input exists. Please check it in input folder!")
-    for tomo_count, tomogram in enumerate(settings.tomogram_list):
-        root_name = settings.tomogram_list_items[tomo_count].split('.')[0]
-        with mrcfile.open(tomogram) as mrcData:
-            orig_data = mrcData.data.astype(np.float32)
-        #find corresponding mask from mask_list
-        if len(mask_list)>0:
-            close_mask = get_close_matches(root_name,os.listdir(settings.mask_dir),cutoff=0.6)# a list
-            if len(close_mask)>0:
-                with mrcfile.open(settings.mask_dir + '/' + close_mask[0]) as m:
-                    mask_data = m.data
-                if mask_data.shape == orig_data.shape:
-                    logging.info("{} mask loaded!".format(root_name))
-                else:
-                    mask_data = None
-                    logging.warning("{}:mask match error!".format(root_name))
-            else:
-                logging.info("{} no mask used!".format(root_name))
-                mask_data = None
-        else:
-            mask_data =None
 
-        seeds=create_cube_seeds(orig_data,settings.ncube,settings.crop_size,mask=mask_data)
+    subtomo_md = MetaData()
+    subtomo_md.addLabels('rlnSubtomoIndex','rlnImageName','rlnCubeSize','rlnCropSize','rlnPixelSize')
+    count=0
+    for it in md:
+        pixel_size = it.rlnPixelSize
+        if settings.use_deconv_tomo and "rlnDeconvTomoName" in md.getLabels() and os.path.isfile(it.rlnDeconvTomoName):
+            print('it.rlnDeconvTomoName',type(it.rlnDeconvTomoName),it.rlnDeconvTomoName)
+            print("Extract from deconvolved tomogram {}".format(it.rlnDeconvTomoName))
+            with mrcfile.open(it.rlnDeconvTomoName) as mrcData:
+                orig_data = mrcData.data.astype(np.float32)
+        else:        
+            print("Extract from origional tomogram {}".format(it.rlnMicrographName))
+            with mrcfile.open(it.rlnMicrographName) as mrcData:
+                orig_data = mrcData.data.astype(np.float32)
+        
+
+        if "rlnMaskName" in md.getLabels() and it.rlnMaskName is not None:
+            with mrcfile.open(it.rlnMaskName) as m:
+                mask_data = m.data
+        else:
+            mask_data = None
+            logging.info(" mask not been used for tomogram {}!".format(it.rlnIndex))
+
+        seeds=create_cube_seeds(orig_data, it.rlnNumberSubtomo, settings.crop_size,mask=mask_data)
         subtomos=crop_cubes(orig_data,seeds,settings.crop_size)
 
         # save sampled subtomo to {results_dir}/subtomos instead of subtomo_dir (as previously does)
+        base_name = os.path.splitext(os.path.basename(it.rlnMicrographName))[0]
+        
         for j,s in enumerate(subtomos):
-            with mrcfile.new('{}/{}_{:0>6d}.mrc'.format(settings.subtomo_dir,root_name,j), overwrite=True) as output_mrc:
+            im_name = '{}/{}_{:0>6d}.mrc'.format(settings.subtomo_dir, base_name, j)
+            with mrcfile.new(im_name, overwrite=True) as output_mrc:
+                count+=1
+                subtomo_it = Item()
+                subtomo_md.addItem(subtomo_it)
+                subtomo_md._setItemValue(subtomo_it,Label('rlnSubtomoIndex'), str(count))
+                subtomo_md._setItemValue(subtomo_it,Label('rlnImageName'), im_name)
+                subtomo_md._setItemValue(subtomo_it,Label('rlnCubeSize'),settings.cube_size)
+                subtomo_md._setItemValue(subtomo_it,Label('rlnCropSize'),settings.crop_size)
+                subtomo_md._setItemValue(subtomo_it,Label('rlnPixelSize'),pixel_size)
                 output_mrc.set_data(s.astype(np.float32))
-    # indent changed here
-    return settings
+    subtomo_md.write(settings.subtomo_star)
+
 
 #preparation files for the first iteration
 def prepare_first_iter(settings):
-    settings = extract_subtomos(settings)
-    settings.mrc_list = os.listdir(settings.subtomo_dir)
-    settings.mrc_list = ['{}/{}'.format(settings.subtomo_dir,i) for i in settings.mrc_list]
+    # extract_subtomos(settings)
+    mkfolder(settings.result_dir)  
+    # settings.mrc_list = os.listdir(settings.subtomo_dir)
+    # settings.mrc_list = ['{}/{}'.format(settings.subtomo_dir,i) for i in settings.mrc_list]
+
     #need further test
     #with Pool(settings.preprocessing_ncpus) as p:
     #    func = partial(generate_first_iter_mrc, settings)
     #    res = p.map(func, settings.mrc_list)
-    if settings.preprocessing_ncpus >1 and not settings.only_extract_subtomos:
+
+    if settings.preprocessing_ncpus >1:
         with Pool(settings.preprocessing_ncpus) as p:
             func = partial(generate_first_iter_mrc, settings=settings)
             res = p.map(func, settings.mrc_list)
             # res = p.map(generate_first_iter_mrc, settings.mrc_list)
-    elif not settings.only_extract_subtomos:
+    else:
         for i in settings.mrc_list:
             generate_first_iter_mrc(i,settings)
-
     return settings
     
 def get_cubes_one(data, settings, start = 0, mask = None, add_noise = 0):

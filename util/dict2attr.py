@@ -24,3 +24,36 @@ def check_args(args):
         if i not in param_list:
             pass
             # logging.warning("{} not recognized!".format(i))
+
+def idx2list(tomo_idx):
+    if tomo_idx is not None:
+            if type(tomo_idx) is tuple:
+                tomo_idx = list(map(str,tomo_idx))
+            elif type(tomo_idx) is int:
+                tomo_idx = [str(tomo_idx)]
+            else:
+                # tomo_idx = tomo_idx.split(',')
+                txt=str(tomo_idx)
+                txt=txt.replace(',',' ').split()
+                tomo_idx=[]
+                for everything in txt:
+                    if everything.find("-")!=-1:
+                        everything=everything.split("-")
+                        for e in range(int(everything[0]),int(everything[1])+1):
+                            tomo_idx.append(str(e))
+                    else:
+                        tomo_idx.append(str(everything))
+    return tomo_idx
+
+def txtval(txt):
+    txt=str(txt)
+    txt=txt.replace(',',' ').split()
+    idx=[]
+    for everything in txt:
+        if everything.find("-")!=-1:
+            everything=everything.split("-")
+            for e in range(int(everything[0]),int(everything[1])+1):
+                idx.append(e)
+        else:
+            idx.append(int(everything))
+    return idx
