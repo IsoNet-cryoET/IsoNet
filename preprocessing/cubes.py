@@ -32,24 +32,28 @@ def create_cube_seeds(img3D,nCubesPerImg,cubeSideLen,mask=None):
     rand_inds = [v[sample_inds] for v in valid_inds]
     return (rand_inds[0],rand_inds[1], rand_inds[2])
 
-def mask_mesh_seeds(mask,sidelen,threshold=0.01):
+def mask_mesh_seeds(mask,sidelen,croplen,threshold=0.01,indx=0):
+    #indx = 0 take the even indix element of seed list,indx = 1 take the odd 
     # Count the masked points in the box centered at mesh grid point, if greater than threshold*sidelen^3, Take the grid point as seed.
     sp = mask.shape
-    ni = [i//sidelen for i in sp]
-    res = [(i%sidelen)//2 for i in sp]
+    ni = [(i-croplen)//sidelen +1 for i in sp]
+    # res = [((i-croplen)%sidelen) for i in sp]
+    margin = croplen//2 - sidelen//2
     ind_list =[]
     for z in range(ni[0]):
         for y in range(ni[1]):
             for x in range(ni[2]):
-                if np.sum(mask[res[0]+sidelen*z:res[0]+sidelen*(z+1),
-                res[1]+sidelen*y:res[1]+sidelen*(y+1),
-                res[2]+sidelen*x:res[2]+sidelen*(x+1)]) > sidelen**3*threshold:
-                    ind_list.append((res[0]+sidelen//2+sidelen*z, res[1]+sidelen//2+sidelen*y,
-                res[2]+sidelen//2+sidelen*x))
+                if np.sum(mask[margin+sidelen*z:margin+sidelen*(z+1),
+                margin+sidelen*y:margin+sidelen*(y+1),
+                margin+sidelen*x:margin+sidelen*(x+1)]) > sidelen**3*threshold:
+                    ind_list.append((margin+sidelen//2+sidelen*z, margin+sidelen//2+sidelen*y,
+                margin+sidelen//2+sidelen*x))
+    ind_list = ind_list[indx:-1:2]
     ind0 = [i[0] for i in ind_list]
     ind1 = [i[1] for i in ind_list]
     ind2 = [i[2] for i in ind_list]
-    return ind_list
+    # return ind_list
+    return (ind0,ind1,ind2)
 
 
 

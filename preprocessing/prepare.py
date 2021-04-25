@@ -2,9 +2,15 @@ import os
 import logging
 import sys
 import mrcfile
+<<<<<<< Updated upstream
 from IsoNet.preprocessing.cubes import create_cube_seeds,crop_cubes,DataCubes
 from IsoNet.preprocessing.img_processing import normalize
 from IsoNet.preprocessing.simulate import apply_wedge1 as  apply_wedge
+=======
+from mwr.preprocessing.cubes import create_cube_seeds,crop_cubes,DataCubes,mask_mesh_seeds
+from mwr.preprocessing.img_processing import normalize
+from mwr.preprocessing.simulate import apply_wedge1 as  apply_wedge
+>>>>>>> Stashed changes
 from multiprocessing import Pool
 import numpy as np
 from functools import partial
@@ -80,8 +86,13 @@ def extract_subtomos(settings):
                 mask_data = None
         else:
             mask_data =None
+<<<<<<< Updated upstream
 
         seeds=create_cube_seeds(orig_data,settings.ncube,settings.crop_size,mask=mask_data)
+=======
+        # seeds=create_cube_seeds(orig_data,settings.ncube,settings.crop_size,mask=mask_data)
+        seeds = mask_mesh_seeds(mask_data,settings.cube_size,settings.crop_size,indx=1)
+>>>>>>> Stashed changes
         subtomos=crop_cubes(orig_data,seeds,settings.crop_size)
 
         # save sampled subtomo to {results_dir}/subtomos instead of subtomo_dir (as previously does)
