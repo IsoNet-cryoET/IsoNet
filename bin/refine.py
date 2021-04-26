@@ -28,7 +28,7 @@ def run(args):
     
     if args.batch_size is None:
         args.batch_size = max(4, 2 * args.ngpus)
-
+    args.predict_batch_size = args.batch_size
     if args.filter_base is None:
         if md._data[0].rlnPixelSize >15:
             args.filter_base = 32

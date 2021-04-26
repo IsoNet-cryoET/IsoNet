@@ -15,14 +15,14 @@ def predict(settings):
     else:
         model = load_model('{}/model_iter{:0>2d}.h5'.format(settings.result_dir,settings.iter_count))
     N = settings.predict_batch_size * settings.ngpus
-
     num_batches = len(settings.mrc_list)
+    while N > len(settings.mrc_list):
+        N = N//2
     if num_batches%N == 0:
         append_number = 0
     else:
         append_number = N - num_batches%N
     data = []
-
     for i,mrc in enumerate(settings.mrc_list + settings.mrc_list[:append_number]):
         root_name = mrc.split('/')[-1].split('.')[0]
         with mrcfile.open('{}/{}_iter00.mrc'.format(settings.result_dir,root_name)) as mrcData:
