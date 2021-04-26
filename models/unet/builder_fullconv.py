@@ -4,9 +4,9 @@ from tensorflow.keras.layers import Concatenate
 
 # define a decoder block
 
-def build_unet(filter_base=32,depth=2,convs_per_depth=2,
+def build_unet(filter_base=32,depth=3,convs_per_depth=3,
                kernel=(3,3,3),
-               batch_norm=False,
+               batch_norm=True,
                dropout=0.0,
                pool=None):
     resnet = False
@@ -53,11 +53,11 @@ def build_unet(filter_base=32,depth=2,convs_per_depth=2,
             if pool is not None:
                 layer = Concatenate(axis=-1)([UpSampling3D(pool)(layer),concatenate[n]])
             else:
-                layer = decoder_block(layer, concatenate[n], filter_base*2**n, dropout=dropout,batchnorm=False,activation='linear')
+                layer = decoder_block(layer, concatenate[n], filter_base*2**n, dropout=False,batchnorm=False,activation='LeakyReLU')
             current_depth_start = layer
             for i in range(convs_per_depth):
                 layer = conv_blocks(filter_base * 2 ** n, kernel, dropout=dropout,
-                                    batch_norm=batch_norm,name="up_level_%s_no_%s" % (n, i))(layer)
+                                    batch_norm=batch_norm,name="up_level_%s_no_%s" % (n, i),activation = "LeakyReLU")(layer)
             if resnet:
                 start_conv = Conv3D(filter_base*2**n,(1,1,1),
                             padding='same',kernel_initializer="glorot_uniform")(current_depth_start)

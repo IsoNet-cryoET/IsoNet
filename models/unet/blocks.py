@@ -49,8 +49,14 @@ def decoder_block(layer_in, skip_in , n_filters, kernel=(3,3,3), strides=(2,2,2)
     if dropout is not None and dropout>0:
         g = Dropout(dropout)(g)
 
-    g = activation_my(activation)(g)
+    # if activation is not None:
+    #     g = activation_my(activation)(g)
     # merge with skip connection
     if skip_in is not None:
         g = Concatenate()([g, skip_in])
+
+    # changed activation position from line 52 to here
+    if activation is not None:
+        g = activation_my(activation)(g)
+
     return g
