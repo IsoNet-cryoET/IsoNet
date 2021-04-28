@@ -59,7 +59,7 @@ class ISONET:
         isonet.py prepare_subtomo_star folder_name [--output_star] [--cube_size] 
         :param folder_name: (None) directory containing subtomogram(s).
         :param output_star: (subtomo.star) star file for subtomograms, will be used as input in refinement.
-        :param cube_size: (None) This is the size of the cubic volumes used for training. This values should smaller than the size of subtomogram. 
+        :param cube_size: (None) This is the size of the cubic volumes used for training. This values should be smaller than the size of subtomogram. 
         And the cube_size should be divisible by 8, eg. 32, 64. If this value isn't set, cube_size is automatically determined as int(subtomo_size / 1.5 + 1)//16 * 16
         """       
         #TODO check folder valid, logging
@@ -155,7 +155,7 @@ class ISONET:
     def make_mask(self,star_file, 
                 mask_folder: str = 'mask', 
                 patch_size: int=4, 
-                percentile: int=30,
+                percentile: int=50,
                 threshold: float=1.0,
                 use_deconv_tomo:bool=True,
                 z_crop:float=None,
@@ -166,7 +166,6 @@ class ISONET:
         :param star_file: path to the tomogram or tomogram folder
         :param mask_folder: path and name of the mask to save as
         :param patch_size: (4) The size of the box from which the max-filter and std-filter are calculated. 
-        It is suggested to be set close to the size of interested particles. 
         :param percentile: (30) The approximate percentage, ranging from 0 to 100, of the area of meaningful content in tomograms. 
         If this value is not set, the program will look for the parameter in the star file. 
         If this value is not set and not found in star file, the default value 99 will be used.
@@ -177,7 +176,7 @@ class ISONET:
         If this value is not set, the program will look for the parameter in the star file. 
         If this value is not set and not found in star file, the default value 1.0 will be used.      
         :param use_deconv_tomo: (True) If CTF deconvolved tomogram is found in tomogram.star, use that tomogram instead. 
-        :param z_crop: If exclude the top and bottum regions of tomograms along z axis. For example, "--z_crop 0.2" will mask out the top 20% and bottum 20% region along z axis. 
+        :param z_crop: If exclude the top and bottom regions of tomograms along z axis. For example, "--z_crop 0.2" will mask out the top 20% and bottom 20% region along z axis. 
         :param tomo_idx: (None) If this value is set, process only the tomograms listed in this index. e.g. 1,2,4 or 5-10,15,16   
         """
         #TODO the meaning of the parameter is not intuitive.
@@ -234,9 +233,8 @@ class ISONET:
         :param star_file: tomogram star file
         :param subtomo_folder: (subtomo) folder for output subtomograms.
         :param subtomo_star: (subtomo.star) star file for output subtomograms.
-        :param cube_size: (64) Size of cubes for training, should be divisible by 8, eg. 32, 64.
+        :param cube_size: (64) Size of cubes for training, should be divisible by 8, eg. 32, 64. The actual sizes of extracted subtomograms are 1.5 times of this value.
         :param log_level: ("info") level of the output, either "info" or "debug"
-        The actual sizes of extracted subtomograms are 1.5 times of this value.
         :param use_deconv_tomo: (True) If CTF deconvolved tomogram is found in tomogram.star, use that tomogram instead. 
         """
 
@@ -267,7 +265,7 @@ class ISONET:
         pretrained_model = None,
         log_level: str = "info",
         continue_iter: int = 0,
-
+        result_dir: str='results',
         preprocessing_ncpus: int = 16,
 
         epochs: int = 10,
@@ -297,7 +295,7 @@ class ISONET:
         :param data_folder: (data) Temperary folder to save the generated data used for training.
         :param log_level: (info) debug level
         :param continue_iter: (0) Which iteration you want to start from?
-
+        :param result_dir: ('results') The name of directory to save refined models and subtomograms
         ************************preparation settings************************
 
         :param preprocessing_ncpus: (16) Number of cpu for preprocessing.
@@ -306,7 +304,7 @@ class ISONET:
 
         :param epochs: (10) Number of epoch for each iteraction.
         :param batch_size: (None) Size of the minibatch.If None, batch_size will be the max(2 * number_of_gpu,4). batch_size should be divisible by the number of gpu.
-        :param steps_per_epoch: (100) Step per epoch. A good estimation of this value is tomograms * ncube * 16 / batch_size *0.9.")
+        :param steps_per_epoch: (None) Step per epoch. If not defined, the default value will be min(num_of_subtomograms * 6 / batch_size , 200)
 
         ************************Denoise settings************************
 
