@@ -25,17 +25,20 @@ def make_mask_dir(tomo_dir,mask_dir,side = 8,percentile=30,threshold=1,surface=N
 
 def make_mask(tomo_path, mask_name,side = 5,percentile=30,threshold=1.0,surface=None):
     from scipy.ndimage.filters import gaussian_filter
+    from skimage.transform import resize
     with mrcfile.open(tomo_path) as n:
-        tomo = n.data
+        tomo = n.data.astype(np.float32)
     sp=np.array(tomo.shape)
-    bintomo = tomo[0:-1:2,0:-1:2,0:-1:2].astype(np.float32)
-    sp2 = bintomo.shape
-    gauss = gaussian_filter(bintomo, side/4)
-    if percentile is not None:
+    sp2 = sp//2
+    # bintomo = tomo[0:-1:2,0:-1:2,0:-1:2]
+    # bintomo = tomo.reshape(2,sp2[0],2,sp2[1],2,sp2[1]).sum(5).sum(3).sum(1)
+    bintomo = resize(tomo,sp2,anti_aliasing=True)
+    gauss = gaussian_filter(bintomo, side/2)
+    if percentile <=99.8:
         mask1 = maxmask(gauss,side=side, percentile=percentile)
     else:
         mask1 = np.ones(sp2)
-    if threshold is not None:
+    if threshold <=99.8:
         mask2 = stdmask(gauss,side=side, threshold=threshold)
     else:
         mask2 = np.ones(sp2)

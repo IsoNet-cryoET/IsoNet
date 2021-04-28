@@ -69,8 +69,8 @@ LABELS = {
     'rlnMaxValueProbDistribution': float,
     'rlnIndex': str,
     'rlnSubtomoIndex': str,
-    'rlnMaskPercentile': float,
-    'rlnMaskThreshold': float
+    'rlnMaskDensityPercentage': float,
+    'rlnMaskStdPercentage': float
 }
 
 

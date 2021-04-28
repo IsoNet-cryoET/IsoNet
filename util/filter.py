@@ -11,7 +11,7 @@ def maxmask(tomo, side=5,percentile=60):
     out = out.astype(np.uint8)
     return out
 
-def stdmask(tomo,side=10,threshold=1):
+def stdmask(tomo,side=10,threshold=60):
     from scipy.signal import convolve
     print('std_filter')
     tomosq = tomo**2
@@ -23,7 +23,8 @@ def stdmask(tomo,side=10,threshold=1):
     ns = convolve(ones, kernel, mode="same")
 
     out = np.sqrt((s2 - s**2 / ns) / ns + eps)
-    out = out>np.std(tomo)*threshold
+    # out = out>np.std(tomo)*threshold
+    out  = out>np.percentile(out, 100-threshold)
     return out.astype(np.uint8)
 
 # def gauss

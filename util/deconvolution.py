@@ -194,7 +194,7 @@ def deconv_one(tomo, out_tomo,defocus=1.0, pixel_size=1.0,snrfalloff=1.0, deconv
     
 
     root_name = os.path.splitext(os.path.basename(tomo))[0]
-    print(tomo,'angpix:',pixel_size, 'defocus',defocus, 'snrfalloff',snrfalloff,'highpassnyquist',highpassnyquist)
+    print(tomo,'angpix:',pixel_size, 'defocus',defocus, 'snrfalloff',snrfalloff,'deconvstrength',deconvstrength)
     c = Chunks(num=tile,overlap=overlap_rate)
     chunks_list = c.get_chunks(tomo) # list of name of subtomograms
     # chunks_gpu_num_list = [[array,j%num_gpu] for j,array in enumerate(chunks_list)]

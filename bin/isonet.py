@@ -155,8 +155,8 @@ class ISONET:
     def make_mask(self,star_file, 
                 mask_folder: str = 'mask', 
                 patch_size: int=4, 
-                percentile: int=50,
-                threshold: float=1.0,
+                density_percentage: int=None,
+                std_percentage: int=None,
                 use_deconv_tomo:bool=True,
                 z_crop:float=None,
                 tomo_idx=None):
@@ -186,20 +186,20 @@ class ISONET:
         # write star percentile threshold
         md = MetaData()
         md.read(star_file)
-        if not 'rlnMaskPercentile' in md.getLabels():    
-            md.addLabels('rlnMaskPercentile','rlnMaskThreshold','rlnMaskName')
+        if not 'rlnMaskDensityPercentage' in md.getLabels():    
+            md.addLabels('rlnMaskDensityPercentage','rlnMaskStdPercentage','rlnMaskName')
             for it in md:
-                md._setItemValue(it,Label('rlnMaskPercentile'),90)
-                md._setItemValue(it,Label('rlnMaskThreshold'),0.85)
+                md._setItemValue(it,Label('rlnMaskDensityPercentage'),50)
+                md._setItemValue(it,Label('rlnMaskStdPercentage'),50)
                 md._setItemValue(it,Label('rlnMaskName'),None)
 
         tomo_idx = idx2list(tomo_idx)
         for it in md:
             if tomo_idx is None or str(it.rlnIndex) in tomo_idx:
-                if percentile is not None:
-                    md._setItemValue(it,Label('rlnMaskPercentile'),percentile)
-                if threshold is not None:
-                    md._setItemValue(it,Label('rlnMaskThreshold'),threshold)
+                if density_percentage is not None:
+                    md._setItemValue(it,Label('rlnMaskDensityPercentage'),density_percentage)
+                if std_percentage is not None:
+                    md._setItemValue(it,Label('rlnMaskStdPercentage'),std_percentage)
                 if use_deconv_tomo and "rlnDeconvTomoName" in md.getLabels():
                     tomo_file = it.rlnDeconvTomoName
                 else:
@@ -211,8 +211,8 @@ class ISONET:
                     make_mask(tomo_file,
                             mask_out_name,
                             side=patch_size,
-                            percentile=it.rlnMaskPercentile,
-                            threshold=it.rlnMaskThreshold,
+                            percentile=it.rlnMaskDensityPercentage,
+                            threshold=it.rlnMaskStdPercentage,
                             surface = z_crop)
                 
                 md._setItemValue(it,Label('rlnMaskName'),mask_out_name)
@@ -270,7 +270,7 @@ class ISONET:
 
         epochs: int = 10,
         batch_size: int = None,
-        steps_per_epoch: int = 100,
+        steps_per_epoch: int = None,
 
         noise_level:  float= 0.05,
         noise_start_iter: int = 15,

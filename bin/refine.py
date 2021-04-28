@@ -36,7 +36,6 @@ def run(args):
             args.filter_base = 64
     if args.steps_per_epoch is None:
         args.steps_per_epoch = min(len(md) * 6/args.batch_size , 200)
-    print(args.batch_size,args.filter_base,args.steps_per_epoch)
     logger = logging.getLogger('IsoNet.refine')
     # Specify GPU(s) to be used
     os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
