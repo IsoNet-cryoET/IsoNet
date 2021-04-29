@@ -275,7 +275,7 @@ class ISONET:
         noise_level:  float= 0.05,
         noise_start_iter: int = 15,
         noise_pause: int = 5,
-
+        noise_mode: int = 1,
         drop_out: float = 0.3,
         convs_per_depth: int = 3,
         kernel: tuple = (3,3,3),

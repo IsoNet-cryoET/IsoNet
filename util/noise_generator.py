@@ -51,9 +51,9 @@ def make_noise(output_folder, number_volume, cubesize=64, minangle=-60,maxangle=
 
 def make_noise_one(cubesize=64, minangle=-60,maxangle=60, anglestep=2, mode=1):
     if mode==1:
-        noise_func = simulate_noise1
+        noise_func = simulate_noise1 # gaussian noise + missing-wedge
     else:
-        noise_func = simulate_noise2
+        noise_func = simulate_noise2 # back-projection
     params = [cubesize, minangle, maxangle, anglestep]
     simu_noise = noise_func(params)
     return simu_noise

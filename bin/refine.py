@@ -14,7 +14,6 @@ def run(args):
     md.read(args.subtomo_star)
     #*******set fixed parameters*******
     args.reload_weight = True
-    args.noise_mode = 1
     args.result_dir = 'results'
     args.continue_from = "training"
     args.crop_size = md._data[0].rlnCropSize

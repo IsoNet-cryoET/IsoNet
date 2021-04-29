@@ -37,12 +37,12 @@ def build_unet(filter_base=32,depth=3,convs_per_depth=3,
         # begin bottleneck path
         b = layer
         bottle_start = layer
-        for i in range(convs_per_depth-1):
-            b = conv_blocks(filter_base*2**depth,kernel,dropout=dropout,
-                                    batch_norm=batch_norm,activation="LeakyReLU",
+        for i in range(convs_per_depth-2):
+            b = conv_blocks(filter_base*2**depth,kernel,dropout=None,
+                                    batch_norm=None,activation="LeakyReLU",
                                     name="bottleneck_no_%s" % (i))(b)
-        layer = conv_blocks(filter_base*2**(depth-1),kernel,dropout=dropout,
-                                    batch_norm=batch_norm,activation="LeakyReLU",
+        layer = conv_blocks(filter_base*2**(depth-1),kernel,dropout=None,
+                                    batch_norm=None,activation="LeakyReLU",
                                     name="bottleneck_no_%s" % (convs_per_depth))(b)
         if resnet:
             layer = Add()([bottle_start,layer])

@@ -87,7 +87,7 @@ def predict_one(args,one_tomo,model,output_file=None):
     #data=wedge_imposing(data)
 
     ngpus = len(args.gpuID.split(','))
-    N = args.batch_size * ngpus * 1 # 8*4*8 
+    N = args.batch_size * ngpus * 4 # 8*4*8 
     num_patches = data.shape[0]
     if num_patches%N == 0:
         append_number = 0
