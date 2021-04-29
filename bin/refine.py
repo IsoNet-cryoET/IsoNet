@@ -58,53 +58,84 @@ def run(args):
         if "rlnImageName" in md.getLabels():
             args.mrc_list.append(it.rlnImageName)
 
-    if args.continue_iter == 0 or args.pretrained_model is None:
-        args = prepare_first_iter(args)
-        logger.info("Done preperation for the first iteration!")
-        args.continue_iter = 1
-        if args.pretrained_model is not None:
-            args.init_model = args.pretrained_model
-        else:
-            args = prepare_first_model(args)
-    else: #mush has pretrained model and continue_iter >0
-        args.init_model = args.pretrained_model
+    #************************
+    args = prepare_first_iter(args)
+    logger.info("Done preperation for the first iteration!")
 
-    continue_from_training = not os.path.isfile('{}/model_iter{:0>2d}.h5'.format
-    (args.result_dir,args.continue_iter))
-
-    #************************************
-    for num_iter in range(args.continue_iter,args.iterations + 1):
+    for num_iter in range(1,args.iterations + 1):
         args.iter_count = num_iter
         logger.info("Start Iteration{}!".format(num_iter))
-        if num_iter > args.continue_iter: # set the previous iteration's result model as the init_model 
-            args.init_model = '{}/model_iter{:0>2d}.h5'.format(args.result_dir,args.iter_count-1)
+        if args.pretrained_model is not None and num_iter==1:
+            os.system('mv {} {}'.format(args.pretrained_model,args.result_dir+'/model_iter01.h5'))
+            predict(args)
+            logger.info('Use Pretrained model as the output model of iteration 1 and predict subtomograms')
+            continue
+        
         args.noise_factor = ((num_iter - args.noise_start_iter)//args.noise_pause)+1 if num_iter >= args.noise_start_iter else 0
         logging.info("noise_factor:{}".format(args.noise_factor))
 
-        if continue_from_training:
-            try:
-                shutil.rmtree(args.data_dir)
-            except OSError:
-                pass
-                # logging.debug("No previous data folder!")
-            get_cubes_list(args)
-            logger.info("Done preparing subtomograms!")
-            logger.info("Start training!")
-            history = train_data(args) #train based on init model and save new one as model_iter{num_iter}.h5
-            # losses.append(history.history['loss'][-1])
-            logger.info("Done training!")
-            logger.info("Start predicting subtomograms!")
-            predict(args)
-            logger.info("Done predicting subtomograms!")
-        
-        else:
-            logger.info("Model for iteration {} exists".format(args.continue_iter))
-            logger.info("Start cube predicting!")
-            predict(args)
-            logger.info("Done cube predicting!")
-            continue_from_training = True
-
+        try:
+            shutil.rmtree(args.data_dir)
+        except OSError:
+            pass
+        get_cubes_list(args)
+        logger.info("Done preparing subtomograms!")
+        logger.info("Start training!")
+        history = train_data(args) #train based on init model and save new one as model_iter{num_iter}.h5
+        # losses.append(history.history['loss'][-1])
+        logger.info("Done training!")
+        logger.info("Start predicting subtomograms!")
+        predict(args)
+        logger.info("Done predicting subtomograms!")
         logger.info("Done Iteration{}!".format(num_iter))
+
+    
+    # if args.continue_iter == 0 or args.pretrained_model is None:
+    #     args = prepare_first_iter(args)
+    #     logger.info("Done preperation for the first iteration!")
+    #     args.continue_iter = 1
+    #     if args.pretrained_model is not None:
+    #         args.init_model = args.pretrained_model
+    #     else:
+    #         args = prepare_first_model(args)
+    # else: #mush has pretrained model and continue_iter >0
+    #     args.init_model = args.pretrained_model
+
+    # continue_from_training = not os.path.isfile('{}/model_iter{:0>2d}.h5'.format
+    # (args.result_dir,args.continue_iter))
+
+    # #************************************
+    # for num_iter in range(args.continue_iter,args.iterations + 1):
+    #     args.iter_count = num_iter
+    #     logger.info("Start Iteration{}!".format(num_iter))
+    #     if num_iter > args.continue_iter: # set the previous iteration's result model as the init_model 
+    #         args.init_model = '{}/model_iter{:0>2d}.h5'.format(args.result_dir,args.iter_count-1)
+    #     args.noise_factor = ((num_iter - args.noise_start_iter)//args.noise_pause)+1 if num_iter >= args.noise_start_iter else 0
+    #     logging.info("noise_factor:{}".format(args.noise_factor))
+
+    #     if continue_from_training:
+    #         try:
+    #             shutil.rmtree(args.data_dir)
+    #         except OSError:
+    #             pass
+    #             # logging.debug("No previous data folder!")
+    #         get_cubes_list(args)
+    #         logger.info("Done preparing subtomograms!")
+    #         logger.info("Start training!")
+    #         history = train_data(args) #train based on init model and save new one as model_iter{num_iter}.h5
+    #         # losses.append(history.history['loss'][-1])
+    #         logger.info("Done training!")
+    #         logger.info("Start predicting subtomograms!")
+    #         predict(args)
+    #         logger.info("Done predicting subtomograms!")
+        
+    #     else:
+    #         logger.info("Model for iteration {} exists".format(args.continue_iter))
+    #         logger.info("Start cube predicting!")
+    #         predict(args)
+    #         logger.info("Done cube predicting!")
+    #         continue_from_training = True
+
 
 if __name__ == "__main__":
     from IsoNet.util.dict2attr import Arg
