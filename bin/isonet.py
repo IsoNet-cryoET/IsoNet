@@ -96,7 +96,7 @@ class ISONET:
         md.write(output_star)
 
     def deconv(self, star_file: str, 
-        deconv_folder:str="deconv", 
+        deconv_folder:str="./deconv", 
         snrfalloff: float=None, 
         deconvstrength: float=None, 
         highpassnyquist: float=0.1,
@@ -108,6 +108,7 @@ class ISONET:
         \nCTF deconvolution for the tomograms.\n
         isonet.py deconv star_file [--deconv_folder] [--snrfalloff] [--deconvstrength] [--highpassnyquist] [--tile] [--overlap_rate] [--ncpu] [--tomo_idx]
         No need for phase plate data. IsoNet generated tomogram can hardly reach resolution beyond ctf first zero. However, this step is recommanded because it enhances low resolution information for a better visulization. 
+        :param deconv_folder: (./deconv) Folder created to save deconvolution results
         :param star_file: (None) Star file for tomograms.
         :param snrfalloff: (None) SNR fall rate with the frequency. High values means losing more high frequency. 
         If this value is not set, the program will look for the parameter in the star file. 
@@ -142,12 +143,11 @@ class ISONET:
                     md._setItemValue(it,Label('rlnSnrFalloff'), snrfalloff)
                 if deconvstrength is not None:
                     md._setItemValue(it,Label('rlnDeconvStrength'),deconvstrength)
-                if (it.rlnDeconvTomoName is None) or (it.rlnDeconvTomoName == "None"):
-                    tomo_file = it.rlnMicrographName
-                    base_name = os.path.basename(tomo_file)                                        
-                    deconv_tomo_name = '{}/{}'.format(deconv_folder,base_name)
-                else:
-                    deconv_tomo_name = it.rlnDeconvTomoName
+                
+                tomo_file = it.rlnMicrographName
+                base_name = os.path.basename(tomo_file)                                        
+                deconv_tomo_name = '{}/{}'.format(deconv_folder,base_name)
+                
                 deconv_one(it.rlnMicrographName,deconv_tomo_name,defocus=it.rlnDefocus/10000.0, pixel_size=it.rlnPixelSize,snrfalloff=it.rlnSnrFalloff, deconvstrength=it.rlnDeconvStrength,highpassnyquist=highpassnyquist,tile=tile,ncpu=ncpu)
                 md._setItemValue(it,Label('rlnDeconvTomoName'),deconv_tomo_name)
             md.write(star_file)
@@ -260,11 +260,11 @@ class ISONET:
     def refine(self,
         subtomo_star: str = None,
         gpuID: str = '0,1,2,3',
-        iterations: int = 50,
+        iterations: int = 30,
         data_folder: str = "data",
-        pretrained_model = None,
+        pretrained_model: str = None,
         log_level: str = "info",
-        continue_iter: int = 0,
+        continue_iter: int = None,
         result_dir: str='results',
         preprocessing_ncpus: int = 16,
 
@@ -273,7 +273,7 @@ class ISONET:
         steps_per_epoch: int = None,
 
         noise_level:  float= 0.05,
-        noise_start_iter: int = 15,
+        noise_start_iter: int = 11,
         noise_pause: int = 5,
         noise_mode: int = 1,
         drop_out: float = 0.3,
@@ -342,7 +342,7 @@ class ISONET:
         run(d_args)
 
     def predict(self, star_file: str, model: str, output_dir: str='./corrected_tomos', gpuID: str = None, cube_size:int=48,
-    crop_size:int=64,use_deconv_tomo=True, batch_size:int=8,norm: bool=True,log_level: str="info",Ntile:int=1,tomo_idx=None):
+    crop_size:int=64,use_deconv_tomo=True, batch_size:int=8,normalize_percentile: bool=True,log_level: str="info",Ntile:int=1,tomo_idx=None):
         """
         \nPredict tomograms using trained model including model.json and weight(xxx.h5)\n
         isonet.py predict star_file model [--gpuID] [--output_dir] [--cube_size] [--crop_size] [--batch_size] [--tomo_idx] [--ntile]
@@ -353,7 +353,7 @@ class ISONET:
         :param cube_size: (64) The tomogram is divided into cubes to predict due to the memory limitation of GPUs.
         :param crop_size: (96) The side-length of cubes cropping from tomogram in an overlapping strategy
         :param batch_size: The batch size of the cubes grouped into for network predicting
-        :param norm: (True) if normalize the tomograms by percentile
+        :param normalize_percentile: (True) if normalize the tomograms by percentile
         :param log_level: ("debug") level of message to be displayed
         :param Ntile: divide data into Ntile part and then predict. 
         :param tomo_idx: (None) If this value is set, process only the tomograms listed in this index. e.g. 1,2,4 or 5-10,15,16  

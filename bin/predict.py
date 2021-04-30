@@ -9,6 +9,7 @@ import mrcfile
 from IsoNet.util.image import *
 from IsoNet.util.metadata import MetaData,Label,Item
 from IsoNet.util.dict2attr import idx2list
+from tqdm import tqdm
 def predict(args):
 
     if args.log_level == 'debug':
@@ -28,7 +29,7 @@ def predict(args):
     os.environ["CUDA_VISIBLE_DEVICES"]=args.gpuID 
 
 
-    logger.debug('percentile:{}'.format(args.norm))
+    logger.debug('percentile:{}'.format(args.normalize_percentile))
 
     logger.info('gpuID:{}'.format(args.gpuID))
     if ngpus >1:
@@ -78,7 +79,7 @@ def predict_one(args,one_tomo,model,output_file=None):
 
     with mrcfile.open(one_tomo) as mrcData:
         real_data = mrcData.data.astype(np.float32)*-1
-    real_data = normalize(real_data,percentile=args.norm)
+    real_data = normalize(real_data,percentile=args.normalize_percentile)
     data=np.expand_dims(real_data,axis=-1)
     reform_ins = reform3D(data)
     data = reform_ins.pad_and_crop_new(args.cube_size,args.crop_size)
@@ -96,13 +97,13 @@ def predict_one(args,one_tomo,model,output_file=None):
     data = np.append(data, data[0:append_number], axis = 0)
     num_big_batch = data.shape[0]//N
     outData = np.zeros(data.shape)
-    for i in range(num_big_batch):
-        outData[i*N:(i+1)*N] = model.predict(data[i*N:(i+1)*N], batch_size= args.batch_size,verbose=1)
+    for i in tqdm(range(num_big_batch)):
+        outData[i*N:(i+1)*N] = model.predict(data[i*N:(i+1)*N], batch_size= args.batch_size,verbose=0)
     outData = outData[0:num_patches]
 
     outData=reform_ins.restore_from_cubes_new(outData.reshape(outData.shape[0:-1]), args.cube_size, args.crop_size)
 
-    outData = normalize(outData,percentile=args.norm)
+    outData = normalize(outData,percentile=args.normalize_percentile)
     with mrcfile.new(output_file, overwrite=True) as output_mrc:
         output_mrc.set_data(-outData)
     print('Done predicting')

@@ -7,6 +7,7 @@ import mrcfile
 import numpy as np
 import glob
 import os
+import sys
 import shutil
 from IsoNet.util.metadata import MetaData, Item, Label
 def run(args):
@@ -59,18 +60,36 @@ def run(args):
             args.mrc_list.append(it.rlnImageName)
 
     #************************
+    if args.pretrained_model is not None:
+        if args.continue_iter is not None: 
+            if args.continue_iter ==0:
+                continue_iter = 1
+            else:
+                continue_iter = args.continue_iter
+        else:
+            logger.error('continue_iter should be provided!')
+            sys.exit()
+    else:
+        continue_iter = 1
     args = prepare_first_iter(args)
     logger.info("Done preperation for the first iteration!")
-
-    for num_iter in range(1,args.iterations + 1):
+    
+    for num_iter in range(continue_iter,args.iterations + 1):
+        
         args.iter_count = num_iter
         logger.info("Start Iteration{}!".format(num_iter))
-        if args.pretrained_model is not None and num_iter==1:
-            os.system('mv {} {}'.format(args.pretrained_model,args.result_dir+'/model_iter01.h5'))
-            predict(args)
+        if args.pretrained_model is not None and num_iter==continue_iter:
+            shutil.copyfile(args.pretrained_model,'{}/model_iter{:0>2d}.h5'.format(args.result_dir,continue_iter))
+            # os.system('cp {} {}'.format(args.pretrained_model,args.result_dir+'{}/model_iter{:0>2d}.h5'.format(args.result_dir,continue_iter)))
             logger.info('Use Pretrained model as the output model of iteration 1 and predict subtomograms')
+            predict(args)
+
             continue
         
+        if continue_iter ==1:
+            args = prepare_first_model(args)
+        else:
+            args.init_model = '{}/model_iter{:0>2d}.h5'.format(args.result_dir,args.iter_count-1)
         args.noise_factor = ((num_iter - args.noise_start_iter)//args.noise_pause)+1 if num_iter >= args.noise_start_iter else 0
         logging.info("noise_factor:{}".format(args.noise_factor))
 
@@ -78,6 +97,7 @@ def run(args):
             shutil.rmtree(args.data_dir)
         except OSError:
             pass
+    
         get_cubes_list(args)
         logger.info("Done preparing subtomograms!")
         logger.info("Start training!")

@@ -214,8 +214,9 @@ def apply_wedge1(ori_data, ld1 = 1, ld2 =0):
     mw = mw * ld1 + (1-mw) * ld2
 
     outData = np.zeros(data.shape,dtype=np.float32)
+    mw_shifted = np.fft.fftshift(mw)
     for i, item in enumerate(data):
-        outData_i=np.fft.ifft2(np.fft.fftshift(mw) * np.fft.fft2(item))
+        outData_i=np.fft.ifft2(mw_shifted * np.fft.fft2(item))
         outData[i] = np.real(outData_i)
 
     outData.astype(np.float32)
