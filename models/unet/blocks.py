@@ -1,4 +1,5 @@
 from tensorflow.keras.layers import Dropout, Activation, BatchNormalization, Conv2D, Conv3D, LeakyReLU,Conv3DTranspose,Concatenate
+from tensorflow.keras.initializers import RandomNormal
 
 def conv_blocks(n_filter, kernel=(3,3,3),
                 activation="relu",
@@ -6,9 +7,9 @@ def conv_blocks(n_filter, kernel=(3,3,3),
                 dropout=0.0,
                 strides=(1,1,1),
                 batch_norm=False,
-                init="glorot_uniform",
                 **kwargs):
     def layer(last_layer):
+        init = RandomNormal(stddev=0.02)
         if len(kernel)==2:
             conv=Conv2D(n_filter,kernel,
                         padding=padding,
@@ -40,7 +41,7 @@ def activation_my(type):
 
 def decoder_block(layer_in, skip_in , n_filters, kernel=(3,3,3), strides=(2,2,2), dropout=0.5, batchnorm=True,activation='relu'):
     # weight initialization
-    init = "glorot_uniform"
+    init = RandomNormal(stddev=0.02)
     # add upsampling layer
     g = Conv3DTranspose(n_filters, kernel, strides=strides, padding='same', kernel_initializer=init)(layer_in)
     # add batch normalization
