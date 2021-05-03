@@ -129,8 +129,9 @@ def train3D_continue(outFile,
 
 
     train_data, test_data = prepare_dataseq(data_dir, batch_size)
-
-    callback_list = []
+    train_data = tf.data.Dataset.from_generator(train_data,output_types=(tf.float32,tf.float32))
+    test_data = tf.data.Dataset.from_generator(test_data,output_types=(tf.float32,tf.float32))
+    # callback_list = []
     # check_point = ModelCheckpoint('{}/modellast.h5'.format(result_folder),
     #                             monitor='val_loss',
     #                             verbose=0,
