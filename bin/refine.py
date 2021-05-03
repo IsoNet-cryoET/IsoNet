@@ -36,6 +36,11 @@ def run(args):
             args.filter_base = 64
     if args.steps_per_epoch is None:
         args.steps_per_epoch = min(len(md) * 6/args.batch_size , 200)
+    #Write training log
+    with open('./refine.log','a') as f: 
+        for k,v in args.__dict__.items():
+            f.write('{} {}\n'.format(k,v))
+
     logger = logging.getLogger('IsoNet.refine')
     # Specify GPU(s) to be used
     os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
@@ -71,15 +76,19 @@ def run(args):
             sys.exit()
     else:
         continue_iter = 1
-    args = prepare_first_iter(args)
-    logger.info("Done preperation for the first iteration!")
+    if continue_iter ==1:
+        args = prepare_first_iter(args)
+        logger.info("Done preperation for the first iteration!")
     
     for num_iter in range(continue_iter,args.iterations + 1):
         
         args.iter_count = num_iter
         logger.info("Start Iteration{}!".format(num_iter))
         if args.pretrained_model is not None and num_iter==continue_iter:
-            shutil.copyfile(args.pretrained_model,'{}/model_iter{:0>2d}.h5'.format(args.result_dir,continue_iter))
+            if os.path.isfile('{}/model_iter{:0>2d}.h5'.format(args.result_dir,continue_iter)):
+                logger.warning('pretrained model has the same name of model in results folder, use the one in the results folder')
+            else:
+                shutil.copyfile(args.pretrained_model,'{}/model_iter{:0>2d}.h5'.format(args.result_dir,continue_iter))
             # os.system('cp {} {}'.format(args.pretrained_model,args.result_dir+'{}/model_iter{:0>2d}.h5'.format(args.result_dir,continue_iter)))
             logger.info('Use Pretrained model as the output model of iteration 1 and predict subtomograms')
             predict(args)
