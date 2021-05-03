@@ -23,7 +23,8 @@ def conv_blocks(n_filter, kernel=(3,3,3),
             conv=BatchNormalization()(conv)
         if dropout is not None and dropout>0:
             conv=Dropout(dropout)(conv)
-        conv = activation_my(activation)(conv)
+        if activation is not None:
+            conv = activation_my(activation)(conv)
         return conv
     return layer
 

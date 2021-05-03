@@ -86,8 +86,9 @@ def run(args):
 
             continue
         
-        if continue_iter ==1:
+        if num_iter ==1:
             args = prepare_first_model(args)
+
         else:
             args.init_model = '{}/model_iter{:0>2d}.h5'.format(args.result_dir,args.iter_count-1)
         args.noise_factor = ((num_iter - args.noise_start_iter)//args.noise_pause)+1 if num_iter >= args.noise_start_iter else 0
