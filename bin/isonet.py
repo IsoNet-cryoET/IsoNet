@@ -282,7 +282,7 @@ class ISONET:
         pool: tuple = None,
         unet_depth: int = 3,
         filter_base: int = None,
-        batch_normalization: bool = False,
+        batch_normalization: bool = True,
         normalize_percentile: bool = True,
     ):
         """
@@ -336,7 +336,8 @@ class ISONET:
             logging.basicConfig(format='%(asctime)s, %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.DEBUG)
         else:
             logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO)
-
+        with open('./refine.log','w') as f:
+            f.write(' '.join(sys.argv[1:]))
         logger = logging.getLogger('IsoNet.bin.refine')
         # d_args.only_extract_subtomos = False
         run(d_args)
