@@ -46,15 +46,12 @@ def prepare_dataseq(data_folder, batch_size):
 def get_gen(x_set,y_set,batch_size,shuffle=True):
     def gen():
         while True:
-            print('gen')
             all_idx = np.arange(len(x_set))
             if shuffle:
                 np.random.shuffle(all_idx)
             for i in range(len(x_set)//batch_size):
-                print('gen batch')
                 idx = slice(i * batch_size,(i+1) * batch_size)
                 idx = all_idx[idx]
-                # print('*******',self.x[-1],mrcfile.open(self.x[0]).data[:,:,:,np.newaxis].shape)
                 rx = np.array([mrcfile.open(x_set[j]).data[:,:,:,np.newaxis] for j in idx])
                 ry = np.array([mrcfile.open(y_set[j]).data[:,:,:,np.newaxis] for j in idx])
 

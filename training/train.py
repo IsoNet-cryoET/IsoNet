@@ -8,7 +8,7 @@ from tensorflow.keras.utils import Sequence
 from IsoNet.training.data_sequence import prepare_dataseq
 from IsoNet.models.unet.model import Unet
 from IsoNet.losses.losses import loss_mae,loss_mse
-
+import numpy as np
 from tensorflow.keras.models import model_from_json,load_model, clone_model
 import os
 
@@ -117,6 +117,8 @@ def train3D_continue(outFile,
     
     # model = load_model( model_file) # weight is a model
     strategy = tf.distribute.MirroredStrategy()
+    # train_data = strategy.experimental_distribute_dataset(train_data)
+    # test_data = strategy.experimental_distribute_dataset(test_data)
     if n_gpus > 1:
         with strategy.scope():
             model = load_model( model_file)
@@ -127,10 +129,6 @@ def train3D_continue(outFile,
     # model.compile(optimizer=optimizer, loss='mae', metrics=_metrics)
     logging.info("Loaded model from disk")
 
-
-    train_data, test_data = prepare_dataseq(data_dir, batch_size)
-    train_data = tf.data.Dataset.from_generator(train_data,output_types=(tf.float32,tf.float32))
-    test_data = tf.data.Dataset.from_generator(test_data,output_types=(tf.float32,tf.float32))
     # callback_list = []
     # check_point = ModelCheckpoint('{}/modellast.h5'.format(result_folder),
     #                             monitor='val_loss',
@@ -143,8 +141,11 @@ def train3D_continue(outFile,
     # tensor_board = TensorBoard(log_dir='./Graph', histogram_freq=0, write_graph=True, write_images=True)
     # callback_list.append(tensor_board)
     logging.info("begin fitting")
+    train_data, test_data= prepare_dataseq(data_dir, batch_size)
+    train_data = tf.data.Dataset.from_generator(train_data,output_types=(tf.float32,tf.float32))
+    test_data = tf.data.Dataset.from_generator(test_data,output_types=(tf.float32,tf.float32))
     history = model.fit(train_data, validation_data=test_data,
-                                  epochs=epochs, steps_per_epoch=steps_per_epoch,
+                                  epochs=epochs, steps_per_epoch=steps_per_epoch,validation_steps=np.ceil(0.1*steps_per_epoch),
                                   verbose=1)
                                 #   callbacks=callback_list)
     # if n_gpus>1:
