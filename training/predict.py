@@ -14,10 +14,8 @@ def predict(settings):
             model = load_model('{}/model_iter{:0>2d}.h5'.format(settings.result_dir,settings.iter_count))
     else:
         model = load_model('{}/model_iter{:0>2d}.h5'.format(settings.result_dir,settings.iter_count))
-    N = settings.predict_batch_size * settings.ngpus
+    N = settings.predict_batch_size 
     num_batches = len(settings.mrc_list)
-    while N > len(settings.mrc_list):
-        N = N//2
     if num_batches%N == 0:
         append_number = 0
     else:

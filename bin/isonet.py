@@ -296,8 +296,6 @@ class ISONET:
         :param log_level: (info) debug level
         :param continue_iter: (0) Which iteration you want to start from?
         :param result_dir: ('results') The name of directory to save refined models and subtomograms
-        ************************preparation settings************************
-
         :param preprocessing_ncpus: (16) Number of cpu for preprocessing.
 
         ************************Training settings************************
