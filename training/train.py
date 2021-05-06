@@ -14,7 +14,7 @@ import os
 
 
 def train3D_seq(outFile,
-                data_dir = 'data',
+                data_folder = 'data',
                 result_folder='results',
                 epochs=40,
                 steps_per_epoch=128,
@@ -69,7 +69,7 @@ def train3D_seq(outFile,
             lr = lr)
         # model.compile(optimizer=optimizer, loss=loss, metrics=_metrics)
     print(model.summary())
-    train_data, test_data = prepare_dataseq(data_dir, batch_size)
+    train_data, test_data = prepare_dataseq(data_folder, batch_size)
     print('**train data size**',len(train_data))
     callback_list = []
     # check_point = ModelCheckpoint('{}/modellast.h5'.format(result_folder),
@@ -100,7 +100,7 @@ def train3D_seq(outFile,
 
 def train3D_continue(outFile,
                     model_file,
-                    data_dir = 'data',
+                    data_folder = 'data',
                     result_folder='results',
                     epochs=40,
                     lr=0.0004,
@@ -128,7 +128,7 @@ def train3D_continue(outFile,
     logging.info("Loaded model from disk")
 
 
-    train_data, test_data = prepare_dataseq(data_dir, batch_size)
+    train_data, test_data = prepare_dataseq(data_folder, batch_size)
 
     callback_list = []
     # check_point = ModelCheckpoint('{}/modellast.h5'.format(result_folder),
@@ -174,7 +174,7 @@ def prepare_first_model(settings):
 def train_data(settings):
     history = train3D_continue('{}/model_iter{:0>2d}.h5'.format(settings.result_dir,settings.iter_count),
                                         settings.init_model,
-                                        data_dir = settings.data_dir,
+                                        data_folder = settings.data_folder,
                                         result_folder = settings.result_dir,
                                         epochs=settings.epochs,
                                         steps_per_epoch=settings.steps_per_epoch,
@@ -184,7 +184,7 @@ def train_data(settings):
 
     # if settings.iter_count == 0 and settings.pretrained_model is None :
     #     history = train3D_seq('{}/model_iter{:0>2d}.h5'.format(settings.result_dir,settings.iter_count+1),
-    #                                 data_dir = settings.data_dir,
+    #                                 data_folder = settings.data_folder,
     #                                 result_folder = settings.result_dir,
     #                                 epochs = settings.epochs,
     #                                 steps_per_epoch = settings.steps_per_epoch,
@@ -200,7 +200,7 @@ def train_data(settings):
     # elif settings.iter_count == 0 and settings.pretrained_model is not None:
     #     history = train3D_continue('{}/model_iter{:0>2d}.h5'.format(settings.result_dir,settings.iter_count+1),
     #                                     settings.pretrained_model,
-    #                                     data_dir = settings.data_dir,
+    #                                     data_folder = settings.data_folder,
     #                                     result_folder = settings.result_dir,
     #                                     epochs=settings.epochs,
     #                                     steps_per_epoch=settings.steps_per_epoch,
@@ -211,7 +211,7 @@ def train_data(settings):
     # else:
     #     history = train3D_continue('{}/model_iter{:0>2d}.h5'.format(settings.result_dir,settings.iter_count+1),
     #                                     '{}/model_iter{:0>2d}.h5'.format(settings.result_dir,settings.iter_count),
-    #                                     data_dir = settings.data_dir,
+    #                                     data_folder = settings.data_folder,
     #                                     result_folder = settings.result_dir,
     #                                     epochs=settings.epochs,
     #                                     steps_per_epoch=settings.steps_per_epoch,
