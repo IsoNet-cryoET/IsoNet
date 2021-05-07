@@ -12,7 +12,7 @@ import sys
 import shutil
 from IsoNet.util.metadata import MetaData, Item, Label
 def run(args):
-    if args.continue_train is None:
+    if args.continue_from is None:
         run_whole(args)
 
     else:
@@ -29,7 +29,12 @@ def run_whole(args):
     args.lr = 0.0004
 
     #*******calculate parameters********
-    args.gpuID = str(args.gpuID)
+    if args.gpuID is None:
+        args.gpuID = '0,1,2,3'
+    else:
+        args.gpuID = str(args.gpuID)
+    if args.iterations is None:
+        args.iterations = 30
     args.ngpus = len(args.gpuID.split(','))
     if args.result_dir is None:
         args.result_dir = 'results'
@@ -64,7 +69,6 @@ def run_whole(args):
     #import tensorflow related modules after setting environment
     from IsoNet.training.predict import predict
     from IsoNet.training.train import prepare_first_model, train_data
-    print([k for k,v in args.__dict__.items()])
     args = prepare_first_iter(args)
     logger.info("Done preperation for the first iteration!")
     for num_iter in range(1,args.iterations + 1):        
@@ -105,16 +109,24 @@ def run_whole(args):
 
 def run_continue(continue_args):
     
-    #params need to to be recalculated when in continue_train mode
-    args = load_args_from_json(continue_args.continue_train)
+    #params need to to be recalculated when in continue_from mode
+    # [gpuID, batch_size, steps_per_epoch, iterations] 
+    args = load_args_from_json(continue_args.continue_from)
     md = MetaData()
     md.read(args.subtomo_star)
-    args.gpuID = str(continue_args.gpuID)
-    args.ngpus = len(continue_args.gpuID.split(','))
-    if continue_args.batch_size is None:
+    if continue_args.iterations is not None:
+        args.iterations = continue_args.iterations
+    if continue_args.gpuID is not None:
+        args.gpuID = str(continue_args.gpuID)
+    args.ngpus = len(args.gpuID.split(','))
+    if continue_args.batch_size is not None:
+        args.batch_size = continue_args.batch_size
+    elif continue_args.gpuID is not None:
         args.batch_size = max(4, 2 * args.ngpus)
     args.predict_batch_size = args.batch_size
-    if continue_args.steps_per_epoch is None:
+    if continue_args.steps_per_epoch is not None:
+        args.steps_per_epoch = continue_args.steps_per_epoch
+    elif continue_args.gpuID is not None:
         args.steps_per_epoch = min(int(len(md) * 6/args.batch_size) , 200)
     if len(md) <=0:
         logging.error("Subtomo list is empty!")
@@ -126,7 +138,7 @@ def run_continue(continue_args):
 
     #setting up gpu and logger
     os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
-    os.environ["CUDA_VISIBLE_DEVICES"]=str(continue_args.gpuID)
+    os.environ["CUDA_VISIBLE_DEVICES"]=str(args.gpuID)
     os.environ["TF_FORCE_GPU_ALLOW_GROWTH"] = "true"
     logger = logging.getLogger('IsoNet.refine')
     if args.log_level == 'debug':
@@ -142,9 +154,10 @@ def run_continue(continue_args):
         args.iter_count = num_iter
         logger.info("Start Iteration{}!".format(num_iter))
         # Predict subtomos at first
-        if continue_args.continue_train is not None:
+        if continue_args.continue_from is not None:
+            logger.info('Continue from previous model: {}/model_iter{:0>2d}.h5 of iteration {} and predict subtomograms'.format(args.result_dir,num_iter,num_iter))
             predict(args)
-            continue_args.continue_train = None
+            continue_args.continue_from = None
             continue
         ##
         args.init_model = '{}/model_iter{:0>2d}.h5'.format(args.result_dir,args.iter_count-1)
