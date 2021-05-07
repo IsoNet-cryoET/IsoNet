@@ -341,7 +341,6 @@ class ISONET:
             f.write(' '.join(sys.argv[1:]))
         logger = logging.getLogger('IsoNet.bin.refine')
         # d_args.only_extract_subtomos = False
-        print([k for k,v in d_args.__dict__.items()])
         run(d_args)
 
     def predict(self, star_file: str, model: str, output_dir: str='./corrected_tomos', gpuID: str = None, cube_size:int=48,

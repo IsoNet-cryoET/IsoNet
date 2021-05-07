@@ -12,21 +12,27 @@ import sys
 import shutil
 from IsoNet.util.metadata import MetaData, Item, Label
 def run(args):
+    if args.continue_train is None:
+        run_whole(args)
+
+    else:
+        run_continue(args)
+
+def run_whole(args):
     md = MetaData()
     md.read(args.subtomo_star)
     #*******set fixed parameters*******
-    args.reload_weight = True
-    args.result_dir = 'results'
-    args.continue_from = "training"
     args.crop_size = md._data[0].rlnCropSize
     args.cube_size = md._data[0].rlnCubeSize
     args.predict_cropsize = args.crop_size
     args.noise_dir = None
     args.lr = 0.0004
+
     #*******calculate parameters********
     args.gpuID = str(args.gpuID)
     args.ngpus = len(args.gpuID.split(','))
-    
+    if args.result_dir is None:
+        args.result_dir = 'results'
     if args.batch_size is None:
         args.batch_size = max(4, 2 * args.ngpus)
     args.predict_batch_size = args.batch_size
@@ -37,17 +43,19 @@ def run(args):
             args.filter_base = 64
     if args.steps_per_epoch is None:
         args.steps_per_epoch = min(int(len(md) * 6/args.batch_size) , 200)
-    #Write training log
-    with open('./refine.log','a') as f: 
-        for k,v in args.__dict__.items():
-            f.write('{} {}\n'.format(k,v))
-
-    logger = logging.getLogger('IsoNet.refine')
+    if len(md) <=0:
+        logging.error("Subtomo list is empty!")
+        sys.exit(0)
+    args.mrc_list = []
+    for i,it in enumerate(md):
+        if "rlnImageName" in md.getLabels():
+            args.mrc_list.append(it.rlnImageName)
+    
     # Specify GPU(s) to be used
     os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
     os.environ["CUDA_VISIBLE_DEVICES"]=args.gpuID
     os.environ["TF_FORCE_GPU_ALLOW_GROWTH"] = "true"
-
+    logger = logging.getLogger('IsoNet.refine')
     if args.log_level == 'debug':
         os.environ['TF_CPP_MIN_LOG_LEVEL'] = '0'
     else:
@@ -56,43 +64,20 @@ def run(args):
     #import tensorflow related modules after setting environment
     from IsoNet.training.predict import predict
     from IsoNet.training.train import prepare_first_model, train_data
-    
-    if len(md) <=0:
-        logging.error("Subtomo list is empty!")
-        sys.exit(0)
-    args.mrc_list = []
-    for i,it in enumerate(md):
-        if "rlnImageName" in md.getLabels():
-            args.mrc_list.append(it.rlnImageName)
-
-    #************************
-    if args.continue_train is not None:
-        args = load_args_from_json(args.continue_train) # passes iter_count, init_model, etc.
-        logger.info('load refining parameters from {}'.format(args.continue_train))
-        iter_count = args.iter_count
-    else:
-        iter_count = 1
-    
-    if iter_count == 1:
-        args = prepare_first_iter(args)
-        logger.info("Done preperation for the first iteration!")
-    
-    save_args_json(args,args.result_dir+'/refine_iter{:0>2d}.json'.format(0))
-    for num_iter in range(iter_count,args.iterations + 1):
-        
+    print([k for k,v in args.__dict__.items()])
+    args = prepare_first_iter(args)
+    logger.info("Done preperation for the first iteration!")
+    for num_iter in range(1,args.iterations + 1):        
         args.iter_count = num_iter
         logger.info("Start Iteration{}!".format(num_iter))
-        # Cases to predict at first
+        # pretrained_model case
         if args.pretrained_model is not None and num_iter==1:
             shutil.copyfile(args.pretrained_model,'{}/model_iter{:0>2d}.h5'.format(args.result_dir,1))
             # os.system('cp {} {}'.format(args.pretrained_model,args.result_dir+'{}/model_iter{:0>2d}.h5'.format(args.result_dir,continue_iter)))
             logger.info('Use Pretrained model as the output model of iteration 1 and predict subtomograms')
             predict(args)
             continue
-        if args.continue_train is True:
-            predict(args)
-            continue
-        ### set initial model
+
         if num_iter ==1:
             args = prepare_first_model(args)
         else:
@@ -118,67 +103,69 @@ def run(args):
         logger.info("Done predicting subtomograms!")
         logger.info("Done Iteration{}!".format(num_iter))
 
+def run_continue(continue_args):
     
-    # if args.continue_iter == 0 or args.pretrained_model is None:
-    #     args = prepare_first_iter(args)
-    #     logger.info("Done preperation for the first iteration!")
-    #     args.continue_iter = 1
-    #     if args.pretrained_model is not None:
-    #         args.init_model = args.pretrained_model
-    #     else:
-    #         args = prepare_first_model(args)
-    # else: #mush has pretrained model and continue_iter >0
-    #     args.init_model = args.pretrained_model
+    #params need to to be recalculated when in continue_train mode
+    args = load_args_from_json(continue_args.continue_train)
+    md = MetaData()
+    md.read(args.subtomo_star)
+    args.gpuID = str(continue_args.gpuID)
+    args.ngpus = len(continue_args.gpuID.split(','))
+    if continue_args.batch_size is None:
+        args.batch_size = max(4, 2 * args.ngpus)
+    args.predict_batch_size = args.batch_size
+    if continue_args.steps_per_epoch is None:
+        args.steps_per_epoch = min(int(len(md) * 6/args.batch_size) , 200)
+    if len(md) <=0:
+        logging.error("Subtomo list is empty!")
+        sys.exit(0)
+    args.mrc_list = []
+    for i,it in enumerate(md):
+        if "rlnImageName" in md.getLabels():
+            args.mrc_list.append(it.rlnImageName)
 
-    # continue_from_training = not os.path.isfile('{}/model_iter{:0>2d}.h5'.format
-    # (args.result_dir,args.continue_iter))
+    #setting up gpu and logger
+    os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
+    os.environ["CUDA_VISIBLE_DEVICES"]=str(continue_args.gpuID)
+    os.environ["TF_FORCE_GPU_ALLOW_GROWTH"] = "true"
+    logger = logging.getLogger('IsoNet.refine')
+    if args.log_level == 'debug':
+        os.environ['TF_CPP_MIN_LOG_LEVEL'] = '0'
+    else:
+        os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
-    # #************************************
-    # for num_iter in range(args.continue_iter,args.iterations + 1):
-    #     args.iter_count = num_iter
-    #     logger.info("Start Iteration{}!".format(num_iter))
-    #     if num_iter > args.continue_iter: # set the previous iteration's result model as the init_model 
-    #         args.init_model = '{}/model_iter{:0>2d}.h5'.format(args.result_dir,args.iter_count-1)
-    #     args.noise_factor = ((num_iter - args.noise_start_iter)//args.noise_pause)+1 if num_iter >= args.noise_start_iter else 0
-    #     logging.info("noise_factor:{}".format(args.noise_factor))
+    from IsoNet.training.predict import predict
+    from IsoNet.training.train import prepare_first_model, train_data
+    # start REFINE LOOP
+    current_iter = args.iter_count
+    for num_iter in range(current_iter,args.iterations + 1):
+        args.iter_count = num_iter
+        logger.info("Start Iteration{}!".format(num_iter))
+        # Predict subtomos at first
+        if continue_args.continue_train is not None:
+            predict(args)
+            continue_args.continue_train = None
+            continue
+        ##
+        args.init_model = '{}/model_iter{:0>2d}.h5'.format(args.result_dir,args.iter_count-1)
+        args.noise_factor = ((num_iter - args.noise_start_iter)//args.noise_pause)+1 if num_iter >= args.noise_start_iter else 0
+        logging.info("noise_level:{}".format(args.noise_factor*args.noise_level))
 
-    #     if continue_from_training:
-    #         try:
-    #             shutil.rmtree(args.data_folder)
-    #         except OSError:
-    #             pass
-    #             # logging.debug("No previous data folder!")
-    #         get_cubes_list(args)
-    #         logger.info("Done preparing subtomograms!")
-    #         logger.info("Start training!")
-    #         history = train_data(args) #train based on init model and save new one as model_iter{num_iter}.h5
-    #         # losses.append(history.history['loss'][-1])
-    #         logger.info("Done training!")
-    #         logger.info("Start predicting subtomograms!")
-    #         predict(args)
-    #         logger.info("Done predicting subtomograms!")
-        
-    #     else:
-    #         logger.info("Model for iteration {} exists".format(args.continue_iter))
-    #         logger.info("Start cube predicting!")
-    #         predict(args)
-    #         logger.info("Done cube predicting!")
-    #         continue_from_training = True
+        try:
+            shutil.rmtree(args.data_folder)     
+        except OSError:
+            pass
+    
+        get_cubes_list(args)
+        logger.info("Done preparing subtomograms!")
+        logger.info("Start training!")
+        history = train_data(args) #train based on init model and save new one as model_iter{num_iter}.h5
+        # losses.append(history.history['loss'][-1])
+        save_args_json(args,args.result_dir+'/refine_iter{:0>2d}.json'.format(num_iter))
+        logger.info("Done training!")
+        logger.info("Start predicting subtomograms!")
+        predict(args)
+        logger.info("Done predicting subtomograms!")
+        logger.info("Done Iteration{}!".format(num_iter))
 
-
-if __name__ == "__main__":
-    from IsoNet.util.dict2attr import Arg
-    arg = {'input_dir': 'subtomo/', 'gpuID': '4,5,6,7', 
-    'mask_dir': None, 'noise_dir': None, 'iterations': 50, 
-    'data_folder': 'data', 'pretrained_model': './results/model_iter35.h5', 
-    'log_level': 'debug', 'continue_training': False, 
-    'continue_iter': 36, 'noise_mode': 1, 'noise_level': 0.05, 
-    'noise_start_iter': 15, 'noise_pause': 5, 'cube_size': 64, 
-    'crop_size': 96, 'ncube': 1, 'preprocessing_ncpus': 16, 
-    'epochs': 10, 'batch_size': 8, 'steps_per_epoch': 150, 
-    'drop_out': 0.3, 'convs_per_depth': 3, 'kernel': (3, 3, 3),
-     'unet_depth': 3, 'filter_base': 32, 'batch_normalization': False, 
-     'normalize_percentile': True}
-    d_args = Arg(arg)
-    print(mrcfile.__file__)
-    run(d_args)
+    
