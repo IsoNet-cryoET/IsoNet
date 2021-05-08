@@ -262,7 +262,7 @@ class ISONET:
         subtomo_star: str = None,
         gpuID: str = None,
         iterations: int = None,
-        data_folder: str = "data",
+        data_folder: str = None,
         pretrained_model: str = None,
         log_level: str = "info",
         result_dir: str='results',

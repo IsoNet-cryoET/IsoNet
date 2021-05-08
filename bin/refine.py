@@ -33,6 +33,8 @@ def run_whole(args):
         args.gpuID = '0,1,2,3'
     else:
         args.gpuID = str(args.gpuID)
+    if args.data_folder is None:
+        args.data_folder = args.result_dir + '/data'
     if args.iterations is None:
         args.iterations = 30
     args.ngpus = len(args.gpuID.split(','))
@@ -120,6 +122,8 @@ def run_continue(continue_args):
     if continue_args.gpuID is not None:
         args.gpuID = str(continue_args.gpuID)
     args.ngpus = len(args.gpuID.split(','))
+    if continue_args.data_folder is not None:
+        args.data_folder = continue_args.data_folder
     if continue_args.batch_size is not None:
         args.batch_size = continue_args.batch_size
     elif continue_args.gpuID is not None:
