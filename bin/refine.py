@@ -1,7 +1,7 @@
 import logging
 from IsoNet.preprocessing.cubes import prepare_cubes
 from IsoNet.preprocessing.img_processing import normalize
-from IsoNet.preprocessing.prepare import prepare_first_iter,get_cubes_list
+from IsoNet.preprocessing.prepare import prepare_first_iter,get_cubes_list,get_noise_level
 from IsoNet.util.dict2attr import save_args_json,load_args_from_json
 import glob
 import mrcfile
@@ -71,6 +71,7 @@ def run_whole(args):
     from IsoNet.training.train import prepare_first_model, train_data
     args = prepare_first_iter(args)
     logger.info("Done preperation for the first iteration!")
+    noise_level_series = get_noise_level(args.noise_level,args.noise_start_iter,args.iterations)
     for num_iter in range(1,args.iterations + 1):        
         args.iter_count = num_iter
         logger.info("Start Iteration{}!".format(num_iter))
@@ -87,8 +88,8 @@ def run_whole(args):
         else:
             args.init_model = '{}/model_iter{:0>2d}.h5'.format(args.result_dir,args.iter_count-1)
         
-        args.noise_factor = ((num_iter - args.noise_start_iter)//args.noise_pause)+1 if num_iter >= args.noise_start_iter else 0
-        logging.info("noise_level:{}".format(args.noise_factor*args.noise_level))
+        args.noise_level_current =  noise_level_series[num_iter]
+        logging.info("Noise Level:{}".format(args.noise_level_current))
 
         try:
             shutil.rmtree(args.data_folder)     
@@ -150,6 +151,7 @@ def run_continue(continue_args):
     from IsoNet.training.train import prepare_first_model, train_data
     # start REFINE LOOP
     current_iter = args.iter_count
+    noise_level_series = get_noise_level(args.noise_level,args.noise_start_iter,args.iterations)
     for num_iter in range(current_iter,args.iterations + 1):
         args.iter_count = num_iter
         logger.info("Start Iteration{}!".format(num_iter))
@@ -161,9 +163,8 @@ def run_continue(continue_args):
             continue
         ##
         args.init_model = '{}/model_iter{:0>2d}.h5'.format(args.result_dir,args.iter_count-1)
-        args.noise_factor = ((num_iter - args.noise_start_iter)//args.noise_pause)+1 if num_iter >= args.noise_start_iter else 0
-        logging.info("noise_level:{}".format(args.noise_factor*args.noise_level))
-
+        args.noise_level_current =  noise_level_series[num_iter]
+        logging.info("noise_level:{}".format(args.noise_level_current))
         try:
             shutil.rmtree(args.data_folder)     
         except OSError:

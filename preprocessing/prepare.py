@@ -124,7 +124,7 @@ def get_cubes_one(data, settings, start = 0, mask = None, add_noise = 0):
     and save them as train set
     '''
     data_cubes = DataCubes(data, nCubesPerImg=1, cubeSideLen = settings.cube_size, cropsize = settings.crop_size, 
-    mask = mask, noise_folder = settings.noise_dir,noise_level = settings.noise_level*settings.noise_factor,noise_mode = settings.noise_mode)
+    mask = mask, noise_folder = settings.noise_dir,noise_level = settings.noise_level_current,noise_mode = settings.noise_mode)
     for i,img in enumerate(data_cubes.cubesX):
         with mrcfile.new('{}/train_x/x_{}.mrc'.format(settings.data_folder, i+start), overwrite=True) as output_mrc:
             output_mrc.set_data(img.astype(np.float32))
@@ -200,4 +200,12 @@ def get_cubes_list(settings):
         os.rename('{}/train_y/{}'.format(settings.data_folder, all_path_y[i]), '{}/test_y/{}'.format(settings.data_folder, all_path_y[i]) )
         #os.rename('data/train_y/'+all_path_y[i], 'data/test_y/'+all_path_y[i])
 
-
+def get_noise_level(noise_level_tuple,noise_start_iter_tuple,iterations):
+    assert len(noise_level_tuple) == len(noise_start_iter_tuple) and type(noise_level_tuple) is tuple
+    noise_level = np.zeros(iterations)
+    for i in range(len(noise_start_iter_tuple)-1):
+        assert i < iterations and noise_start_iter_tuple[i]< noise_start_iter_tuple[i+1]
+        noise_level[noise_start_iter_tuple[i]:noise_start_iter_tuple[i+1]] = noise_level_tuple[i]
+    assert noise_level_tuple[-1] < iterations and noise_level_tuple[-2] < noise_level_tuple[-1]
+    noise_level[noise_start_iter_tuple[-1]:] = noise_level_tuple[-1]
+    return noise_level
