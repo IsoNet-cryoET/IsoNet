@@ -16,6 +16,7 @@ from IsoNet.gui.model_star import Model, setTableWidget #need to change in the p
 import time
 from threading import Thread
 from IsoNet.util.metadata import MetaData,Label,Item
+from subprocess import call,Popen
 
 class MainWindowUIClass( Ui_MainWindow ):
     def __init__( self ):
@@ -165,11 +166,11 @@ class MainWindowUIClass( Ui_MainWindow ):
         i = self.tableWidget.currentRow()
         j = self.tableWidget.currentColumn() 
         item = self.tableWidget.item(i, j).text()
-        if item[-4:] == '.mrc':
+        if item[-4:] in ['.mrc','.rec']:
             cmd = "3dmod {}".format(item)
             os.system(cmd)
         else:
-            print("The current item is not a mrc file!")
+            print("The current item is not a mrc/rec file!")
     # slot
     
     def switch_btn(self, btn):
@@ -391,7 +392,8 @@ class MainWindowUIClass( Ui_MainWindow ):
         if self.checkBox_only_print_command_refine.isChecked():
             print(cmd)
         else:
-            os.system(cmd)
+            # os.system(cmd)
+            Popen(cmd,shell=True,stdin=None,stdout=None, stderr=None)
             
     def predict( self ):
         tomo_star = self.lineEdit_tomo_star_predict.text() if self.lineEdit_tomo_star_predict.text() else "tomogram.star"
