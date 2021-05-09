@@ -370,7 +370,7 @@ class ISONET:
         print('IsoNet --version 0.1 installed')
        
     def gui(self):
-        import IsoNet.gui.Isonet_app as app
+        import IsoNet.gui.Isonet_star_app as app
         app.main()
 
 def Display(lines, out):
