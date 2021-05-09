@@ -2,7 +2,7 @@
 import fire
 import logging
 import os
-from IsoNet.util.dict2attr import Arg,check_args,idx2list
+from IsoNet.util.dict2attr import Arg,check_parse,idx2list
 import sys
 from fire import core
 import time
@@ -179,7 +179,6 @@ class ISONET:
         :param z_crop: If exclude the top and bottom regions of tomograms along z axis. For example, "--z_crop 0.2" will mask out the top 20% and bottom 20% region along z axis. 
         :param tomo_idx: (None) If this value is set, process only the tomograms listed in this index. e.g. 1,2,4 or 5-10,15,16   
         """
-        #TODO the meaning of the parameter is not intuitive.
         from IsoNet.bin.make_mask import make_mask
         if not os.path.isdir(mask_folder):
             os.mkdir(mask_folder)
@@ -255,26 +254,25 @@ class ISONET:
         from IsoNet.preprocessing.prepare import extract_subtomos
         d_args.crop_size = int(int(cube_size) * 1.5)
         d_args.subtomo_dir = subtomo_folder
+        
         extract_subtomos(d_args)
 
     def refine(self,
         subtomo_star: str = None,
-        gpuID: str = '0,1,2,3',
-        iterations: int = 30,
-        data_folder: str = "data",
+        gpuID: str = None,
+        iterations: int = None,
+        data_folder: str = None,
         pretrained_model: str = None,
         log_level: str = "info",
-        continue_iter: int = None,
         result_dir: str='results',
         preprocessing_ncpus: int = 16,
-
+        continue_from: str=None,
         epochs: int = 10,
         batch_size: int = None,
         steps_per_epoch: int = None,
 
-        noise_level:  float= 0.05,
-        noise_start_iter: int = 11,
-        noise_pause: int = 5,
+        noise_level:  tuple=(0.05,0.10,0.15,0.20),
+        noise_start_iter: tuple=(11,16,21,26),
         noise_mode: int = 1,
         drop_out: float = 0.3,
         convs_per_depth: int = 3,
@@ -291,7 +289,7 @@ class ISONET:
         :param subtomo_star: (None) star file containing subtomogram(s).
         :param gpuID: (0,1,2,3) The ID of gpu to be used during the training. e.g 0,1,2,3.
         :param pretrained_model: (None) A trained neural network model in ".h5" format to start with.
-        :param iterations: (50) Number of training iterations.
+        :param iterations: (30) Number of training iterations.
         :param data_folder: (data) Temperary folder to save the generated data used for training.
         :param log_level: (info) debug level
         :param continue_iter: (0) Which iteration you want to start from?
@@ -329,7 +327,6 @@ class ISONET:
         from IsoNet.bin.refine import run
         d = locals()
         d_args = Arg(d)
-        d_args.data_dir = data_folder
         if d_args.log_level == "debug":
             logging.basicConfig(format='%(asctime)s, %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.DEBUG)
         else:
@@ -389,4 +386,6 @@ def pool_process(p_func,chunks_list,ncpu):
     
 if __name__ == "__main__":
     core.Display = Display
+    logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO)
+    check_parse(sys.argv[1:])
     fire.Fire(ISONET)
