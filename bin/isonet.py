@@ -252,7 +252,6 @@ class ISONET:
         os.mkdir(subtomo_folder)
 
         from IsoNet.preprocessing.prepare import extract_subtomos
-        print([k for k,v in d_args.__dict__.items()])
         d_args.crop_size = int(int(cube_size) * 1.5)
         d_args.subtomo_dir = subtomo_folder
         
@@ -365,7 +364,6 @@ class ISONET:
             logging.basicConfig(format='%(asctime)s, %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.DEBUG)
         else:
             logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO)
-        print([k for k,v in d_args.__dict__.items()])
         predict(d_args)
   
     def check(self):

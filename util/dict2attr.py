@@ -6,6 +6,8 @@ predict_param = ['tomo_idx', 'Ntile', 'log_level', 'normalize_percentile', 'batc
 extract_param = ['log_level', 'cube_size', 'subtomo_star', 'subtomo_folder', 'use_deconv_tomo', 'star_file']
 deconv_param = ['star_file', 'deconv_folder', 'snrfalloff', 'deconvstrength', 'highpassnyquist', 'tile', 'overlap_rate', 'ncpu', 'tomo_idx']
 make_mask_param = ['star_file', 'mask_folder', 'patch_size', 'density_percentage', 'std_percentage', 'use_deconv_tomo', 'z_crop', 'tomo_idx']
+prepare_star_param = ['number_subtomos', 'defocus', 'pixel_size', 'output_star', 'folder_name']
+prepare_subtomo_star_param = ['folder_name', 'output_star', 'pixel_size', 'cube_size']
 param_to_check = refine_param + predict_param + extract_param + ['self','run']
 param_to_set_attr = refine_param + predict_param + extract_param + ['iter_count','crop_size','cube_size','predict_cropsize','noise_dir','lr','ngpus','predict_batch_size']
 class Arg:
@@ -36,24 +38,22 @@ def load_args_from_json(file_name):
     return Arg(encoded,from_cmd=False)
 
 def check_parse(args_list):
-    if args_list[0] == 'refine':
-        check_list = refine_param
-    elif args_list[0] == 'predict':
-        check_list = predict_param
-    elif args_list[0] == 'extract':
-        check_list = extract_param
-    elif args_list[0] == 'deconv':
-        check_list = deconv_param
-    elif args_list[0] == 'make_mask':
-        check_list = make_mask_param
+    if args_list[0] in ['refine','predict','extract','deconv','make_mask','prepare_star','extract','prepare_subtomo_star','check','gui']:
+        if args_list[0] in ['refine','predict','extract','deconv','make_mask','prepare_star','extract','prepare_subtomo_star']:
+            check_list = eval(args_list[0]+'_param') + ['help']
+        else:
+            check_list = None
     else:
-        logging.error(" '{}' is NOT a IsoNet function!".format(args_list[0]))
-        sys.exit(0)
-    for arg in args_list:
-        if type(arg) is str and arg[0:2]=='--':
-            if arg[2:] not in check_list:
-                logging.error(" '{}' not recognized!".format(arg[2:]))
-                sys.exit(0)
+        check_list = None
+        # logging.error(" '{}' is NOT a IsoNet function!".format(args_list[0]))
+        # sys.exit(0)
+    # check_list not None means need to check the parameters.
+    if check_list is not None:
+        for arg in args_list:
+            if type(arg) is str and arg[0:2]=='--':
+                if arg[2:] not in check_list:
+                    logging.error(" '{}' not recognized!".format(arg[2:]))
+                    sys.exit(0)
 
 
 def idx2list(tomo_idx):
