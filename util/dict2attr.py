@@ -1,5 +1,8 @@
 import json,sys
 import logging
+global logger 
+logger = logging.getLogger('main')
+logger.setLevel(logging.INFO)
 global refine_param, predict_param, extract_param, param_to_check, param_to_set_attr
 refine_param = [ 'normalize_percentile', 'batch_normalization', 'filter_base', 'unet_depth', 'pool', 'kernel', 'convs_per_depth', 'drop_out', 'noise_mode', 'noise_pause', 'noise_start_iter', 'noise_level', 'steps_per_epoch', 'batch_size', 'epochs', 'continue_from', 'preprocessing_ncpus', 'result_dir', 'continue_iter', 'log_level', 'pretrained_model', 'data_folder', 'iterations', 'gpuID', 'subtomo_star']
 predict_param = ['tomo_idx', 'Ntile', 'log_level', 'normalize_percentile', 'batch_size', 'use_deconv_tomo', 'crop_size', 'cube_size', 'gpuID', 'output_dir', 'model', 'star_file']
@@ -18,7 +21,7 @@ class Arg:
         #logger = logging.getLogger('IsoNet.util.dict2attr')
         for k, v in dictionary.items():
             if k not in param_to_check and from_cmd is True:
-                logging.error("{} not recognized!".format(k))
+                logger.error("{} not recognized!".format(k))
                 sys.exit(0)
             if k == 'gpuID' and type(v) is tuple:
                 v = ','.join([str(i) for i in v])
@@ -52,7 +55,7 @@ def check_parse(args_list):
         for arg in args_list:
             if type(arg) is str and arg[0:2]=='--':
                 if arg[2:] not in check_list:
-                    logging.error(" '{}' not recognized!".format(arg[2:]))
+                    logger.error(" '{}' not recognized!".format(arg[2:]))
                     sys.exit(0)
 
 

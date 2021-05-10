@@ -1,6 +1,7 @@
 import numpy as np
 import mrcfile
 import os
+import logging
 def tom_ctf1d(pixelsize, voltage, cs, defocus, amplitude, phaseshift, bfactor, length=2048):
 
     ny = 1 / pixelsize
@@ -194,7 +195,7 @@ def deconv_one(tomo, out_tomo,defocus=1.0, pixel_size=1.0,snrfalloff=1.0, deconv
     
 
     root_name = os.path.splitext(os.path.basename(tomo))[0]
-    print(tomo,'angpix:',pixel_size, 'defocus',defocus, 'snrfalloff',snrfalloff,'deconvstrength',deconvstrength)
+    logging.info('deconv: {}| pixel: {}| defocus: {}| snrfalloff:{}| deconvstrength:{}'.format(tomo, pixel_size, defocus ,snrfalloff, deconvstrength))
     c = Chunks(num=tile,overlap=overlap_rate)
     chunks_list = c.get_chunks(tomo) # list of name of subtomograms
     # chunks_gpu_num_list = [[array,j%num_gpu] for j,array in enumerate(chunks_list)]
@@ -212,7 +213,7 @@ def deconv_one(tomo, out_tomo,defocus=1.0, pixel_size=1.0,snrfalloff=1.0, deconv
         mrc.set_data(vol_restored)
     shutil.rmtree('./deconv_temp')
     t2 = time.time()
-    print('time consumed: ',t2-t1)
+    logging.info('time consumed: '.format(t2-t1))
     
 
 
@@ -253,3 +254,25 @@ def deconv_gpu(tomo, defocus: float=1.0, pixel_size: float=1.0,snrfalloff: float
     # vol_restored = c.restore(chunks_deconv_list)
     # with mrcfile.new(outname, overwrite=True) as mrc:
     #     mrc.set_data(vol_restored)
+
+
+if __name__=='__main__':
+    import sys
+    import time
+    import argparse
+    parser = argparse.ArgumentParser(
+    description="Deconvolve with cpu", add_help=True,
+    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+    parser.add_argument("mrcFile",type=str,default=None)
+    parser.add_argument("outFile",type=str,default=None)
+    parser.add_argument("defocus",type=float,default=None)
+    parser.add_argument("pixsize",type=float,default=None)
+    parser.add_argument("snrfalloff",type=float,default=1.0)
+    parser.add_argument("deconvstrength",type=float,default=1.0)
+    parser.add_argument("--tile",type=tuple,default=(1,4,4))
+    parser.add_argument("--ncpu",type=int,default=8)
+    args = parser.parse_args()
+    start = time.time()
+    
+    deconv_one(args.mrcFile, args.outFile,defocus=args.defocus/10000.0, pixel_size=args.pixsize,snrfalloff=args.snrfalloff, deconvstrength=args.deconvstrength,tile=args.tile,ncpu=args.ncpu)
