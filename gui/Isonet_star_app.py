@@ -162,6 +162,23 @@ class MainWindowUIClass( Ui_MainWindow ):
             pass
      
     def view_3dmod(self):
+        slected_items = self.tableWidget.selectedItems()
+        if len(slected_items) > 0:
+            cmd = "3dmod"
+            for item in slected_items:
+                i = item.row()
+                j = item.column()
+                item_text = self.tableWidget.item(i, j).text()
+                if item_text[-4:] == '.mrc':
+                    cmd = "{} {}".format(cmd,item_text)
+            print(cmd)
+            if cmd != "3dmod":
+                os.system(cmd)
+            else:
+                print("selected items are not mrc file(s)")
+            
+        
+        '''
         i = self.tableWidget.currentRow()
         j = self.tableWidget.currentColumn() 
         item = self.tableWidget.item(i, j).text()
@@ -170,6 +187,7 @@ class MainWindowUIClass( Ui_MainWindow ):
             os.system(cmd)
         else:
             print("The current item is not a mrc file!")
+       '''
     # slot
     
     def switch_btn(self, btn):
@@ -382,8 +400,8 @@ class MainWindowUIClass( Ui_MainWindow ):
         if self.lineEdit_pool.text():
             cmd = "{} --pool {}".format(cmd, self.lineEdit_pool.text()) 
             
-        if self.checkBox_batch_normalization.isChecked():
-            cmd = "{} --batch_normalization {}".format(cmd, True)    
+        if not self.checkBox_batch_normalization.isChecked():
+            cmd = "{} --batch_normalization {}".format(cmd, False)    
         if not self.checkBox_normalization_percentile.isChecked():
             cmd = "{} --normalize_percentile {}".format(cmd, False)
             
@@ -424,8 +442,11 @@ class MainWindowUIClass( Ui_MainWindow ):
     def view_predict_3dmod(self):
         try:
             result_dir_predict = self.lineEdit_result_dir_predict.text()
-            cmd = "3dmod {}/*.mrc {}/*.rec".format(result_dir_predict,result_dir_predict)
-            os.system(cmd)
+            list_file = os.listdir(result_dir_predict)
+            for f in list_file:
+                if f[-4:] == ".mrc":                   
+                    cmd = "3dmod {}/{}".format(result_dir_predict,f)
+                    os.system(cmd)
         except:
             pass
     
