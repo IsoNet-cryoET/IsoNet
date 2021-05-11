@@ -50,6 +50,12 @@ def run_whole(args):
             args.filter_base = 64
     if args.steps_per_epoch is None:
         args.steps_per_epoch = min(int(len(md) * 6/args.batch_size) , 200)
+    logger = logging.getLogger('IsoNet.refine')
+    if args.log_level == "debug":
+        logging.basicConfig(format='%(asctime)s, %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.DEBUG,handlers=[logging.FileHandler("refine_logging.log"),logging.StreamHandler()])
+    else:
+        logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[logging.FileHandler("refine_logging.log"),logging.StreamHandler()])
+    logging.info('\n######Isonet starts refining######\n')
     if len(md) <=0:
         logging.error("Subtomo list is empty!")
         sys.exit(0)
@@ -62,7 +68,6 @@ def run_whole(args):
     os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
     os.environ["CUDA_VISIBLE_DEVICES"]=args.gpuID
     os.environ["TF_FORCE_GPU_ALLOW_GROWTH"] = "true"
-    logger = logging.getLogger('IsoNet.refine')
     if args.log_level == 'debug':
         os.environ['TF_CPP_MIN_LOG_LEVEL'] = '0'
     else:
@@ -71,6 +76,17 @@ def run_whole(args):
     #import tensorflow related modules after setting environment
     from IsoNet.training.predict import predict
     from IsoNet.training.train import prepare_first_model, train_data
+    import tensorflow as tf
+    gpu_info =  tf.config.list_physical_devices('GPU')
+    logger.debug(gpu_info)   
+    if len(gpu_info)!=args.ngpus:
+        if len(gpu_info) == 0:
+            logger.error('No GPU detected, Please check your CUDA version and installation')
+            sys.exit(0)
+        else:
+            logger.error('Available number of GPUs don\'t match requested GPUs \n\n Detected GPUs: {} \n\n Requested GPUs: {}'.format(gpu_info,args.gpuID))
+            sys.exit(0)
+
     args = prepare_first_iter(args)
     logger.info("Done preperation for the first iteration!")
     noise_level_series = get_noise_level(args.noise_level,args.noise_start_iter,args.iterations)
