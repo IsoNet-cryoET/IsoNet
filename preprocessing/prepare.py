@@ -59,7 +59,7 @@ def extract_subtomos(settings):
     for it in md:
         pixel_size = it.rlnPixelSize
         if settings.use_deconv_tomo and "rlnDeconvTomoName" in md.getLabels() and os.path.isfile(it.rlnDeconvTomoName):
-            print("Extract from deconvolved tomogram {}".format(it.rlnDeconvTomoName))
+            logging.info("Extract from deconvolved tomogram {}".format(it.rlnDeconvTomoName))
             with mrcfile.open(it.rlnDeconvTomoName) as mrcData:
                 orig_data = mrcData.data.astype(np.float32)
         else:        

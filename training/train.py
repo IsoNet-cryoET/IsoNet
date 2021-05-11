@@ -141,7 +141,7 @@ def train3D_continue(outFile,
     # tensor_board = TensorBoard(log_dir='./Graph', histogram_freq=0, write_graph=True, write_images=True)
     # callback_list.append(tensor_board)
     logging.info("begin fitting")
-    train_data, test_data= prepare_dataseq(data_dir, batch_size)
+    train_data, test_data= prepare_dataseq(data_folder, batch_size)
     train_data = tf.data.Dataset.from_generator(train_data,output_types=(tf.float32,tf.float32))
     test_data = tf.data.Dataset.from_generator(test_data,output_types=(tf.float32,tf.float32))
     history = model.fit(train_data, validation_data=test_data,
