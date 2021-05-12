@@ -1,46 +1,42 @@
-# MWR
+## Installation
 
-## Usage
-![](turorials/images/origional_data.png)
+### Install with pip
 
-### Training
+Not ready. This should be available once GitHub link is released
 
-Create a new folder and copy a setting template **settings.py** into it.
+pip3 install isonet (-cudax)
 
-##### Configure Training
 
-Training noise example: noise start to be added from iteration 20 and remain 0.04 for iteration 20-24, 0.08 for iteration 25-29 , so on. 
 
-```
-#level of noise STD(added noise)/STD(data)
-noise_level = 0.04
+### Install from source
 
-#iteration to add trainning noise
-noise_start_iter = 20
 
-#iters trainning noise remain at one level
-noise_pause = 5
-```
 
-**Note**: In current version, network configuring is invalid (like: *unet_depth* and *convs_per_depth* )
+IsoNet relies on Tensorflow with version at least 2.0 
 
-#### Run training
+https://www.tensorflow.org/install/source#gpu
 
-```
-mwr3D settings.py
-```
+Table here
 
-On DGX workstation
+Please first configure your Nvidia driver and cuda version 
 
-```
-sudo docker run --runtime=nvidia  -t -v /localdata:/localdata -v /raid:/raid --rm tf-keras-mwr sh /raid/gqbi/missing_wedge/example/run.sh
-```
 
-#### Predicting
 
-```
-mwr3D_predict -h
-```
+Install other dependencies
+
+pip3 install mrcfile fire scipy numpy skimage
+
+
+
+added a line in your ~/.bashrc
+
+"source isonet.bashrc"
+
+
+
+To check whether your installation is successful you can type: 
+
+
 
 
 
