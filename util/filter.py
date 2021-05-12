@@ -5,7 +5,7 @@ import numpy as np
 
 def maxmask(tomo, side=5,percentile=60):
     from scipy.ndimage.filters import maximum_filter
-    print('maximum_filter')
+    # print('maximum_filter')
     filtered = maximum_filter(-tomo, 2*side+1, mode='reflect')
     out =  filtered > np.percentile(filtered,100-percentile)
     out = out.astype(np.uint8)
@@ -13,7 +13,7 @@ def maxmask(tomo, side=5,percentile=60):
 
 def stdmask(tomo,side=10,threshold=60):
     from scipy.signal import convolve
-    print('std_filter')
+    # print('std_filter')
     tomosq = tomo**2
     ones = np.ones(tomo.shape)
     eps = 0.01
@@ -27,7 +27,6 @@ def stdmask(tomo,side=10,threshold=60):
     out  = out>np.percentile(out, 100-threshold)
     return out.astype(np.uint8)
 
-# def gauss
 
 if __name__ == "__main__":
     import sys

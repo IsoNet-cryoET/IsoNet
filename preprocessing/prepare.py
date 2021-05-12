@@ -59,7 +59,7 @@ def extract_subtomos(settings):
     for it in md:
         pixel_size = it.rlnPixelSize
         if settings.use_deconv_tomo and "rlnDeconvTomoName" in md.getLabels() and os.path.isfile(it.rlnDeconvTomoName):
-            print("Extract from deconvolved tomogram {}".format(it.rlnDeconvTomoName))
+            logging.info("Extract from deconvolved tomogram {}".format(it.rlnDeconvTomoName))
             with mrcfile.open(it.rlnDeconvTomoName) as mrcData:
                 orig_data = mrcData.data.astype(np.float32)
         else:        
@@ -202,7 +202,7 @@ def get_cubes_list(settings):
 
 def get_noise_level(noise_level_tuple,noise_start_iter_tuple,iterations):
     assert len(noise_level_tuple) == len(noise_start_iter_tuple) and type(noise_level_tuple) in [tuple,list]
-    noise_level = np.zeros(iterations)
+    noise_level = np.zeros(iterations+1)
     for i in range(len(noise_start_iter_tuple)-1):
         assert i < iterations and noise_start_iter_tuple[i]< noise_start_iter_tuple[i+1]
         noise_level[noise_start_iter_tuple[i]:noise_start_iter_tuple[i+1]] = noise_level_tuple[i]
