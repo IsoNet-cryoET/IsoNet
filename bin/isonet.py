@@ -123,6 +123,7 @@ class ISONET:
         :param tomo_idx: (None) If this value is set, process only the tomograms listed in this index. e.g. 1,2,4 or 5-10,15,16  
         """    
         from IsoNet.util.deconvolution import deconv_one
+        logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO)
         logging.info('\n######Isonet starts ctf deconvolve######\n')
         md = MetaData()
         md.read(star_file)
@@ -181,6 +182,7 @@ class ISONET:
         :param tomo_idx: (None) If this value is set, process only the tomograms listed in this index. e.g. 1,2,4 or 5-10,15,16   
         """
         from IsoNet.bin.make_mask import make_mask
+        logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO)
         logging.info('\n######Isonet starts making mask######\n')
         if not os.path.isdir(mask_folder):
             os.mkdir(mask_folder)
@@ -240,6 +242,7 @@ class ISONET:
         :param log_level: ("info") level of the output, either "info" or "debug"
         :param use_deconv_tomo: (True) If CTF deconvolved tomogram is found in tomogram.star, use that tomogram instead. 
         """
+        logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO)
         logging.info("\n######Isonet starts extracting subtomograms######\n")
         d = locals()
         d_args = Arg(d)
@@ -263,7 +266,7 @@ class ISONET:
         logging.info("\n######Isonet done extracting subtomograms######\n")
 
     def refine(self,
-        subtomo_star: str = None,
+        subtomo_star: str,
         gpuID: str = None,
         iterations: int = None,
         data_folder: str = None,
@@ -389,5 +392,6 @@ def pool_process(p_func,chunks_list,ncpu):
 if __name__ == "__main__":
     core.Display = Display
     # logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO)
-    check_parse(sys.argv[1:])
+    if len(sys.argv) > 1:
+        check_parse(sys.argv[1:])
     fire.Fire(ISONET)
