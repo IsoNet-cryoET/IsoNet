@@ -41,6 +41,8 @@ class Model:
         the file name and its contents.
         '''
         self.tomogram_star = "tomograms.star"
+        self.github_addr = "https://github.com/Heng-Z/IsoNet"
+        self.pid_file = "pid.txt"
         #self.commands2run = []
         self.read_star()
         self.pwd = os.getcwd().replace("\\","/")
@@ -49,8 +51,8 @@ class Model:
     def read_star(self):
         if not self.isValid(self.tomogram_star):
             self.md = MetaData()
-            self.md.addLabels('rlnIndex','rlnMicrographName','rlnPixelSize','rlnDefocus','rlnNumberSubtomo')
-            #self.md.addLabels('rlnIndex','rlnMicrographName','rlnPixelSize','rlnDefocus','rlnNumberSubtomo','rlnSnrFalloff','rlnDeconvStrength','rlnMaskDensityPercentage','rlnMaskStdPercentage')
+            #self.md.addLabels('rlnIndex','rlnMicrographName','rlnPixelSize','rlnDefocus','rlnNumberSubtomo')
+            self.md.addLabels('rlnIndex','rlnMicrographName','rlnPixelSize','rlnDefocus','rlnNumberSubtomo','rlnSnrFalloff','rlnDeconvStrength','rlnDeconvTomoName','rlnMaskDensityPercentage','rlnMaskStdPercentage','rlnMaskName')
             self.md.write(self.tomogram_star)
 
         else:
