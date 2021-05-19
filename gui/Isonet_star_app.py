@@ -17,7 +17,7 @@ from IsoNet.gui.model_star import Model, setTableWidget #need to change in the p
 import time
 from threading import Thread
 from IsoNet.util.metadata import MetaData,Label,Item
-from subprocess import call,Popen
+#from subprocess import call,Popen
 
 class MainWindowUIClass( Ui_MainWindow ):
     def __init__( self ):
@@ -57,6 +57,7 @@ class MainWindowUIClass( Ui_MainWindow ):
 
         self.button_deconov_dir.clicked.connect(lambda: self.browseFolderSlot("deconv_dir"))
         self.button_mask_dir.clicked.connect(lambda: self.browseFolderSlot("mask_dir"))
+        self.button_subtomo_dir.clicked.connect(lambda: self.browseFolderSlot("subtomo_dir"))
         self.button_result_dir_refine.clicked.connect(lambda: self.browseFolderSlot("result_dir_refine"))
         self.button_result_dir_predict.clicked.connect(lambda: self.browseFolderSlot("result_dir_predict"))
         
@@ -86,22 +87,42 @@ class MainWindowUIClass( Ui_MainWindow ):
         self.button_deconov_dir.setIcon(icon)
         self.button_mask_dir.setIcon(icon)
         self.button_subtomo_star_refine.setIcon(icon)
+        self.button_subtomo_dir.setIcon(icon)
         self.button_pretrain_model_refine.setIcon(icon)
         self.button_result_dir_refine.setIcon(icon)
         self.button_tomo_star_predict.setIcon(icon)
         self.button_pretrain_model_predict.setIcon(icon)
         self.button_result_dir_predict.setIcon(icon)
         self.button_continue_iter.setIcon(icon)
+        
+        ###Set up log file monitor###
+        import datetime
+        now = datetime.datetime.now()
+        #self.textBrowser_log.setText(now.strftime("%Y-%m-%d %H:%M:%S"))
+        if not self.model.isValid(self.model.log_file):
+            os.system("echo {} > {}".format(now.strftime("%Y-%m-%d %H:%M:%S"), self.model.log_file))
+            
+        self.textBrowser_log.setText(self.model.getLogContent(self.model.log_file))
+        self.textBrowser_log.moveCursor(QtGui.QTextCursor.End)
+        self.log_watcher = QtCore.QFileSystemWatcher([self.model.log_file])
+        self.log_watcher.fileChanged.connect(self.update_log)
     
+    def update_log(self, filename):
+
+        self.textBrowser_log.setText(self.model.getLogContent(filename))
+        self.textBrowser_log.moveCursor(QtGui.QTextCursor.End)
+        self.log_watcher.addPath(self.model.log_file)
+        
     def start_process(self, cmd, btn):
   
-        if self.p is None:  # No process running.
+        if self.mw.p is None:  # No process running.
             #self.message("Executing process")
-            self.p = QProcess()  # Keep a reference to the QProcess (e.g. on self) while it's running.
-            self.mw.p = self.p
+
+            self.mw.p = QProcess()  # Keep a reference to the QProcess (e.g. on self) while it's running.
+            #self.mw.p = self.p
             btn.setEnabled(False)
-            self.p.finished.connect(lambda: self.process_finished(btn))  # Clean up once complete.
-            self.p.start(cmd)
+            self.mw.p.finished.connect(lambda: self.process_finished(btn))  # Clean up once complete.
+            self.mw.p.start(cmd)
         else:
             print("already runing another job, please wait until it finished!")
 
@@ -111,8 +132,9 @@ class MainWindowUIClass( Ui_MainWindow ):
         self.model.read_star()
         setTableWidget(self.tableWidget, self.model.md)   
         
-        #self.message("Process finished.")
-        self.p = None
+        #print("Process finished.")
+        self.mw.p = None
+        #self.p = None
         
     def removeRow(self):
         #print(self.tableWidget.selectionModel().selectedIndexes()[0].row())
@@ -243,6 +265,7 @@ class MainWindowUIClass( Ui_MainWindow ):
         switcher = {
             "mask_dir": self.lineEdit_mask_dir,
             "deconv_dir": self.lineEdit_deconv_dir,
+            "subtomo_dir": self.lineEdit_subtomo_dir,
             "result_dir_refine": self.lineEdit_result_dir_refine,
             "result_dir_predict": self.lineEdit_result_dir_predict,
             "subtomo_star_refine":self.lineEdit_subtomo_star_refine,
@@ -369,6 +392,9 @@ class MainWindowUIClass( Ui_MainWindow ):
             print(cmd)
         else:
             #print("deconv_else")
+            #cmd = "{} &>> {}".format(cmd,self.model.log_file)
+            #print(cmd)
+
             self.start_process(cmd,self.pushButton_deconv)
             #process_deconv = Popen(cmd,shell=True,stdin=None,stdout=None, stderr=None)
             #process_deconv.communicate()
@@ -418,7 +444,11 @@ class MainWindowUIClass( Ui_MainWindow ):
         tomogram_star = self.model.tomogram_star
 
         cmd = "isonet.py extract {} ".format(tomogram_star)
-
+        
+        if self.lineEdit_subtomo_dir.text():
+            cmd = "{} --subtomo_folder {}".format(cmd, self.lineEdit_subtomo_dir.text())
+        if self.lineEdit_subtomo_star_extract.text():
+            cmd = "{} --subtomo_star {}".format(cmd, self.lineEdit_subtomo_star_extract.text())
         if self.lineEdit_cube_size_extract.text():
             cmd = "{} --cube_size {}".format(cmd, self.lineEdit_cube_size_extract.text())
         if not self.checkBox_use_deconv_extract.isChecked():

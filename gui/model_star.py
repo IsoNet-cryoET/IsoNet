@@ -46,6 +46,7 @@ class Model:
         #self.commands2run = []
         self.read_star()
         self.pwd = os.getcwd().replace("\\","/")
+        self.log_file = "log.txt"
 
 
     def read_star(self):
@@ -113,3 +114,16 @@ class Model:
             return "." + path[len(pwd):]
         else:
             return path
+            
+    def getLogContent( self, fileName ):
+        '''
+        sets the member fileName to the value of the argument
+        if the file exists.  Otherwise resets both the filename
+        and file contents members.
+        '''
+        if self.isValid( fileName ):
+            self.fileName = fileName
+            content = open( fileName, 'r' ).read()
+            return content
+        else:
+            return None

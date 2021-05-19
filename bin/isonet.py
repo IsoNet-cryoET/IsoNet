@@ -22,6 +22,7 @@ class ISONET:
     isonet.py predict -h
 
     """
+    log_file = "log.txt"
     
     def prepare_star(self,folder_name, output_star='tomograms.star',pixel_size = 10.0, defocus = 0.0, number_subtomos = 100):
         """
@@ -123,8 +124,11 @@ class ISONET:
         :param tomo_idx: (None) If this value is set, process only the tomograms listed in this index. e.g. 1,2,4 or 5-10,15,16  
         """    
         from IsoNet.util.deconvolution import deconv_one
-        logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO)
+
+        file_handler = logging.FileHandler(self.log_file)
+        logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[file_handler,logging.StreamHandler()])
         logging.info('\n######Isonet starts ctf deconvolve######\n')
+        
         md = MetaData()
         md.read(star_file)
         if not 'rlnSnrFalloff' in md.getLabels():
@@ -182,7 +186,9 @@ class ISONET:
         :param tomo_idx: (None) If this value is set, process only the tomograms listed in this index. e.g. 1,2,4 or 5-10,15,16   
         """
         from IsoNet.bin.make_mask import make_mask
-        logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO)
+        file_handler = logging.FileHandler(self.log_file)
+        logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[file_handler,logging.StreamHandler()])
+        #logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO)
         logging.info('\n######Isonet starts making mask######\n')
         if not os.path.isdir(mask_folder):
             os.mkdir(mask_folder)
@@ -242,18 +248,24 @@ class ISONET:
         :param log_level: ("info") level of the output, either "info" or "debug"
         :param use_deconv_tomo: (True) If CTF deconvolved tomogram is found in tomogram.star, use that tomogram instead. 
         """
-        logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO)
-        logging.info("\n######Isonet starts extracting subtomograms######\n")
+
+        #logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[file_handler,logging.StreamHandler()])
+
+        #logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO)
         d = locals()
         d_args = Arg(d)
+        
+        file_handler = logging.FileHandler(self.log_file)
+        logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[file_handler,logging.StreamHandler()])
+        logging.info("\n######Isonet starts extracting subtomograms######\n")
         if d_args.log_level == "debug":
-            logging.basicConfig(format='%(asctime)s, %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.DEBUG)
+            logging.basicConfig(format='%(asctime)s, %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.DEBUG,handlers=[file_handler,logging.StreamHandler()])
         else:
-            logging.basicConfig(format='%(asctime)s, %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO)
-        logger = logging.getLogger('IsoNet.extract')
+            logging.basicConfig(format='%(asctime)s, %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[file_handler,logging.StreamHandler()])
+        #logger = logging.getLogger('IsoNet.extract')
 
         if  os.path.isdir(subtomo_folder):
-            logger.warning("subtomo directory exists, the current directory will be overwriten")
+            logging.warning("subtomo directory exists, the current directory will be overwriten")
             import shutil
             shutil.rmtree(subtomo_folder)
         os.mkdir(subtomo_folder)
@@ -363,10 +375,15 @@ class ISONET:
         d = locals()
         d_args = Arg(d)
         from IsoNet.bin.predict import predict
+        file_handler = logging.FileHandler(self.log_file)
+        
+        
         if d_args.log_level == "debug":
-            logging.basicConfig(format='%(asctime)s, %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.DEBUG)
+            logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.DEBUG,handlers=[file_handler,logging.StreamHandler()])
+            #logging.basicConfig(format='%(asctime)s, %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.DEBUG)
         else:
-            logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO)
+            logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[file_handler,logging.StreamHandler()])
+            #logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO)
         predict(d_args)
   
     def check(self):

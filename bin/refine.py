@@ -52,9 +52,12 @@ def run_whole(args):
         args.steps_per_epoch = min(int(len(md) * 6/args.batch_size) , 200)
     logger = logging.getLogger('IsoNet.refine')
     if args.log_level == "debug":
-        logging.basicConfig(format='%(asctime)s, %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.DEBUG,handlers=[logging.FileHandler("refine_logging.log"),logging.StreamHandler()])
+        logging.basicConfig(format='%(asctime)s, %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.DEBUG,handlers=[logging.FileHandler("log.txt"),logging.StreamHandler()])
+        #logging.basicConfig(format='%(asctime)s, %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.DEBUG,handlers=[logging.FileHandler("refine_logging.log"),logging.StreamHandler()])
     else:
-        logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[logging.FileHandler("refine_logging.log"),logging.StreamHandler()])
+        logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[logging.FileHandler("log.txt"),logging.StreamHandler()])
+    logging.info('\n######Isonet starts refining######\n')
+        #logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[logging.FileHandler("refine_logging.log"),logging.StreamHandler()])
     logging.info('\n######Isonet starts refining######\n')
     if len(md) <=0:
         logging.error("Subtomo list is empty!")
