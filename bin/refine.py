@@ -58,7 +58,6 @@ def run_whole(args):
         logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[logging.FileHandler("log.txt"),logging.StreamHandler()])
     logging.info('\n######Isonet starts refining######\n')
         #logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[logging.FileHandler("refine_logging.log"),logging.StreamHandler()])
-    logging.info('\n######Isonet starts refining######\n')
     if len(md) <=0:
         logging.error("Subtomo list is empty!")
         sys.exit(0)

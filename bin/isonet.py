@@ -209,7 +209,7 @@ class ISONET:
                     md._setItemValue(it,Label('rlnMaskDensityPercentage'),density_percentage)
                 if std_percentage is not None:
                     md._setItemValue(it,Label('rlnMaskStdPercentage'),std_percentage)
-                if use_deconv_tomo and "rlnDeconvTomoName" in md.getLabels():
+                if use_deconv_tomo and "rlnDeconvTomoName" in md.getLabels() and it.rlnDeconvTomoName not in [None,'None']:
                     tomo_file = it.rlnDeconvTomoName
                 else:
                     tomo_file = it.rlnMicrographName
@@ -235,7 +235,8 @@ class ISONET:
         subtomo_folder: str = "subtomo",
         subtomo_star: str = "subtomo.star",
         cube_size: int = 64,
-        log_level: str="info"
+        log_level: str="info",
+        tomo_idx = None
         ):
 
         """
@@ -273,7 +274,7 @@ class ISONET:
         from IsoNet.preprocessing.prepare import extract_subtomos
         d_args.crop_size = int(int(cube_size) * 1.5)
         d_args.subtomo_dir = subtomo_folder
-        
+        d_args.tomo_idx = idx2list(tomo_idx)
         extract_subtomos(d_args)
         logging.info("\n######Isonet done extracting subtomograms######\n")
 
