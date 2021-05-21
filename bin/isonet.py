@@ -356,12 +356,12 @@ class ISONET:
         run(d_args)
 
     def predict(self, star_file: str, model: str, output_dir: str='./corrected_tomos', gpuID: str = None, cube_size:int=48,
-    crop_size:int=64,use_deconv_tomo=True, batch_size:int=8,normalize_percentile: bool=True,log_level: str="info",Ntile:int=1,tomo_idx=None):
+    crop_size:int=64,use_deconv_tomo=True, batch_size:int=None,normalize_percentile: bool=True,log_level: str="info",Ntile:int=1,tomo_idx=None):
         """
         \nPredict tomograms using trained model including model.json and weight(xxx.h5)\n
         isonet.py predict star_file model [--gpuID] [--output_dir] [--cube_size] [--crop_size] [--batch_size] [--tomo_idx] [--ntile]
         :param star_file: star for tomogram
-        :param output_file: file_name of output predicted tomograms
+        :param output_dir: file_name of output predicted tomograms
         :param model: path to trained network model .h5
         :param gpuID: (0,1,2,3) The gpuID to used during the training. e.g 0,1,2,3.
         :param cube_size: (64) The tomogram is divided into cubes to predict due to the memory limitation of GPUs.

@@ -525,17 +525,17 @@ class MainWindowUIClass( Ui_MainWindow ):
             #Popen(cmd,shell=True,stdin=None,stdout=None, stderr=None)
             
     def predict( self ):
-        tomo_star = self.lineEdit_tomo_star_predict.text() if self.lineEdit_tomo_star_predict.text() else "tomogram.star"
-
-        cmd = "isonet.py predict {} ".format(tomo_star)
+        tomo_star = self.lineEdit_tomo_star_predict.text() if self.lineEdit_tomo_star_predict.text() else "tomograms.star"
+        gpuID = self.lineEdit_gpuID_predict.text() if self.lineEdit_gpuID_predict.text() else '0,1,2,3'
+        cmd = "isonet.py predict {} --gpuID {}".format(tomo_star,gpuID)
         
         if self.lineEdit_pretrain_model_predict.text() and self.model.isValid(self.lineEdit_pretrain_model_predict.text()):
             cmd = "{} {}".format(cmd, self.lineEdit_pretrain_model_predict.text())
         else:
             print("no pretrain model detected")
             return
-        if self.lineEdit_gpuID_predict.text():
-            cmd = "{} --gpuID {}".format(cmd, self.lineEdit_gpuID_predict.text())
+        # if self.lineEdit_gpuID_predict.text():
+        #     cmd = "{} --gpuID {}".format(cmd, self.lineEdit_gpuID_predict.text())
             
         if self.lineEdit_result_dir_predict.text():
             cmd = "{} --output_dir {}".format(cmd, self.lineEdit_result_dir_predict.text())
