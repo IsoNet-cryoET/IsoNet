@@ -25,6 +25,9 @@ def predict(args):
     logger = logging.getLogger('predict')
     args.gpuID = str(args.gpuID)
     ngpus = len(args.gpuID.split(','))
+    if args.batch_size is None:
+        args.batch_size = max(4, 2 * ngpus)
+    print('batch_size',args.batch_size)
     os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
     os.environ["CUDA_VISIBLE_DEVICES"]=args.gpuID 
 
@@ -53,7 +56,7 @@ def predict(args):
     args.tomo_idx = idx2list(args.tomo_idx)
     for it in md:
         if args.tomo_idx is None or str(it.rlnIndex) in args.tomo_idx:
-            if args.use_deconv_tomo and "rlnDeconvTomoName" in md.getLabels():
+            if args.use_deconv_tomo and "rlnDeconvTomoName" in md.getLabels() and it.rlnDeconvTomoName not in [None,'None']:
                 tomo_file = it.rlnDeconvTomoName
             else:
                 tomo_file = it.rlnMicrographName

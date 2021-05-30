@@ -57,42 +57,43 @@ def extract_subtomos(settings):
     subtomo_md.addLabels('rlnSubtomoIndex','rlnImageName','rlnCubeSize','rlnCropSize','rlnPixelSize')
     count=0
     for it in md:
-        pixel_size = it.rlnPixelSize
-        if settings.use_deconv_tomo and "rlnDeconvTomoName" in md.getLabels() and os.path.isfile(it.rlnDeconvTomoName):
-            logging.info("Extract from deconvolved tomogram {}".format(it.rlnDeconvTomoName))
-            with mrcfile.open(it.rlnDeconvTomoName) as mrcData:
-                orig_data = mrcData.data.astype(np.float32)
-        else:        
-            print("Extract from origional tomogram {}".format(it.rlnMicrographName))
-            with mrcfile.open(it.rlnMicrographName) as mrcData:
-                orig_data = mrcData.data.astype(np.float32)
-        
+        if settings.tomo_idx is None or str(it.rlnIndex) in settings.tomo_idx:
+            pixel_size = it.rlnPixelSize
+            if settings.use_deconv_tomo and "rlnDeconvTomoName" in md.getLabels() and os.path.isfile(it.rlnDeconvTomoName):
+                logging.info("Extract from deconvolved tomogram {}".format(it.rlnDeconvTomoName))
+                with mrcfile.open(it.rlnDeconvTomoName) as mrcData:
+                    orig_data = mrcData.data.astype(np.float32)
+            else:        
+                print("Extract from origional tomogram {}".format(it.rlnMicrographName))
+                with mrcfile.open(it.rlnMicrographName) as mrcData:
+                    orig_data = mrcData.data.astype(np.float32)
+            
 
-        if "rlnMaskName" in md.getLabels() and it.rlnMaskName is not None:
-            with mrcfile.open(it.rlnMaskName) as m:
-                mask_data = m.data
-        else:
-            mask_data = None
-            logging.info(" mask not been used for tomogram {}!".format(it.rlnIndex))
+            if "rlnMaskName" in md.getLabels() and it.rlnMaskName is not None:
+                with mrcfile.open(it.rlnMaskName) as m:
+                    mask_data = m.data
+            else:
+                mask_data = None
+                logging.info(" mask not been used for tomogram {}!".format(it.rlnIndex))
 
-        seeds=create_cube_seeds(orig_data, it.rlnNumberSubtomo, settings.crop_size,mask=mask_data)
-        subtomos=crop_cubes(orig_data,seeds,settings.crop_size)
+            seeds=create_cube_seeds(orig_data, it.rlnNumberSubtomo, settings.crop_size,mask=mask_data)
+            subtomos=crop_cubes(orig_data,seeds,settings.crop_size)
 
-        # save sampled subtomo to {results_dir}/subtomos instead of subtomo_dir (as previously does)
-        base_name = os.path.splitext(os.path.basename(it.rlnMicrographName))[0]
-        
-        for j,s in enumerate(subtomos):
-            im_name = '{}/{}_{:0>6d}.mrc'.format(settings.subtomo_dir, base_name, j)
-            with mrcfile.new(im_name, overwrite=True) as output_mrc:
-                count+=1
-                subtomo_it = Item()
-                subtomo_md.addItem(subtomo_it)
-                subtomo_md._setItemValue(subtomo_it,Label('rlnSubtomoIndex'), str(count))
-                subtomo_md._setItemValue(subtomo_it,Label('rlnImageName'), im_name)
-                subtomo_md._setItemValue(subtomo_it,Label('rlnCubeSize'),settings.cube_size)
-                subtomo_md._setItemValue(subtomo_it,Label('rlnCropSize'),settings.crop_size)
-                subtomo_md._setItemValue(subtomo_it,Label('rlnPixelSize'),pixel_size)
-                output_mrc.set_data(s.astype(np.float32))
+            # save sampled subtomo to {results_dir}/subtomos instead of subtomo_dir (as previously does)
+            base_name = os.path.splitext(os.path.basename(it.rlnMicrographName))[0]
+            
+            for j,s in enumerate(subtomos):
+                im_name = '{}/{}_{:0>6d}.mrc'.format(settings.subtomo_dir, base_name, j)
+                with mrcfile.new(im_name, overwrite=True) as output_mrc:
+                    count+=1
+                    subtomo_it = Item()
+                    subtomo_md.addItem(subtomo_it)
+                    subtomo_md._setItemValue(subtomo_it,Label('rlnSubtomoIndex'), str(count))
+                    subtomo_md._setItemValue(subtomo_it,Label('rlnImageName'), im_name)
+                    subtomo_md._setItemValue(subtomo_it,Label('rlnCubeSize'),settings.cube_size)
+                    subtomo_md._setItemValue(subtomo_it,Label('rlnCropSize'),settings.crop_size)
+                    subtomo_md._setItemValue(subtomo_it,Label('rlnPixelSize'),pixel_size)
+                    output_mrc.set_data(s.astype(np.float32))
     subtomo_md.write(settings.subtomo_star)
 
 
