@@ -532,7 +532,7 @@ class MainWindowUIClass( Ui_MainWindow ):
         if self.lineEdit_pretrain_model_predict.text() and self.model.isValid(self.lineEdit_pretrain_model_predict.text()):
             cmd = "{} {}".format(cmd, self.lineEdit_pretrain_model_predict.text())
         else:
-            print("no pretrain model detected")
+            print("no trained model detected")
             return
         if self.lineEdit_gpuID_predict.text():
             cmd = "{} --gpuID {}".format(cmd, self.lineEdit_gpuID_predict.text())
