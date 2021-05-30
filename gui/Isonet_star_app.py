@@ -5,10 +5,9 @@
     Date last modified: 5/8/2021
     Python Version: 3.6.5
 '''
-import pandas as pd
 from PyQt5 import QtCore, QtGui, QtWidgets
 
-from PyQt5.QtWidgets import QTableWidgetItem
+from PyQt5.QtWidgets import QTableWidgetItem,QMessageBox
 from PyQt5.QtCore import QObject, pyqtSlot,QProcess
 from IsoNet.gui.isonet_gui import Ui_MainWindow ##need to change in the package
 import sys
@@ -119,16 +118,37 @@ class MainWindowUIClass( Ui_MainWindow ):
             #self.message("Executing process")
 
             self.mw.p = QProcess()  # Keep a reference to the QProcess (e.g. on self) while it's running.
-            #self.mw.p = self.p
-            btn.setEnabled(False)
+            if btn.text() == "Refine":
+                btn.setText("Stop")
+                btn.setStyleSheet('QPushButton {color: red;}')
+            else:
+                btn.setEnabled(False)
             self.mw.p.finished.connect(lambda: self.process_finished(btn))  # Clean up once complete.
             self.mw.p.start(cmd)
+            
+        elif btn.text() =="Stop":
+            if self.mw.p:
+                self.mw.p.kill()
+            #elif self.model.refine_pid:
+            #    pass
+            else:
+                btn.setText("Refine")
         else:
-            print("already runing another job, please wait until it finished!")
+            msg = QMessageBox()
+            msg.setWindowTitle("Warning!")
+            msg.setText("Already runing another job, please wait until it finished!")
+            msg.setStandardButtons(QMessageBox.Ok)
+            msg.setIcon(QMessageBox.Warning)
+            msg.exec_()
+            #print("already runing another job, please wait until it finished!")
 
     def process_finished(self, btn):
-
-        btn.setEnabled(True)
+        
+        if btn.text() == "Stop":
+            btn.setText("Refine")
+            btn.setStyleSheet('QPushButton {color: black;}')
+        else:
+            btn.setEnabled(True)
         self.model.read_star()
         setTableWidget(self.tableWidget, self.model.md)   
         
