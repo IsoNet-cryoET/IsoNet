@@ -494,6 +494,8 @@ class MainWindowUIClass( Ui_MainWindow ):
             cmd = "{} --noise_level {}".format(cmd, self.lineEdit_noise_level.text())
         if self.lineEdit_noise_start_iter.text():
             cmd = "{} --noise_start_iter {}".format(cmd, self.lineEdit_noise_start_iter.text())
+        if self.lineEdit_noise_mode.text():
+            cmd = "{} --noise_mode {}".format(cmd, self.lineEdit_noise_mode.text())
         #if self.lineEdit_noise_pause.text():
         #    cmd = "{} --noise_pause {}".format(cmd, self.lineEdit_noise_pause.text())
         
@@ -536,7 +538,10 @@ class MainWindowUIClass( Ui_MainWindow ):
             return
         # if self.lineEdit_gpuID_predict.text():
         #     cmd = "{} --gpuID {}".format(cmd, self.lineEdit_gpuID_predict.text())
-            
+        
+        if self.lineEdit_tomo_index_predict.text():
+            cmd = "{} --tomo_idx {}".format(cmd, self.lineEdit_tomo_index_predict.text())
+
         if self.lineEdit_result_dir_predict.text():
             cmd = "{} --output_dir {}".format(cmd, self.lineEdit_result_dir_predict.text())
         
