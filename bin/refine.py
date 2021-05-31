@@ -12,11 +12,16 @@ import sys
 import shutil
 from IsoNet.util.metadata import MetaData, Item, Label
 def run(args):
-    if args.continue_from is None:
-        run_whole(args)
+    try:
+        if args.continue_from is None:
+            run_whole(args)
+        else:
+            run_continue(args)
+    except Exception:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[logging.FileHandler("log.txt"),logging.StreamHandler()])
+        logging.error(exc_value)
 
-    else:
-        run_continue(args)
 
 def run_whole(args):
     md = MetaData()

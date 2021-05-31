@@ -34,6 +34,11 @@ class MainWindowUIClass( Ui_MainWindow ):
         '''
         super().setupUi( MW )
 
+                    
+        #test_p = QProcess()
+        #test_p.finished.connect(self.process_finished_test)
+        #test_p.start("ls > test.log" )
+        
         setTableWidget(self.tableWidget, self.model.md)
 
         self.tableWidget.cellPressed[int, int].connect(self.browseSlotTable)
@@ -123,8 +128,10 @@ class MainWindowUIClass( Ui_MainWindow ):
                 btn.setStyleSheet('QPushButton {color: red;}')
             else:
                 btn.setEnabled(False)
+                
             self.mw.p.finished.connect(lambda: self.process_finished(btn))  # Clean up once complete.
             self.mw.p.start(cmd)
+
             
         elif btn.text() =="Stop":
             if self.mw.p:
@@ -155,6 +162,9 @@ class MainWindowUIClass( Ui_MainWindow ):
         #print("Process finished.")
         self.mw.p = None
         #self.p = None
+    def process_finished_test(self):
+        
+        print("test_finished")
         
     def removeRow(self):
         #print(self.tableWidget.selectionModel().selectedIndexes()[0].row())

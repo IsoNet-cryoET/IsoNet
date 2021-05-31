@@ -129,34 +129,39 @@ class ISONET:
         logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[file_handler,logging.StreamHandler()])
         logging.info('\n######Isonet starts ctf deconvolve######\n')
         
-        md = MetaData()
-        md.read(star_file)
-        if not 'rlnSnrFalloff' in md.getLabels():
-            md.addLabels('rlnSnrFalloff','rlnDeconvStrength','rlnDeconvTomoName')
+        try: 
+            md = MetaData()
+            md.read(star_file)
+            if not 'rlnSnrFalloff' in md.getLabels():
+                md.addLabels('rlnSnrFalloff','rlnDeconvStrength','rlnDeconvTomoName')
+                for it in md:
+                    md._setItemValue(it,Label('rlnSnrFalloff'),1.0)
+                    md._setItemValue(it,Label('rlnDeconvStrength'),1.0)
+                    md._setItemValue(it,Label('rlnDeconvTomoName'),None)
+    
+            if not os.path.isdir(deconv_folder):
+                os.mkdir(deconv_folder)
+            
+            tomo_idx = idx2list(tomo_idx)
             for it in md:
-                md._setItemValue(it,Label('rlnSnrFalloff'),1.0)
-                md._setItemValue(it,Label('rlnDeconvStrength'),1.0)
-                md._setItemValue(it,Label('rlnDeconvTomoName'),None)
-
-        if not os.path.isdir(deconv_folder):
-            os.mkdir(deconv_folder)
-        
-        tomo_idx = idx2list(tomo_idx)
-        for it in md:
-            if tomo_idx is None or str(it.rlnIndex) in tomo_idx:
-                if snrfalloff is not None:
-                    md._setItemValue(it,Label('rlnSnrFalloff'), snrfalloff)
-                if deconvstrength is not None:
-                    md._setItemValue(it,Label('rlnDeconvStrength'),deconvstrength)
-                
-                tomo_file = it.rlnMicrographName
-                base_name = os.path.basename(tomo_file)                                        
-                deconv_tomo_name = '{}/{}'.format(deconv_folder,base_name)
-                
-                deconv_one(it.rlnMicrographName,deconv_tomo_name,defocus=it.rlnDefocus/10000.0, pixel_size=it.rlnPixelSize,snrfalloff=it.rlnSnrFalloff, deconvstrength=it.rlnDeconvStrength,highpassnyquist=highpassnyquist,tile=tile,ncpu=ncpu)
-                md._setItemValue(it,Label('rlnDeconvTomoName'),deconv_tomo_name)
-            md.write(star_file)
-        logging.info('\n######Isonet done ctf deconvolve######\n')
+                if tomo_idx is None or str(it.rlnIndex) in tomo_idx:
+                    if snrfalloff is not None:
+                        md._setItemValue(it,Label('rlnSnrFalloff'), snrfalloff)
+                    if deconvstrength is not None:
+                        md._setItemValue(it,Label('rlnDeconvStrength'),deconvstrength)
+                    
+                    tomo_file = it.rlnMicrographName
+                    base_name = os.path.basename(tomo_file)                                        
+                    deconv_tomo_name = '{}/{}'.format(deconv_folder,base_name)
+                    
+                    deconv_one(it.rlnMicrographName,deconv_tomo_name,defocus=it.rlnDefocus/10000.0, pixel_size=it.rlnPixelSize,snrfalloff=it.rlnSnrFalloff, deconvstrength=it.rlnDeconvStrength,highpassnyquist=highpassnyquist,tile=tile,ncpu=ncpu)
+                    md._setItemValue(it,Label('rlnDeconvTomoName'),deconv_tomo_name)
+                md.write(star_file)
+            logging.info('\n######Isonet done ctf deconvolve######\n')
+        except Exception:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[logging.FileHandler("log.txt"),logging.StreamHandler()])
+            logging.error(exc_value)
 
     def make_mask(self,star_file, 
                 mask_folder: str = 'mask', 
