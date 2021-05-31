@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 import fire
 import logging
-import os
+import os, sys, traceback
 from IsoNet.util.dict2attr import Arg,check_parse,idx2list
-import sys
 from fire import core
-import time
 from IsoNet.util.metadata import MetaData,Label,Item
 
 class ISONET:
@@ -159,9 +157,7 @@ class ISONET:
                 md.write(star_file)
             logging.info('\n######Isonet done ctf deconvolve######\n')
         except Exception:
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[logging.FileHandler("log.txt"),logging.StreamHandler()])
-            logging.error(exc_value)
+            logging.error(traceback.format_exc())
 
     def make_mask(self,star_file, 
                 mask_folder: str = 'mask', 
@@ -195,44 +191,47 @@ class ISONET:
         logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[file_handler,logging.StreamHandler()])
         #logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO)
         logging.info('\n######Isonet starts making mask######\n')
-        if not os.path.isdir(mask_folder):
-            os.mkdir(mask_folder)
-        # write star percentile threshold
-        md = MetaData()
-        md.read(star_file)
-        if not 'rlnMaskDensityPercentage' in md.getLabels():    
-            md.addLabels('rlnMaskDensityPercentage','rlnMaskStdPercentage','rlnMaskName')
+        try:
+            if not os.path.isdir(mask_folder):
+                os.mkdir(mask_folder)
+            # write star percentile threshold
+            md = MetaData()
+            md.read(star_file)
+            if not 'rlnMaskDensityPercentage' in md.getLabels():    
+                md.addLabels('rlnMaskDensityPercentage','rlnMaskStdPercentage','rlnMaskName')
+                for it in md:
+                    md._setItemValue(it,Label('rlnMaskDensityPercentage'),50)
+                    md._setItemValue(it,Label('rlnMaskStdPercentage'),50)
+                    md._setItemValue(it,Label('rlnMaskName'),None)
+
+            tomo_idx = idx2list(tomo_idx)
             for it in md:
-                md._setItemValue(it,Label('rlnMaskDensityPercentage'),50)
-                md._setItemValue(it,Label('rlnMaskStdPercentage'),50)
-                md._setItemValue(it,Label('rlnMaskName'),None)
+                if tomo_idx is None or str(it.rlnIndex) in tomo_idx:
+                    if density_percentage is not None:
+                        md._setItemValue(it,Label('rlnMaskDensityPercentage'),density_percentage)
+                    if std_percentage is not None:
+                        md._setItemValue(it,Label('rlnMaskStdPercentage'),std_percentage)
+                    if use_deconv_tomo and "rlnDeconvTomoName" in md.getLabels() and it.rlnDeconvTomoName not in [None,'None']:
+                        tomo_file = it.rlnDeconvTomoName
+                    else:
+                        tomo_file = it.rlnMicrographName
+                    tomo_root_name = os.path.splitext(os.path.basename(tomo_file))[0]
 
-        tomo_idx = idx2list(tomo_idx)
-        for it in md:
-            if tomo_idx is None or str(it.rlnIndex) in tomo_idx:
-                if density_percentage is not None:
-                    md._setItemValue(it,Label('rlnMaskDensityPercentage'),density_percentage)
-                if std_percentage is not None:
-                    md._setItemValue(it,Label('rlnMaskStdPercentage'),std_percentage)
-                if use_deconv_tomo and "rlnDeconvTomoName" in md.getLabels() and it.rlnDeconvTomoName not in [None,'None']:
-                    tomo_file = it.rlnDeconvTomoName
-                else:
-                    tomo_file = it.rlnMicrographName
-                tomo_root_name = os.path.splitext(os.path.basename(tomo_file))[0]
-
-                if os.path.isfile(tomo_file):
-                    logging.info('make_mask: {}| dir_to_save: {}| percentage: {}| window_scale: {}'.format(tomo_file,mask_folder,it.rlnMaskDensityPercentage,patch_size))
-                    mask_out_name = '{}/{}_mask.mrc'.format(mask_folder,tomo_root_name)
-                    make_mask(tomo_file,
-                            mask_out_name,
-                            side=patch_size,
-                            percentile=it.rlnMaskDensityPercentage,
-                            threshold=it.rlnMaskStdPercentage,
-                            surface = z_crop)
-                
-                md._setItemValue(it,Label('rlnMaskName'),mask_out_name)
-            md.write(star_file)
-        logging.info('\n######Isonet done making mask######\n')
+                    if os.path.isfile(tomo_file):
+                        logging.info('make_mask: {}| dir_to_save: {}| percentage: {}| window_scale: {}'.format(tomo_file,mask_folder,it.rlnMaskDensityPercentage,patch_size))
+                        mask_out_name = '{}/{}_mask.mrc'.format(mask_folder,tomo_root_name)
+                        make_mask(tomo_file,
+                                mask_out_name,
+                                side=patch_size,
+                                percentile=it.rlnMaskDensityPercentage,
+                                threshold=it.rlnMaskStdPercentage,
+                                surface = z_crop)
+                    
+                    md._setItemValue(it,Label('rlnMaskName'),mask_out_name)
+                md.write(star_file)
+            logging.info('\n######Isonet done making mask######\n')
+        except Exception:
+            logging.error(traceback.format_exc())
 
     def extract(self,
         star_file: str,
@@ -264,24 +263,29 @@ class ISONET:
         file_handler = logging.FileHandler(self.log_file)
         logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[file_handler,logging.StreamHandler()])
         logging.info("\n######Isonet starts extracting subtomograms######\n")
+
+
         if d_args.log_level == "debug":
             logging.basicConfig(format='%(asctime)s, %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.DEBUG,handlers=[file_handler,logging.StreamHandler()])
         else:
             logging.basicConfig(format='%(asctime)s, %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[file_handler,logging.StreamHandler()])
         #logger = logging.getLogger('IsoNet.extract')
+        try:
+            if  os.path.isdir(subtomo_folder):
+                logging.warning("subtomo directory exists, the current directory will be overwriten")
+                import shutil
+                shutil.rmtree(subtomo_folder)
+            os.mkdir(subtomo_folder)
 
-        if  os.path.isdir(subtomo_folder):
-            logging.warning("subtomo directory exists, the current directory will be overwriten")
-            import shutil
-            shutil.rmtree(subtomo_folder)
-        os.mkdir(subtomo_folder)
+            from IsoNet.preprocessing.prepare import extract_subtomos
+            d_args.crop_size = int(int(cube_size) * 1.5)
+            d_args.subtomo_dir = subtomo_folder
+            d_args.tomo_idx = idx2list(tomo_idx)
+            extract_subtomos(d_args)
+            logging.info("\n######Isonet done extracting subtomograms######\n")
+        except Exception:
+            logging.error(traceback.format_exc())
 
-        from IsoNet.preprocessing.prepare import extract_subtomos
-        d_args.crop_size = int(int(cube_size) * 1.5)
-        d_args.subtomo_dir = subtomo_folder
-        d_args.tomo_idx = idx2list(tomo_idx)
-        extract_subtomos(d_args)
-        logging.info("\n######Isonet done extracting subtomograms######\n")
 
     def refine(self,
         subtomo_star: str,
@@ -390,7 +394,10 @@ class ISONET:
         else:
             logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[file_handler,logging.StreamHandler()])
             #logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO)
-        predict(d_args)
+        try:
+            predict(d_args)
+        except:
+            logging.error(traceback.format_exc())
   
     def check(self):
         from IsoNet.bin.predict import predict
