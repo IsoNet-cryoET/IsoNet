@@ -174,6 +174,14 @@ def prepare_first_model(settings):
     return settings
 
 def train_data(settings):
+    
+    logger = tf.get_logger()
+    fh = logging.FileHandler('log.txt')
+    fh.setLevel(logging.INFO)
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    fh.setFormatter(formatter)
+    logger.addHandler(fh)
+    
     history = train3D_continue('{}/model_iter{:0>2d}.h5'.format(settings.result_dir,settings.iter_count),
                                         settings.init_model,
                                         data_folder = settings.data_folder,
