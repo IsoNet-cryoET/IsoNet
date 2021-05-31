@@ -5,10 +5,9 @@
     Date last modified: 5/8/2021
     Python Version: 3.6.5
 '''
-import pandas as pd
 from PyQt5 import QtCore, QtGui, QtWidgets
 
-from PyQt5.QtWidgets import QTableWidgetItem
+from PyQt5.QtWidgets import QTableWidgetItem,QMessageBox
 from PyQt5.QtCore import QObject, pyqtSlot,QProcess
 from IsoNet.gui.isonet_gui import Ui_MainWindow ##need to change in the package
 import sys
@@ -35,6 +34,11 @@ class MainWindowUIClass( Ui_MainWindow ):
         '''
         super().setupUi( MW )
 
+                    
+        #test_p = QProcess()
+        #test_p.finished.connect(self.process_finished_test)
+        #test_p.start("ls > test.log" )
+        
         setTableWidget(self.tableWidget, self.model.md)
 
         self.tableWidget.cellPressed[int, int].connect(self.browseSlotTable)
@@ -119,22 +123,48 @@ class MainWindowUIClass( Ui_MainWindow ):
             #self.message("Executing process")
 
             self.mw.p = QProcess()  # Keep a reference to the QProcess (e.g. on self) while it's running.
-            #self.mw.p = self.p
-            btn.setEnabled(False)
+            if btn.text() == "Refine":
+                btn.setText("Stop")
+                btn.setStyleSheet('QPushButton {color: red;}')
+            else:
+                btn.setEnabled(False)
+                
             self.mw.p.finished.connect(lambda: self.process_finished(btn))  # Clean up once complete.
             self.mw.p.start(cmd)
+
+            
+        elif btn.text() =="Stop":
+            if self.mw.p:
+                self.mw.p.kill()
+            #elif self.model.refine_pid:
+            #    pass
+            else:
+                btn.setText("Refine")
         else:
-            print("already runing another job, please wait until it finished!")
+            msg = QMessageBox()
+            msg.setWindowTitle("Warning!")
+            msg.setText("Already runing another job, please wait until it finished!")
+            msg.setStandardButtons(QMessageBox.Ok)
+            msg.setIcon(QMessageBox.Warning)
+            msg.exec_()
+            #print("already runing another job, please wait until it finished!")
 
     def process_finished(self, btn):
-
-        btn.setEnabled(True)
+        
+        if btn.text() == "Stop":
+            btn.setText("Refine")
+            btn.setStyleSheet('QPushButton {color: black;}')
+        else:
+            btn.setEnabled(True)
         self.model.read_star()
         setTableWidget(self.tableWidget, self.model.md)   
         
         #print("Process finished.")
         self.mw.p = None
         #self.p = None
+    def process_finished_test(self):
+        
+        print("test_finished")
         
     def removeRow(self):
         #print(self.tableWidget.selectionModel().selectedIndexes()[0].row())
@@ -494,6 +524,8 @@ class MainWindowUIClass( Ui_MainWindow ):
             cmd = "{} --noise_level {}".format(cmd, self.lineEdit_noise_level.text())
         if self.lineEdit_noise_start_iter.text():
             cmd = "{} --noise_start_iter {}".format(cmd, self.lineEdit_noise_start_iter.text())
+        if self.lineEdit_noise_mode.text():
+            cmd = "{} --noise_mode {}".format(cmd, self.lineEdit_noise_mode.text())
         #if self.lineEdit_noise_pause.text():
         #    cmd = "{} --noise_pause {}".format(cmd, self.lineEdit_noise_pause.text())
         
@@ -532,11 +564,14 @@ class MainWindowUIClass( Ui_MainWindow ):
         if self.lineEdit_pretrain_model_predict.text() and self.model.isValid(self.lineEdit_pretrain_model_predict.text()):
             cmd = "{} {}".format(cmd, self.lineEdit_pretrain_model_predict.text())
         else:
-            print("no pretrain model detected")
+            print("no trained model detected")
             return
         # if self.lineEdit_gpuID_predict.text():
         #     cmd = "{} --gpuID {}".format(cmd, self.lineEdit_gpuID_predict.text())
-            
+        
+        if self.lineEdit_tomo_index_predict.text():
+            cmd = "{} --tomo_idx {}".format(cmd, self.lineEdit_tomo_index_predict.text())
+
         if self.lineEdit_result_dir_predict.text():
             cmd = "{} --output_dir {}".format(cmd, self.lineEdit_result_dir_predict.text())
         
