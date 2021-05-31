@@ -69,7 +69,7 @@ def extract_subtomos(settings):
                     orig_data = mrcData.data.astype(np.float32)
             
 
-            if "rlnMaskName" in md.getLabels() and it.rlnMaskName is not None:
+            if "rlnMaskName" in md.getLabels() and it.rlnMaskName not in [None,'None']:
                 with mrcfile.open(it.rlnMaskName) as m:
                     mask_data = m.data
             else:

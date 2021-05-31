@@ -163,18 +163,19 @@ class DataCubes:
         if self.__cubesX is None:
 
             self.__cubesX = self.crop_to_size(self.cubesX_padded, self.cubeSideLen)
-            if self.noise_folder is not None:
-                path_noise = sorted([self.noise_folder+'/'+f for f in os.listdir(self.noise_folder)])
-                path_index = np.random.permutation(len(path_noise))[0:self.__cubesX.shape[0]]
-                def read_vol(f):
-                    with mrcfile.open(f) as mf:
-                        res = mf.data
-                    return res
-                noise_volume = np.array([read_vol(path_noise[j]) for j in path_index])
-            else:
-                noise_volume = make_noise_one(cubesize = self.cubeSideLen,mode=self.noise_mode)
-            
-            self.__cubesX += self.noise_level * noise_volume / np.std(noise_volume)
+            if self.noise_level > 0.0000001:
+                if self.noise_folder is not None:
+                    path_noise = sorted([self.noise_folder+'/'+f for f in os.listdir(self.noise_folder)])
+                    path_index = np.random.permutation(len(path_noise))[0:self.__cubesX.shape[0]]
+                    def read_vol(f):
+                        with mrcfile.open(f) as mf:
+                            res = mf.data
+                        return res
+                    noise_volume = np.array([read_vol(path_noise[j]) for j in path_index])
+                else:
+                    noise_volume = make_noise_one(cubesize = self.cubeSideLen,mode=self.noise_mode)
+                
+                self.__cubesX += self.noise_level * noise_volume / np.std(noise_volume)
         return self.__cubesX
 
 
