@@ -1,8 +1,7 @@
-from tensorflow.keras.models import model_from_json,load_model
+from tensorflow.keras.models import load_model
 import mrcfile
 from IsoNet.preprocessing.img_processing import normalize
 import numpy as np
-import logging
 import tensorflow.keras.backend as K
 import tensorflow as tf
 

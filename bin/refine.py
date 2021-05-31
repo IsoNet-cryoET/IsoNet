@@ -18,9 +18,11 @@ def run(args):
         else:
             run_continue(args)
     except Exception:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
+        import traceback
+        #exc_type, exc_value, exc_traceback = sys.exc_info()
         logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[logging.FileHandler("log.txt"),logging.StreamHandler()])
-        logging.error(exc_value)
+        logging.error(traceback.format_exc())
+        #logging.error(exc_value)
 
 
 def run_whole(args):
@@ -81,8 +83,10 @@ def run_whole(args):
         os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
     #import tensorflow related modules after setting environment
+
     from IsoNet.training.predict import predict
     from IsoNet.training.train import prepare_first_model, train_data
+
     import tensorflow as tf
     gpu_info =  tf.config.list_physical_devices('GPU')
     logger.debug(gpu_info)   
