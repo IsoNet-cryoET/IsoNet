@@ -2,21 +2,20 @@
     File name: Isonet_star_app.py
     Author: Hui Wang (EICN)
     Date created: 4/21/2021
-    Date last modified: 5/8/2021
+    Date last modified: 06/01/2021
     Python Version: 3.6.5
 '''
-from PyQt5 import QtCore, QtGui, QtWidgets
+import sys,os
 
+from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QTableWidgetItem,QMessageBox
-from PyQt5.QtCore import QObject, pyqtSlot,QProcess
+from PyQt5.QtCore import QObject, pyqtSlot, QProcess
+
+#Isonet packages
 from IsoNet.gui.isonet_gui import Ui_MainWindow ##need to change in the package
-import sys
-import os
 from IsoNet.gui.model_star import Model, setTableWidget #need to change in the package
-import time
-from threading import Thread
 from IsoNet.util.metadata import MetaData,Label,Item
-#from subprocess import call,Popen
+
 
 class MainWindowUIClass( Ui_MainWindow ):
     def __init__( self ):
@@ -24,38 +23,41 @@ class MainWindowUIClass( Ui_MainWindow ):
         '''
         super().__init__()
         self.model = Model()
+        
+        #reset process as None
         self.p = None
-        if os.path.isfile(self.model.pid_file):
-            os.remove(self.model.pid_file)
+        
+        # check for pid in last running
+        #if os.path.isfile(self.model.pid_file):
+        #    os.remove(self.model.pid_file)
+    
+    #link to log window to display output of stdout
+    def dataReady(self):
+        cursor = self.textBrowser_log.textCursor()
+        cursor.movePosition(cursor.End)
+        # have transfer byte string to unicode string
+        cursor.insertText(str(self.mw.p.readAll(),'utf-8'))
+        self.textBrowser_log.ensureCursorVisible()
+        
         
     def setupUi( self, MW ):
         ''' Setup the UI of the super class, and add here code
         that relates to the way we want our UI to operate.
         '''
         super().setupUi( MW )
-
-                    
-        #test_p = QProcess()
-        #test_p.finished.connect(self.process_finished_test)
-        #test_p.start("ls > test.log" )
         
+        #load default content in tomograms.star 
         setTableWidget(self.tableWidget, self.model.md)
-
+        
+        #set up functions when cells be clicked
         self.tableWidget.cellPressed[int, int].connect(self.browseSlotTable)
-
-        #self.tableWidget = TableWidget(df)
-        #self.tableWidget.setCurrentCell(0,0)
-        #self.tableWidget.currentCellChanged[int,int,int,int].connect(self.updateMDItem) 
         self.tableWidget.cellChanged[int,int].connect(self.updateMDItem) 
-        #self.tableWidget.setCellWidget(0,0,self.pushButton_insert)
-        #self.horizontalLayout.addWidget(self.tableWidget)
 
         ########################
         # connect function to buttons
         ########################
         self.pushButton_insert.clicked.connect(self.copyRow)
         self.pushButton_delete.clicked.connect(self.removeRow)
-        #self.pushButton_update.clicked.connect(self.updateMD)
         self.pushButton_open_star.clicked.connect(self.open_star)
         self.pushButton_3dmod.clicked.connect(self.view_3dmod)
 
@@ -79,9 +81,12 @@ class MainWindowUIClass( Ui_MainWindow ):
         self.pushButton_predict_3dmod.clicked.connect(self.view_predict_3dmod)
 
         self.actionGithub.triggered.connect(self.openGithub)
+
         #########################
         #set icon location
         #########################
+
+        #get the root path for isonet
         isonet_path = os.popen("which isonet.py").read()
         tmp = isonet_path.split("bin/isonet.py")
         root_path = tmp[0]
@@ -102,14 +107,17 @@ class MainWindowUIClass( Ui_MainWindow ):
         ###Set up log file monitor###
         import datetime
         now = datetime.datetime.now()
-        #self.textBrowser_log.setText(now.strftime("%Y-%m-%d %H:%M:%S"))
+        
+        #create a empty log file
         if not self.model.isValid(self.model.log_file):
             os.system("echo {} > {}".format(now.strftime("%Y-%m-%d %H:%M:%S"), self.model.log_file))
             
         self.textBrowser_log.setText(self.model.getLogContent(self.model.log_file))
         self.textBrowser_log.moveCursor(QtGui.QTextCursor.End)
-        self.log_watcher = QtCore.QFileSystemWatcher([self.model.log_file])
-        self.log_watcher.fileChanged.connect(self.update_log)
+        
+        ####################
+        #self.log_watcher = QtCore.QFileSystemWatcher([self.model.log_file])
+        #self.log_watcher.fileChanged.connect(self.update_log)
     
     def update_log(self, filename):
 
@@ -130,9 +138,11 @@ class MainWindowUIClass( Ui_MainWindow ):
                 btn.setEnabled(False)
                 
             self.mw.p.finished.connect(lambda: self.process_finished(btn))  # Clean up once complete.
+            #############added #################
+            print("start process")
+            self.mw.p.readyReadStandardOutput.connect(self.dataReady)
             self.mw.p.start(cmd)
 
-            
         elif btn.text() =="Stop":
             if self.mw.p:
                 self.mw.p.kill()

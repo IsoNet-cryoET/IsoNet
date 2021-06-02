@@ -1951,7 +1951,7 @@ class Ui_MainWindow(object):
         self.lineEdit_subtomo_dir.setPlaceholderText(_translate("MainWindow", "subtomo"))
         self.label_subtomo_star_extract.setText(_translate("MainWindow", "subtomo star"))
         self.lineEdit_subtomo_star_extract.setToolTip(_translate("MainWindow", "<html><head/><body><p><span style=\" font-size:9pt;\">Size of cubes for training, should be divisible by 8, eg. 32, 64. The actual sizes of extracted subtomograms are 1.5 times of this value.</span></p></body></html>"))
-        self.lineEdit_subtomo_star_extract.setPlaceholderText(_translate("MainWindow", "subtomos.star"))
+        self.lineEdit_subtomo_star_extract.setPlaceholderText(_translate("MainWindow", "subtomo.star"))
         self.checkBox_use_deconv_extract.setToolTip(_translate("MainWindow", "<html><head/><body><p><span style=\" font-size:9pt;\">If CTF deconvolved tomogram is found in tomogram.star, use that tomogram instead.</span></p></body></html>"))
         self.checkBox_use_deconv_extract.setText(_translate("MainWindow", "use deconv map"))
         self.label_cube_size_extract.setText(_translate("MainWindow", "cube size"))

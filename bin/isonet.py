@@ -124,9 +124,9 @@ class ISONET:
         from IsoNet.util.deconvolution import deconv_one
 
         file_handler = logging.FileHandler(self.log_file)
-        logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[file_handler,logging.StreamHandler()])
+        logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[file_handler,logging.StreamHandler(sys.stdout)])
         logging.info('\n######Isonet starts ctf deconvolve######\n')
-        
+        print("deconv")
         try: 
             md = MetaData()
             md.read(star_file)
