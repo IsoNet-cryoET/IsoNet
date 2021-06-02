@@ -124,9 +124,9 @@ class ISONET:
         from IsoNet.util.deconvolution import deconv_one
 
         file_handler = logging.FileHandler(self.log_file)
-        logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[file_handler,logging.StreamHandler()])
+        logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[file_handler,logging.StreamHandler(sys.stdout)])
         logging.info('\n######Isonet starts ctf deconvolve######\n')
-        
+        #print("deconv")
         try: 
             md = MetaData()
             md.read(star_file)
@@ -188,7 +188,7 @@ class ISONET:
         """
         from IsoNet.bin.make_mask import make_mask
         file_handler = logging.FileHandler(self.log_file)
-        logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[file_handler,logging.StreamHandler()])
+        logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[file_handler,logging.StreamHandler(sys.stdout)])
         #logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO)
         logging.info('\n######Isonet starts making mask######\n')
         try:
@@ -261,17 +261,17 @@ class ISONET:
         d_args = Arg(d)
         
         file_handler = logging.FileHandler(self.log_file)
-        logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[file_handler,logging.StreamHandler()])
+        logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[file_handler,logging.StreamHandler(sys.stdout)])
         logging.info("\n######Isonet starts extracting subtomograms######\n")
 
 
         if d_args.log_level == "debug":
-            logging.basicConfig(format='%(asctime)s, %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.DEBUG,handlers=[file_handler,logging.StreamHandler()])
+            logging.basicConfig(format='%(asctime)s, %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.DEBUG,handlers=[file_handler,logging.StreamHandler(sys.stdout)])
         else:
-            logging.basicConfig(format='%(asctime)s, %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[file_handler,logging.StreamHandler()])
+            logging.basicConfig(format='%(asctime)s, %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[file_handler,logging.StreamHandler(sys.stdout)])
         #logger = logging.getLogger('IsoNet.extract')
         try:
-            if  os.path.isdir(subtomo_folder):
+            if os.path.isdir(subtomo_folder):
                 logging.warning("subtomo directory exists, the current directory will be overwriten")
                 import shutil
                 shutil.rmtree(subtomo_folder)

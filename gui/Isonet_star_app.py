@@ -2,21 +2,20 @@
     File name: Isonet_star_app.py
     Author: Hui Wang (EICN)
     Date created: 4/21/2021
-    Date last modified: 5/8/2021
+    Date last modified: 06/01/2021
     Python Version: 3.6.5
 '''
-from PyQt5 import QtCore, QtGui, QtWidgets
+import sys,os
 
+from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QTableWidgetItem,QMessageBox
-from PyQt5.QtCore import QObject, pyqtSlot,QProcess
+from PyQt5.QtCore import QObject, pyqtSlot, QProcess
+
+#Isonet packages
 from IsoNet.gui.isonet_gui import Ui_MainWindow ##need to change in the package
-import sys
-import os
 from IsoNet.gui.model_star import Model, setTableWidget #need to change in the package
-import time
-from threading import Thread
 from IsoNet.util.metadata import MetaData,Label,Item
-#from subprocess import call,Popen
+
 
 class MainWindowUIClass( Ui_MainWindow ):
     def __init__( self ):
@@ -24,38 +23,33 @@ class MainWindowUIClass( Ui_MainWindow ):
         '''
         super().__init__()
         self.model = Model()
+        
+        #reset process as None
         self.p = None
-        if os.path.isfile(self.model.pid_file):
-            os.remove(self.model.pid_file)
+        
+        # check for pid in last running
+        #if os.path.isfile(self.model.pid_file):
+        #    os.remove(self.model.pid_file)
+        
         
     def setupUi( self, MW ):
         ''' Setup the UI of the super class, and add here code
         that relates to the way we want our UI to operate.
         '''
         super().setupUi( MW )
-
-                    
-        #test_p = QProcess()
-        #test_p.finished.connect(self.process_finished_test)
-        #test_p.start("ls > test.log" )
         
+        #load default content in tomograms.star 
         setTableWidget(self.tableWidget, self.model.md)
-
+        
+        #set up functions when cells be clicked
         self.tableWidget.cellPressed[int, int].connect(self.browseSlotTable)
-
-        #self.tableWidget = TableWidget(df)
-        #self.tableWidget.setCurrentCell(0,0)
-        #self.tableWidget.currentCellChanged[int,int,int,int].connect(self.updateMDItem) 
         self.tableWidget.cellChanged[int,int].connect(self.updateMDItem) 
-        #self.tableWidget.setCellWidget(0,0,self.pushButton_insert)
-        #self.horizontalLayout.addWidget(self.tableWidget)
 
         ########################
         # connect function to buttons
         ########################
         self.pushButton_insert.clicked.connect(self.copyRow)
         self.pushButton_delete.clicked.connect(self.removeRow)
-        #self.pushButton_update.clicked.connect(self.updateMD)
         self.pushButton_open_star.clicked.connect(self.open_star)
         self.pushButton_3dmod.clicked.connect(self.view_3dmod)
 
@@ -79,9 +73,12 @@ class MainWindowUIClass( Ui_MainWindow ):
         self.pushButton_predict_3dmod.clicked.connect(self.view_predict_3dmod)
 
         self.actionGithub.triggered.connect(self.openGithub)
+
         #########################
         #set icon location
         #########################
+
+        #get the root path for isonet
         isonet_path = os.popen("which isonet.py").read()
         tmp = isonet_path.split("bin/isonet.py")
         root_path = tmp[0]
@@ -102,55 +99,56 @@ class MainWindowUIClass( Ui_MainWindow ):
         ###Set up log file monitor###
         import datetime
         now = datetime.datetime.now()
-        #self.textBrowser_log.setText(now.strftime("%Y-%m-%d %H:%M:%S"))
+        
+        #create a empty log file
         if not self.model.isValid(self.model.log_file):
             os.system("echo {} > {}".format(now.strftime("%Y-%m-%d %H:%M:%S"), self.model.log_file))
             
         self.textBrowser_log.setText(self.model.getLogContent(self.model.log_file))
         self.textBrowser_log.moveCursor(QtGui.QTextCursor.End)
-        self.log_watcher = QtCore.QFileSystemWatcher([self.model.log_file])
-        self.log_watcher.fileChanged.connect(self.update_log)
+        
+        ####################
+        #self.log_watcher = QtCore.QFileSystemWatcher([self.model.log_file])
+        #self.log_watcher.fileChanged.connect(self.update_log)
     
+    '''
     def update_log(self, filename):
 
         self.textBrowser_log.setText(self.model.getLogContent(filename))
         self.textBrowser_log.moveCursor(QtGui.QTextCursor.End)
         self.log_watcher.addPath(self.model.log_file)
-        
+    '''
+    
+    #connect to all the main function button to run the process in the background
+    #cmd is the command need to be excuted, and btn pass the button object 
     def start_process(self, cmd, btn):
-  
         if self.mw.p is None:  # No process running.
-            #self.message("Executing process")
-
-            self.mw.p = QProcess()  # Keep a reference to the QProcess (e.g. on self) while it's running.
+            self.mw.p = QProcess()
+            #change the status of the current botton 
             if btn.text() == "Refine":
                 btn.setText("Stop")
                 btn.setStyleSheet('QPushButton {color: red;}')
             else:
                 btn.setEnabled(False)
-                
-            self.mw.p.finished.connect(lambda: self.process_finished(btn))  # Clean up once complete.
+            self.mw.p.readyReadStandardOutput.connect(self.dataReady)
+            self.mw.p.finished.connect(lambda: self.process_finished(btn))
             self.mw.p.start(cmd)
 
-            
         elif btn.text() =="Stop":
             if self.mw.p:
                 self.mw.p.kill()
-            #elif self.model.refine_pid:
-            #    pass
             else:
                 btn.setText("Refine")
         else:
-            msg = QMessageBox()
-            msg.setWindowTitle("Warning!")
-            msg.setText("Already runing another job, please wait until it finished!")
-            msg.setStandardButtons(QMessageBox.Ok)
-            msg.setIcon(QMessageBox.Warning)
-            msg.exec_()
-            #print("already runing another job, please wait until it finished!")
+            self.warn_window("Already runing another job, please wait until it finished!")
+            #msg = QMessageBox()
+            #msg.setWindowTitle("Warning!")
+            #msg.setText("Already runing another job, please wait until it finished!")
+            #msg.setStandardButtons(QMessageBox.Ok)
+            #msg.setIcon(QMessageBox.Warning)
+            #msg.exec_()
 
     def process_finished(self, btn):
-        
         if btn.text() == "Stop":
             btn.setText("Refine")
             btn.setStyleSheet('QPushButton {color: black;}')
@@ -158,13 +156,20 @@ class MainWindowUIClass( Ui_MainWindow ):
             btn.setEnabled(True)
         self.model.read_star()
         setTableWidget(self.tableWidget, self.model.md)   
-        
-        #print("Process finished.")
         self.mw.p = None
-        #self.p = None
-    def process_finished_test(self):
         
-        print("test_finished")
+    #link to log window to display output of stdout
+    def dataReady(self):
+        cursor = self.textBrowser_log.textCursor()
+        cursor.movePosition(cursor.End)
+        # have transfer byte string to unicode string
+        import string
+        printable = set(string.printable)
+        txt = str(self.mw.p.readAll(),'utf-8')
+        printable_txt = "".join(list(filter(lambda x: x in printable, txt)))
+        cursor.insertText(printable_txt)
+        self.textBrowser_log.ensureCursorVisible()
+        self.textBrowser_log.moveCursor(QtGui.QTextCursor.End)
         
     def removeRow(self):
         #print(self.tableWidget.selectionModel().selectedIndexes()[0].row())
@@ -205,7 +210,6 @@ class MainWindowUIClass( Ui_MainWindow ):
         self.updateMD()
     
     def default_value(self, label):
-        
         switcher = {
             "rlnMicrographName": "None",
             "rlnPixelSize": "1",
@@ -218,7 +222,6 @@ class MainWindowUIClass( Ui_MainWindow ):
             "rlnMaskStdPercentage": "50",
             "rlnMaskName": "None"
         }
-        #print(label,switcher.get(label, "None"))
         return switcher.get(label, "None")
         
     def updateMD ( self ):
@@ -288,8 +291,6 @@ class MainWindowUIClass( Ui_MainWindow ):
             os.system(cmd)
         else:
        '''
-		
-    # slot
     
     def switch_btn(self, btn):
         switcher = {
@@ -396,11 +397,6 @@ class MainWindowUIClass( Ui_MainWindow ):
             pass
 
     def deconvolve( self ):
-          
-        #self.pushButton_deconv.setEnabled(False)
-        #self.pushButton_deconv.setDisabled(True)
-        #self.pushButton_deconv.update()
-        #self.pushButton_deconv.repaint()
 
         tomogram_star = self.model.tomogram_star
         cmd = "isonet.py deconv {} ".format(tomogram_star)
@@ -421,27 +417,7 @@ class MainWindowUIClass( Ui_MainWindow ):
         if self.checkBox_only_print_command_prepare.isChecked():
             print(cmd)
         else:
-            #print("deconv_else")
-            #cmd = "{} &>> {}".format(cmd,self.model.log_file)
-            #print(cmd)
-
             self.start_process(cmd,self.pushButton_deconv)
-            #process_deconv = Popen(cmd,shell=True,stdin=None,stdout=None, stderr=None)
-            #process_deconv.communicate()
-            #os.system("echo {} >> {}".format(process_deconv.pid,self.model.pid_file))
-            #while True:
-            #    poll = process_deconv.poll()
-            #   print(process_deconv.pid, None)
-            #    if poll != None:
-            #        break
-            #print("deconv_after")
-            
-            #os.system(cmd)
-        #self.pushButton_deconv.setEnabled(True)
-        #os.remove(self.model.pid_file)
-        #self.model.read_star()
-        #setTableWidget(self.tableWidget, self.model.md)   
-
 
     def make_mask( self ):
         #print("#####making mask############")
@@ -465,10 +441,7 @@ class MainWindowUIClass( Ui_MainWindow ):
             print(cmd)
         else:
             self.start_process(cmd,self.pushButton_generate_mask)
-            #os.system(cmd)
-                          
-        #self.model.read_star()
-        #setTableWidget(self.tableWidget, self.model.md)
+
 
     def extract_subtomo( self ):
         tomogram_star = self.model.tomogram_star
@@ -490,8 +463,7 @@ class MainWindowUIClass( Ui_MainWindow ):
             print(cmd)
         else:
             self.start_process(cmd,self.pushButton_extract)
-            #self.create_subprocess(cmd)
-            #os.system(cmd)
+
 
     def refine( self ):
 
@@ -505,7 +477,6 @@ class MainWindowUIClass( Ui_MainWindow ):
             cmd = "{} --pretrained_model {}".format(cmd, self.lineEdit_pretrain_model_refine.text())
         if self.lineEdit_continue_iter.text():
             cmd = "{} --continue_from {}".format(cmd, self.lineEdit_continue_iter.text())
-            #cmd = "{} --continue_iter {}".format(cmd, self.lineEdit_continue_iter.text())
         if self.lineEdit_result_dir_refine.text():
             cmd = "{} --result_dir {}".format(cmd, self.lineEdit_result_dir_refine.text())
         if self.lineEdit_preprocessing_ncpus.text():
@@ -526,8 +497,6 @@ class MainWindowUIClass( Ui_MainWindow ):
             cmd = "{} --noise_start_iter {}".format(cmd, self.lineEdit_noise_start_iter.text())
         if self.lineEdit_noise_mode.text():
             cmd = "{} --noise_mode {}".format(cmd, self.lineEdit_noise_mode.text())
-        #if self.lineEdit_noise_pause.text():
-        #    cmd = "{} --noise_pause {}".format(cmd, self.lineEdit_noise_pause.text())
         
         if self.lineEdit_drop_out.text():
             cmd = "{} --drop_out {}".format(cmd, self.lineEdit_drop_out.text())
@@ -552,9 +521,6 @@ class MainWindowUIClass( Ui_MainWindow ):
             print(cmd)
         else:
             self.start_process(cmd,self.pushButton_refine)
-            # os.system(cmd)
-            #self.create_subprocess(cmd)
-            #Popen(cmd,shell=True,stdin=None,stdout=None, stderr=None)
             
     def predict( self ):
         tomo_star = self.lineEdit_tomo_star_predict.text() if self.lineEdit_tomo_star_predict.text() else "tomograms.star"
@@ -587,8 +553,6 @@ class MainWindowUIClass( Ui_MainWindow ):
             print(cmd)
         else:
             self.start_process(cmd,self.pushButton_predict)
-            #self.create_subprocess(cmd)
-            #os.system(cmd)
             
     def view_predict_3dmod(self):
         try:
@@ -613,19 +577,26 @@ class MainWindowUIClass( Ui_MainWindow ):
         if fileName:
             try:
                 tomo_file = self.model.sim_path(self.model.pwd, fileName)
-                self.model.read_star_gui(tomo_file)
-                setTableWidget(self.tableWidget, self.model.md)
+                read_result = self.model.read_star_gui(tomo_file)
+                if read_result == 1:
+                    self.warn_window("The input star file is not legid!")
+                else:
+                    setTableWidget(self.tableWidget, self.model.md)
             except:
                 print("warning")
                 pass
+                
     def openGithub(self):
         import webbrowser
         webbrowser.open(self.model.github_addr)
         
-    def create_subprocess (self, cmd):
-        process_ping = Popen(cmd,shell=True,stdin=None,stdout=None, stderr=None)
-        pid = process_ping.pid
-        os.system("echo {} >> {}".format(pid,self.model.pid_file))
+    def warn_window(self,text):
+        msg = QMessageBox()
+        msg.setWindowTitle("Warning!")
+        msg.setText(text)
+        msg.setStandardButtons(QMessageBox.Ok)
+        msg.setIcon(QMessageBox.Warning)
+        msg.exec_()
         
      
 class MyWindow(QtWidgets.QMainWindow):
