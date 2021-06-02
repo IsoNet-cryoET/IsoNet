@@ -125,7 +125,8 @@ class MainWindowUIClass( Ui_MainWindow ):
         if self.mw.p is None:  # No process running.
             self.mw.p = QProcess()
             #change the status of the current botton 
-            if btn.text() == "Refine":
+            if btn.text() in ["Deconvolve","Generate Mask","Extract","Refine","Predict"]:
+                self.model.btn_pressed_text =  btn.text()
                 btn.setText("Stop")
                 btn.setStyleSheet('QPushButton {color: red;}')
             else:
@@ -138,20 +139,18 @@ class MainWindowUIClass( Ui_MainWindow ):
             if self.mw.p:
                 self.mw.p.kill()
             else:
-                btn.setText("Refine")
+                if self.model.btn_pressed_text:
+                    btn.setText(self.model.btn_pressed_text)
         else:
             self.warn_window("Already runing another job, please wait until it finished!")
-            #msg = QMessageBox()
-            #msg.setWindowTitle("Warning!")
-            #msg.setText("Already runing another job, please wait until it finished!")
-            #msg.setStandardButtons(QMessageBox.Ok)
-            #msg.setIcon(QMessageBox.Warning)
-            #msg.exec_()
 
     def process_finished(self, btn):
         if btn.text() == "Stop":
-            btn.setText("Refine")
-            btn.setStyleSheet('QPushButton {color: black;}')
+            if self.model.btn_pressed_text:
+                btn.setText(self.model.btn_pressed_text)
+                #btn.setText("Refine")
+                self.model.btn_pressed_text = None
+                btn.setStyleSheet('QPushButton {color: black;}')
         else:
             btn.setEnabled(True)
         self.model.read_star()
@@ -224,6 +223,21 @@ class MainWindowUIClass( Ui_MainWindow ):
         }
         return switcher.get(label, "None")
         
+    def switch_btn(self, btn):
+        switcher = {
+            "mask_dir": self.lineEdit_mask_dir,
+            "deconv_dir": self.lineEdit_deconv_dir,
+            "subtomo_dir": self.lineEdit_subtomo_dir,
+            "result_dir_refine": self.lineEdit_result_dir_refine,
+            "result_dir_predict": self.lineEdit_result_dir_predict,
+            "subtomo_star_refine":self.lineEdit_subtomo_star_refine,
+            "pretrain_model_refine":self.lineEdit_pretrain_model_refine,
+            "tomo_star_predict": self.lineEdit_tomo_star_predict,
+            "pretrain_model_predict":self.lineEdit_pretrain_model_predict,
+            "continue_from": self.lineEdit_continue_iter
+        }
+        return switcher.get(btn, "Invaid btn name")
+
     def updateMD ( self ):
         star_file = self.model.tomogram_star
         rowCount = self.tableWidget.rowCount()
@@ -265,49 +279,6 @@ class MainWindowUIClass( Ui_MainWindow ):
         except:
             pass
      
-    def view_3dmod(self):
-        slected_items = self.tableWidget.selectedItems()
-        if len(slected_items) > 0:
-            cmd = "3dmod"
-            for item in slected_items:
-                i = item.row()
-                j = item.column()
-                item_text = self.tableWidget.item(i, j).text()
-                if item_text[-4:] == '.mrc' or item_text[-4:] == '.rec':
-                    cmd = "{} {}".format(cmd,item_text)
-            #print(cmd)
-            if cmd != "3dmod":
-                os.system(cmd)
-            else:
-                print("selected items are not mrc or rec file(s)")
-            
-        
-        '''
-        i = self.tableWidget.currentRow()
-        j = self.tableWidget.currentColumn() 
-        item = self.tableWidget.item(i, j).text()
-        if item[-4:] in ['.mrc','.rec']:
-            cmd = "3dmod {}".format(item)
-            os.system(cmd)
-        else:
-       '''
-    
-    def switch_btn(self, btn):
-        switcher = {
-            "mask_dir": self.lineEdit_mask_dir,
-            "deconv_dir": self.lineEdit_deconv_dir,
-            "subtomo_dir": self.lineEdit_subtomo_dir,
-            "result_dir_refine": self.lineEdit_result_dir_refine,
-            "result_dir_predict": self.lineEdit_result_dir_predict,
-            "subtomo_star_refine":self.lineEdit_subtomo_star_refine,
-            "pretrain_model_refine":self.lineEdit_pretrain_model_refine,
-            "tomo_star_predict": self.lineEdit_tomo_star_predict,
-            "pretrain_model_predict":self.lineEdit_pretrain_model_predict,
-            "continue_from": self.lineEdit_continue_iter
-        }
-        return switcher.get(btn, "Invaid btn name")
-        
-        
     def browseSlot( self , btn ):
         ''' Called when the user presses the Browse button
         '''
@@ -530,7 +501,7 @@ class MainWindowUIClass( Ui_MainWindow ):
         if self.lineEdit_pretrain_model_predict.text() and self.model.isValid(self.lineEdit_pretrain_model_predict.text()):
             cmd = "{} {}".format(cmd, self.lineEdit_pretrain_model_predict.text())
         else:
-            print("no trained model detected")
+            self.warn_window("no trained model detected")
             return
         
         if self.lineEdit_tomo_index_predict.text():
@@ -550,15 +521,36 @@ class MainWindowUIClass( Ui_MainWindow ):
             print(cmd)
         else:
             self.start_process(cmd,self.pushButton_predict)
+     
+    def view_3dmod(self):
+        slected_items = self.tableWidget.selectedItems()
+        if len(slected_items) > 0:
+            cmd = "3dmod"
+            for item in slected_items:
+                i = item.row()
+                j = item.column()
+                item_text = self.tableWidget.item(i, j).text()
+                if item_text[-4:] == '.mrc' or item_text[-4:] == '.rec':
+                    cmd = "{} {}".format(cmd,item_text)
+            #print(cmd)
+            if cmd != "3dmod":
+                os.system(cmd)
+            else:
+                self.warn_window("selected items are not mrc or rec file(s)")
             
     def view_predict_3dmod(self):
         try:
             result_dir_predict = self.lineEdit_result_dir_predict.text()
             list_file = os.listdir(result_dir_predict)
+            cmd = "3dmod"
             for f in list_file:
                 if f[-4:] == ".mrc" or f[-4:] == ".rec":                   
-                    cmd = "3dmod {}/{}".format(result_dir_predict,f)
-                    os.system(cmd)
+                    cmd = "{} {}/{}".format(cmd,result_dir_predict,f)
+            
+            if cmd != "3dmod":
+                os.system(cmd)  
+            else:
+                self.warn_window("no mrc or rec file(s) detected in results folder: {}!".format(result_dir_predict))       
         except:
             pass
     
