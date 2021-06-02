@@ -51,6 +51,7 @@ class Model:
 
     def read_star(self):
         if not self.isValid(self.tomogram_star):
+            
             self.md = MetaData()
             #self.md.addLabels('rlnIndex','rlnMicrographName','rlnPixelSize','rlnDefocus','rlnNumberSubtomo')
             self.md.addLabels('rlnIndex','rlnMicrographName','rlnPixelSize','rlnDefocus','rlnNumberSubtomo','rlnSnrFalloff','rlnDeconvStrength','rlnDeconvTomoName','rlnMaskDensityPercentage','rlnMaskStdPercentage','rlnMaskName')
@@ -65,10 +66,16 @@ class Model:
     def read_star_gui(self,star_file):
 
         if self.isValid(star_file):
-            self.tomogram_star = star_file
-            self.md = MetaData()
-            self.md.read(self.tomogram_star)
-            self.header = self.md.getLabels()
+            md_cad = MetaData()
+            md_cad.read(star_file)
+            if "rlnMicrographName" not in md_cad.getLabels():
+                return 1
+            else:
+                self.tomogram_star = star_file
+                self.md = MetaData()
+                self.md.read(self.tomogram_star)
+                self.header = self.md.getLabels()
+            return 0
 
     def isValid(self, fileName):
         '''

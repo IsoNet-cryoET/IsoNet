@@ -30,14 +30,6 @@ class MainWindowUIClass( Ui_MainWindow ):
         # check for pid in last running
         #if os.path.isfile(self.model.pid_file):
         #    os.remove(self.model.pid_file)
-    
-    #link to log window to display output of stdout
-    def dataReady(self):
-        cursor = self.textBrowser_log.textCursor()
-        cursor.movePosition(cursor.End)
-        # have transfer byte string to unicode string
-        cursor.insertText(str(self.mw.p.readAll(),'utf-8'))
-        self.textBrowser_log.ensureCursorVisible()
         
         
     def setupUi( self, MW ):
@@ -119,48 +111,44 @@ class MainWindowUIClass( Ui_MainWindow ):
         #self.log_watcher = QtCore.QFileSystemWatcher([self.model.log_file])
         #self.log_watcher.fileChanged.connect(self.update_log)
     
+    '''
     def update_log(self, filename):
 
         self.textBrowser_log.setText(self.model.getLogContent(filename))
         self.textBrowser_log.moveCursor(QtGui.QTextCursor.End)
         self.log_watcher.addPath(self.model.log_file)
-        
+    '''
+    
+    #connect to all the main function button to run the process in the background
+    #cmd is the command need to be excuted, and btn pass the button object 
     def start_process(self, cmd, btn):
-  
         if self.mw.p is None:  # No process running.
-            #self.message("Executing process")
-
-            self.mw.p = QProcess()  # Keep a reference to the QProcess (e.g. on self) while it's running.
+            self.mw.p = QProcess()
+            #change the status of the current botton 
             if btn.text() == "Refine":
                 btn.setText("Stop")
                 btn.setStyleSheet('QPushButton {color: red;}')
             else:
                 btn.setEnabled(False)
-                
-            self.mw.p.finished.connect(lambda: self.process_finished(btn))  # Clean up once complete.
-            #############added #################
-            print("start process")
             self.mw.p.readyReadStandardOutput.connect(self.dataReady)
+            self.mw.p.finished.connect(lambda: self.process_finished(btn))
             self.mw.p.start(cmd)
 
         elif btn.text() =="Stop":
             if self.mw.p:
                 self.mw.p.kill()
-            #elif self.model.refine_pid:
-            #    pass
             else:
                 btn.setText("Refine")
         else:
-            msg = QMessageBox()
-            msg.setWindowTitle("Warning!")
-            msg.setText("Already runing another job, please wait until it finished!")
-            msg.setStandardButtons(QMessageBox.Ok)
-            msg.setIcon(QMessageBox.Warning)
-            msg.exec_()
-            #print("already runing another job, please wait until it finished!")
+            self.warn_window("Already runing another job, please wait until it finished!")
+            #msg = QMessageBox()
+            #msg.setWindowTitle("Warning!")
+            #msg.setText("Already runing another job, please wait until it finished!")
+            #msg.setStandardButtons(QMessageBox.Ok)
+            #msg.setIcon(QMessageBox.Warning)
+            #msg.exec_()
 
     def process_finished(self, btn):
-        
         if btn.text() == "Stop":
             btn.setText("Refine")
             btn.setStyleSheet('QPushButton {color: black;}')
@@ -168,13 +156,20 @@ class MainWindowUIClass( Ui_MainWindow ):
             btn.setEnabled(True)
         self.model.read_star()
         setTableWidget(self.tableWidget, self.model.md)   
-        
-        #print("Process finished.")
         self.mw.p = None
-        #self.p = None
-    def process_finished_test(self):
         
-        print("test_finished")
+    #link to log window to display output of stdout
+    def dataReady(self):
+        cursor = self.textBrowser_log.textCursor()
+        cursor.movePosition(cursor.End)
+        # have transfer byte string to unicode string
+        import string
+        printable = set(string.printable)
+        txt = str(self.mw.p.readAll(),'utf-8')
+        printable_txt = "".join(list(filter(lambda x: x in printable, txt)))
+        cursor.insertText(printable_txt)
+        self.textBrowser_log.ensureCursorVisible()
+        self.textBrowser_log.moveCursor(QtGui.QTextCursor.End)
         
     def removeRow(self):
         #print(self.tableWidget.selectionModel().selectedIndexes()[0].row())
@@ -215,7 +210,6 @@ class MainWindowUIClass( Ui_MainWindow ):
         self.updateMD()
     
     def default_value(self, label):
-        
         switcher = {
             "rlnMicrographName": "None",
             "rlnPixelSize": "1",
@@ -228,7 +222,6 @@ class MainWindowUIClass( Ui_MainWindow ):
             "rlnMaskStdPercentage": "50",
             "rlnMaskName": "None"
         }
-        #print(label,switcher.get(label, "None"))
         return switcher.get(label, "None")
         
     def updateMD ( self ):
@@ -298,8 +291,6 @@ class MainWindowUIClass( Ui_MainWindow ):
             os.system(cmd)
         else:
        '''
-		
-    # slot
     
     def switch_btn(self, btn):
         switcher = {
@@ -406,11 +397,6 @@ class MainWindowUIClass( Ui_MainWindow ):
             pass
 
     def deconvolve( self ):
-          
-        #self.pushButton_deconv.setEnabled(False)
-        #self.pushButton_deconv.setDisabled(True)
-        #self.pushButton_deconv.update()
-        #self.pushButton_deconv.repaint()
 
         tomogram_star = self.model.tomogram_star
         cmd = "isonet.py deconv {} ".format(tomogram_star)
@@ -431,27 +417,7 @@ class MainWindowUIClass( Ui_MainWindow ):
         if self.checkBox_only_print_command_prepare.isChecked():
             print(cmd)
         else:
-            #print("deconv_else")
-            #cmd = "{} &>> {}".format(cmd,self.model.log_file)
-            #print(cmd)
-
             self.start_process(cmd,self.pushButton_deconv)
-            #process_deconv = Popen(cmd,shell=True,stdin=None,stdout=None, stderr=None)
-            #process_deconv.communicate()
-            #os.system("echo {} >> {}".format(process_deconv.pid,self.model.pid_file))
-            #while True:
-            #    poll = process_deconv.poll()
-            #   print(process_deconv.pid, None)
-            #    if poll != None:
-            #        break
-            #print("deconv_after")
-            
-            #os.system(cmd)
-        #self.pushButton_deconv.setEnabled(True)
-        #os.remove(self.model.pid_file)
-        #self.model.read_star()
-        #setTableWidget(self.tableWidget, self.model.md)   
-
 
     def make_mask( self ):
         #print("#####making mask############")
@@ -475,10 +441,7 @@ class MainWindowUIClass( Ui_MainWindow ):
             print(cmd)
         else:
             self.start_process(cmd,self.pushButton_generate_mask)
-            #os.system(cmd)
-                          
-        #self.model.read_star()
-        #setTableWidget(self.tableWidget, self.model.md)
+
 
     def extract_subtomo( self ):
         tomogram_star = self.model.tomogram_star
@@ -500,8 +463,7 @@ class MainWindowUIClass( Ui_MainWindow ):
             print(cmd)
         else:
             self.start_process(cmd,self.pushButton_extract)
-            #self.create_subprocess(cmd)
-            #os.system(cmd)
+
 
     def refine( self ):
 
@@ -515,7 +477,6 @@ class MainWindowUIClass( Ui_MainWindow ):
             cmd = "{} --pretrained_model {}".format(cmd, self.lineEdit_pretrain_model_refine.text())
         if self.lineEdit_continue_iter.text():
             cmd = "{} --continue_from {}".format(cmd, self.lineEdit_continue_iter.text())
-            #cmd = "{} --continue_iter {}".format(cmd, self.lineEdit_continue_iter.text())
         if self.lineEdit_result_dir_refine.text():
             cmd = "{} --result_dir {}".format(cmd, self.lineEdit_result_dir_refine.text())
         if self.lineEdit_preprocessing_ncpus.text():
@@ -536,8 +497,6 @@ class MainWindowUIClass( Ui_MainWindow ):
             cmd = "{} --noise_start_iter {}".format(cmd, self.lineEdit_noise_start_iter.text())
         if self.lineEdit_noise_mode.text():
             cmd = "{} --noise_mode {}".format(cmd, self.lineEdit_noise_mode.text())
-        #if self.lineEdit_noise_pause.text():
-        #    cmd = "{} --noise_pause {}".format(cmd, self.lineEdit_noise_pause.text())
         
         if self.lineEdit_drop_out.text():
             cmd = "{} --drop_out {}".format(cmd, self.lineEdit_drop_out.text())
@@ -562,9 +521,6 @@ class MainWindowUIClass( Ui_MainWindow ):
             print(cmd)
         else:
             self.start_process(cmd,self.pushButton_refine)
-            # os.system(cmd)
-            #self.create_subprocess(cmd)
-            #Popen(cmd,shell=True,stdin=None,stdout=None, stderr=None)
             
     def predict( self ):
         tomo_star = self.lineEdit_tomo_star_predict.text() if self.lineEdit_tomo_star_predict.text() else "tomograms.star"
@@ -576,8 +532,6 @@ class MainWindowUIClass( Ui_MainWindow ):
         else:
             print("no trained model detected")
             return
-        # if self.lineEdit_gpuID_predict.text():
-        #     cmd = "{} --gpuID {}".format(cmd, self.lineEdit_gpuID_predict.text())
         
         if self.lineEdit_tomo_index_predict.text():
             cmd = "{} --tomo_idx {}".format(cmd, self.lineEdit_tomo_index_predict.text())
@@ -596,8 +550,6 @@ class MainWindowUIClass( Ui_MainWindow ):
             print(cmd)
         else:
             self.start_process(cmd,self.pushButton_predict)
-            #self.create_subprocess(cmd)
-            #os.system(cmd)
             
     def view_predict_3dmod(self):
         try:
@@ -622,19 +574,26 @@ class MainWindowUIClass( Ui_MainWindow ):
         if fileName:
             try:
                 tomo_file = self.model.sim_path(self.model.pwd, fileName)
-                self.model.read_star_gui(tomo_file)
-                setTableWidget(self.tableWidget, self.model.md)
+                read_result = self.model.read_star_gui(tomo_file)
+                if read_result == 1:
+                    self.warn_window("The input star file is not legid!")
+                else:
+                    setTableWidget(self.tableWidget, self.model.md)
             except:
                 print("warning")
                 pass
+                
     def openGithub(self):
         import webbrowser
         webbrowser.open(self.model.github_addr)
         
-    def create_subprocess (self, cmd):
-        process_ping = Popen(cmd,shell=True,stdin=None,stdout=None, stderr=None)
-        pid = process_ping.pid
-        os.system("echo {} >> {}".format(pid,self.model.pid_file))
+    def warn_window(self,text):
+        msg = QMessageBox()
+        msg.setWindowTitle("Warning!")
+        msg.setText(text)
+        msg.setStandardButtons(QMessageBox.Ok)
+        msg.setIcon(QMessageBox.Warning)
+        msg.exec_()
         
      
 class MyWindow(QtWidgets.QMainWindow):
