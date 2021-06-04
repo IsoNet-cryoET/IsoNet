@@ -47,6 +47,7 @@ class Model:
         self.read_star()
         self.pwd = os.getcwd().replace("\\","/")
         self.log_file = "log.txt"
+        self.btn_pressed_text = None
 
 
     def read_star(self):
