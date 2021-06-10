@@ -33,7 +33,8 @@ def run_whole(args):
     args.cube_size = md._data[0].rlnCubeSize
     args.predict_cropsize = args.crop_size
     args.noise_dir = None
-    args.lr = 0.0004
+    args.lr = args.learning_rate
+    # args.lr = 0.00005
 
     #*******calculate parameters********
     if args.gpuID is None:
@@ -173,6 +174,12 @@ def run_continue(continue_args):
     os.environ["CUDA_VISIBLE_DEVICES"]=str(args.gpuID)
     os.environ["TF_FORCE_GPU_ALLOW_GROWTH"] = "true"
     logger = logging.getLogger('IsoNet.refine')
+    if args.log_level == "debug":
+        logging.basicConfig(format='%(asctime)s, %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.DEBUG,handlers=[logging.FileHandler("log.txt"),logging.StreamHandler(sys.stdout)])
+        #logging.basicConfig(format='%(asctime)s, %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.DEBUG,handlers=[logging.FileHandler("refine_logging.log"),logging.StreamHandler()])
+    else:
+        logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[logging.FileHandler("log.txt"),logging.StreamHandler(sys.stdout)])
+    logging.info('\n######Isonet Continues Refining######\n')
     if args.log_level == 'debug':
         os.environ['TF_CPP_MIN_LOG_LEVEL'] = '0'
     else:

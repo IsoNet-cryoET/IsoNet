@@ -213,7 +213,7 @@ def deconv_one(tomo, out_tomo,defocus=1.0, pixel_size=1.0,snrfalloff=1.0, deconv
         mrc.set_data(vol_restored)
     shutil.rmtree('./deconv_temp')
     t2 = time.time()
-    logging.info('time consumed: '.format(t2-t1))
+    logging.info('time consumed: {} '.format(t2-t1))
     
 
 

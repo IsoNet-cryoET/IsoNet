@@ -103,7 +103,6 @@ def train3D_continue(outFile,
                     data_folder = 'data',
                     result_folder='results',
                     epochs=40,
-                    lr=0.0004,
                     steps_per_epoch=128,
                     batch_size=64,
                     n_gpus=2):
@@ -167,7 +166,7 @@ def prepare_first_model(settings):
             residual = True,
             last_activation = 'linear',
             loss = 'mae',
-            lr = settings.lr)
+            lr = settings.learning_rate)
     init_model_name = settings.result_dir+'/model_init.h5'
     model.save(init_model_name)
     settings.init_model = init_model_name

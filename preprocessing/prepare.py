@@ -146,10 +146,10 @@ def get_cubes(inp,settings):
 
     with mrcfile.open(current_mrc) as mrcData:
         ow_data = mrcData.data.astype(np.float32)*-1
-    #ow_data = normalize(ow_data, percentile = settings.normalize_percentile)
+    ow_data = normalize(ow_data, percentile = settings.normalize_percentile)
     with mrcfile.open('{}/{}_iter00.mrc'.format(settings.result_dir,root_name)) as mrcData:
         iw_data = mrcData.data.astype(np.float32)*-1
-    #iw_data = normalize(iw_data, percentile = settings.normalize_percentile)
+    iw_data = normalize(iw_data, percentile = settings.normalize_percentile)
 
     if settings.iter_count <= settings.iterations:
         orig_data = apply_wedge(ow_data, ld1=0, ld2=1) + apply_wedge(iw_data, ld1 = 1, ld2=0)
