@@ -103,6 +103,7 @@ def train3D_continue(outFile,
                     data_folder = 'data',
                     result_folder='results',
                     epochs=40,
+                    lr=0.0004,
                     steps_per_epoch=128,
                     batch_size=64,
                     n_gpus=2):
@@ -123,8 +124,8 @@ def train3D_continue(outFile,
             model = load_model( model_file)
     else:
         model = load_model( model_file)
-
-    # model.compile(optimizer=optimizer, loss='mae', metrics=_metrics)
+    optimizer = Adam(lr=lr)
+    model.compile(optimizer=optimizer, loss='mae', metrics=('mse','mae'))
     # model.compile(optimizer=optimizer, loss='mae', metrics=_metrics)
     logging.info("Loaded model from disk")
 
@@ -180,7 +181,7 @@ def train_data(settings):
                                         epochs=settings.epochs,
                                         steps_per_epoch=settings.steps_per_epoch,
                                         batch_size=settings.batch_size,
-                                        lr = settings.lr,
+                                        lr = settings.learning_rate,
                                         n_gpus=settings.ngpus)
 
     # if settings.iter_count == 0 and settings.pretrained_model is None :

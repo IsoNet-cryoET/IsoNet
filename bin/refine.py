@@ -33,8 +33,6 @@ def run_whole(args):
     args.cube_size = md._data[0].rlnCubeSize
     args.predict_cropsize = args.crop_size
     args.noise_dir = None
-    args.lr = args.learning_rate
-    # args.lr = 0.00005
 
     #*******calculate parameters********
     if args.gpuID is None:
@@ -58,6 +56,15 @@ def run_whole(args):
             args.filter_base = 64
     if args.steps_per_epoch is None:
         args.steps_per_epoch = min(int(len(md) * 6/args.batch_size) , 200)
+    if args.learning_rate is None:
+        args.learning_rate = 0.0004
+    if args.noise_level is None:
+        args.noise_level = (0.05,0.10,0.15,0.20)
+    if args.noise_start_iter is None:
+        args.noise_start_iter = (11,16,21,26)
+    if args.noise_mode is None:
+        args.noise_mode = 1
+
     logger = logging.getLogger('IsoNet.refine')
     if args.log_level == "debug":
         logging.basicConfig(format='%(asctime)s, %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.DEBUG,handlers=[logging.FileHandler("log.txt"),logging.StreamHandler(sys.stdout)])
@@ -161,15 +168,16 @@ def run_continue(continue_args):
         args.steps_per_epoch = continue_args.steps_per_epoch
     elif continue_args.gpuID is not None:
         args.steps_per_epoch = min(int(len(md) * 6/args.batch_size) , 200)
-
+    if continue_args.learning_rate is not None:
+        args.learning_rate = continue_args.learning_rate
+    if continue_args.noise_level is not None:
+        args.noise_level = continue_args.noise_level
+    if continue_args.noise_start_iter is not None:
+        args.noise_start_iter = continue_args.noise_start_iter
+    if continue_args.noise_mode is not None:
+        args.noise_mode = continue_args.noise_mode
     logger = logging.getLogger('IsoNet.refine')
-    if args.log_level == "debug":
-        logging.basicConfig(format='%(asctime)s, %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.DEBUG,handlers=[logging.FileHandler("log.txt"),logging.StreamHandler()])
-        #logging.basicConfig(format='%(asctime)s, %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.DEBUG,handlers=[logging.FileHandler("refine_logging.log"),logging.StreamHandler()])
-    else:
-        logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[logging.FileHandler("log.txt"),logging.StreamHandler()])
-    logging.info('\n######Isonet starts refining######\n')
-    
+   
     if len(md) <=0:
         logging.error("Subtomo list is empty!")
         sys.exit(0)
