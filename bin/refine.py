@@ -177,7 +177,13 @@ def run_continue(continue_args):
         os.environ['TF_CPP_MIN_LOG_LEVEL'] = '0'
     else:
         os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
-
+        
+    if args.log_level == "debug":
+        logging.basicConfig(format='%(asctime)s, %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.DEBUG,handlers=[logging.FileHandler("log.txt"),logging.StreamHandler(sys.stdout)])
+        
+    else:
+        logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[logging.FileHandler("log.txt"),logging.StreamHandler(sys.stdout)])        
+        
     from IsoNet.training.predict import predict
     from IsoNet.training.train import prepare_first_model, train_data
     # start REFINE LOOP

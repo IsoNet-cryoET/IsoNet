@@ -389,10 +389,10 @@ class ISONET:
         
         
         if d_args.log_level == "debug":
-            logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.DEBUG,handlers=[file_handler,logging.StreamHandler()])
+            logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.DEBUG,handlers=[file_handler,logging.StreamHandler(sys.stdout)])
             #logging.basicConfig(format='%(asctime)s, %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.DEBUG)
         else:
-            logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[file_handler,logging.StreamHandler()])
+            logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[file_handler,logging.StreamHandler(sys.stdout)])
             #logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO)
         try:
             predict(d_args)
