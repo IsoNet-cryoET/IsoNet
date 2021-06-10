@@ -124,8 +124,8 @@ def train3D_continue(outFile,
             model = load_model( model_file)
     else:
         model = load_model( model_file)
-
-    # model.compile(optimizer=optimizer, loss='mae', metrics=_metrics)
+    optimizer = Adam(lr=lr)
+    model.compile(optimizer=optimizer, loss='mae', metrics=('mse','mae'))
     # model.compile(optimizer=optimizer, loss='mae', metrics=_metrics)
     logging.info("Loaded model from disk")
 
@@ -167,7 +167,7 @@ def prepare_first_model(settings):
             residual = True,
             last_activation = 'linear',
             loss = 'mae',
-            lr = settings.lr)
+            lr = settings.learning_rate)
     init_model_name = settings.result_dir+'/model_init.h5'
     model.save(init_model_name)
     settings.init_model = init_model_name
@@ -181,7 +181,7 @@ def train_data(settings):
                                         epochs=settings.epochs,
                                         steps_per_epoch=settings.steps_per_epoch,
                                         batch_size=settings.batch_size,
-                                        lr = settings.lr,
+                                        lr = settings.learning_rate,
                                         n_gpus=settings.ngpus)
 
     # if settings.iter_count == 0 and settings.pretrained_model is None :

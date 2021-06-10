@@ -496,13 +496,16 @@ class MainWindowUIClass( Ui_MainWindow ):
     def predict( self ):
         tomo_star = self.lineEdit_tomo_star_predict.text() if self.lineEdit_tomo_star_predict.text() else "tomograms.star"
         gpuID = self.lineEdit_gpuID_predict.text() if self.lineEdit_gpuID_predict.text() else '0,1,2,3'
-        cmd = "isonet.py predict {} --gpuID {}".format(tomo_star,gpuID)
+        cmd = "isonet.py predict {}".format(tomo_star)
         
         if self.lineEdit_pretrain_model_predict.text() and self.model.isValid(self.lineEdit_pretrain_model_predict.text()):
             cmd = "{} {}".format(cmd, self.lineEdit_pretrain_model_predict.text())
         else:
             self.warn_window("no trained model detected")
             return
+        # if self.lineEdit_gpuID_predict.text():
+        #     cmd = "{} --gpuID {}".format(cmd, self.lineEdit_gpuID_predict.text())
+        cmd = "{} --gpuID {}".format(cmd,gpuID)
         
         if self.lineEdit_tomo_index_predict.text():
             cmd = "{} --tomo_idx {}".format(cmd, self.lineEdit_tomo_index_predict.text())
