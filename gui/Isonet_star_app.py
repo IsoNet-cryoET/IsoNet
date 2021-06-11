@@ -111,14 +111,7 @@ class MainWindowUIClass( Ui_MainWindow ):
         #self.log_watcher = QtCore.QFileSystemWatcher([self.model.log_file])
         #self.log_watcher.fileChanged.connect(self.update_log)
     
-    '''
-    def update_log(self, filename):
 
-        self.textBrowser_log.setText(self.model.getLogContent(filename))
-        self.textBrowser_log.moveCursor(QtGui.QTextCursor.End)
-        self.log_watcher.addPath(self.model.log_file)
-    '''
-    
     #connect to all the main function button to run the process in the background
     #cmd is the command need to be excuted, and btn pass the button object 
     def start_process(self, cmd, btn):
@@ -164,9 +157,17 @@ class MainWindowUIClass( Ui_MainWindow ):
         # have transfer byte string to unicode string
         import string
         printable = set(string.printable)
+        printable.add(u'\u2588')
+
         txt = str(self.mw.p.readAll(),'utf-8')
+        #txt += self.mw.p.errorString()
+
+
         printable_txt = "".join(list(filter(lambda x: x in printable, txt)))
         cursor.insertText(printable_txt)
+        f = open(self.model.log_file, 'a+')
+        f.write(printable_txt)
+        f.close()
         self.textBrowser_log.ensureCursorVisible()
         self.textBrowser_log.moveCursor(QtGui.QTextCursor.End)
         
@@ -385,7 +386,7 @@ class MainWindowUIClass( Ui_MainWindow ):
         if self.lineEdit_overlap.text():
             cmd = "{} --overlap {}".format(cmd, self.lineEdit_overlap.text())
 
-        if self.checkBox_only_print_command_prepare.isChecked():
+        if self.checkBox_only_print_command_prepare.isChecked() and self.pushButton_deconv.text() == 'Deconvolve':
             print(cmd)
         else:
             self.start_process(cmd,self.pushButton_deconv)
@@ -408,7 +409,7 @@ class MainWindowUIClass( Ui_MainWindow ):
         if self.lineEdit_z_crop.text():
             cmd = "{} --z_crop {}".format(cmd, self.lineEdit_z_crop.text())
 
-        if self.checkBox_only_print_command_prepare.isChecked():
+        if self.checkBox_only_print_command_prepare.isChecked() and self.pushButton_generate_mask.text() == 'Generate Mask':
             print(cmd)
         else:
             self.start_process(cmd,self.pushButton_generate_mask)
@@ -430,7 +431,7 @@ class MainWindowUIClass( Ui_MainWindow ):
         if self.lineEdit_tomo_index_extract.text():
             cmd = "{} --tomo_idx {}".format(cmd, self.lineEdit_tomo_index_extract.text())
         
-        if self.checkBox_only_print_command_prepare.isChecked():
+        if self.checkBox_only_print_command_prepare.isChecked() and self.pushButton_extract.text() == 'Extract':
             print(cmd)
         else:
             self.start_process(cmd,self.pushButton_extract)
@@ -491,7 +492,7 @@ class MainWindowUIClass( Ui_MainWindow ):
             cmd = "{} --normalize_percentile {}".format(cmd, False)
             
             
-        if self.checkBox_only_print_command_refine.isChecked():
+        if self.checkBox_only_print_command_refine.isChecked() and self.pushButton_refine.text() == 'Refine':
             print(cmd)
         else:
             self.start_process(cmd,self.pushButton_refine)
@@ -523,7 +524,7 @@ class MainWindowUIClass( Ui_MainWindow ):
             cmd = "{} --crop_size {}".format(cmd, self.lineEdit_crop_size_predict.text())
             
                     
-        if self.checkBox_only_print_command_predict.isChecked():
+        if self.checkBox_only_print_command_predict.isChecked() and self.pushButton_predict.text() == "Predict":
             print(cmd)
         else:
             self.start_process(cmd,self.pushButton_predict)

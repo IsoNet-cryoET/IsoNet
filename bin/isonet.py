@@ -123,8 +123,8 @@ class ISONET:
         """    
         from IsoNet.util.deconvolution import deconv_one
 
-        file_handler = logging.FileHandler(self.log_file)
-        logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[file_handler,logging.StreamHandler(sys.stdout)])
+        logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',
+        datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[logging.StreamHandler(sys.stdout)])
         logging.info('\n######Isonet starts ctf deconvolve######\n')
         #print("deconv")
         try: 
@@ -157,7 +157,11 @@ class ISONET:
                 md.write(star_file)
             logging.info('\n######Isonet done ctf deconvolve######\n')
         except Exception:
-            logging.error(traceback.format_exc())
+            error_text = traceback.format_exc()
+            f =open('log.txt','a+')
+            f.write(error_text)
+            f.close()
+            logging.error(error_text)
 
     def make_mask(self,star_file, 
                 mask_folder: str = 'mask', 
@@ -187,9 +191,8 @@ class ISONET:
         :param tomo_idx: (None) If this value is set, process only the tomograms listed in this index. e.g. 1,2,4 or 5-10,15,16   
         """
         from IsoNet.bin.make_mask import make_mask
-        file_handler = logging.FileHandler(self.log_file)
-        logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[file_handler,logging.StreamHandler(sys.stdout)])
-        #logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO)
+        logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',
+        datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[logging.StreamHandler(sys.stdout)])
         logging.info('\n######Isonet starts making mask######\n')
         try:
             if not os.path.isdir(mask_folder):
@@ -231,7 +234,11 @@ class ISONET:
                 md.write(star_file)
             logging.info('\n######Isonet done making mask######\n')
         except Exception:
-            logging.error(traceback.format_exc())
+            error_text = traceback.format_exc()
+            f =open('log.txt','a+')
+            f.write(error_text)
+            f.close()
+            logging.error(error_text)
 
     def extract(self,
         star_file: str,
@@ -254,22 +261,18 @@ class ISONET:
         :param use_deconv_tomo: (True) If CTF deconvolved tomogram is found in tomogram.star, use that tomogram instead. 
         """
 
-        #logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[file_handler,logging.StreamHandler()])
-
-        #logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO)
         d = locals()
         d_args = Arg(d)
         
-        file_handler = logging.FileHandler(self.log_file)
-        logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[file_handler,logging.StreamHandler(sys.stdout)])
+        if d_args.log_level == "debug":
+            logging.basicConfig(format='%(asctime)s, %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s'
+            ,datefmt="%H:%M:%S",level=logging.DEBUG,handlers=[logging.StreamHandler(sys.stdout)])
+        else:
+            logging.basicConfig(format='%(asctime)s, %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s'
+            ,datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[logging.StreamHandler(sys.stdout)])
+
         logging.info("\n######Isonet starts extracting subtomograms######\n")
 
-
-        if d_args.log_level == "debug":
-            logging.basicConfig(format='%(asctime)s, %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.DEBUG,handlers=[file_handler,logging.StreamHandler(sys.stdout)])
-        else:
-            logging.basicConfig(format='%(asctime)s, %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[file_handler,logging.StreamHandler(sys.stdout)])
-        #logger = logging.getLogger('IsoNet.extract')
         try:
             if os.path.isdir(subtomo_folder):
                 logging.warning("subtomo directory exists, the current directory will be overwriten")
@@ -284,7 +287,11 @@ class ISONET:
             extract_subtomos(d_args)
             logging.info("\n######Isonet done extracting subtomograms######\n")
         except Exception:
-            logging.error(traceback.format_exc())
+            error_text = traceback.format_exc()
+            f =open('log.txt','a+')
+            f.write(error_text)
+            f.close()
+            logging.error(error_text)
 
 
     def refine(self,
@@ -386,19 +393,22 @@ class ISONET:
         d = locals()
         d_args = Arg(d)
         from IsoNet.bin.predict import predict
-        file_handler = logging.FileHandler(self.log_file)
-        
+       
         
         if d_args.log_level == "debug":
-            logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.DEBUG,handlers=[file_handler,logging.StreamHandler(sys.stdout)])
-            #logging.basicConfig(format='%(asctime)s, %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.DEBUG)
+            logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',
+            datefmt="%m-%d %H:%M:%S",level=logging.DEBUG,handlers=[logging.StreamHandler(sys.stdout)])
         else:
-            logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[file_handler,logging.StreamHandler(sys.stdout)])
-            #logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO)
+            logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',
+            datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[logging.StreamHandler(sys.stdout)])
         try:
             predict(d_args)
         except:
-            logging.error(traceback.format_exc())
+            error_text = traceback.format_exc()
+            f =open('log.txt','a+')
+            f.write(error_text)
+            f.close()
+            logging.error(error_text)
   
     def check(self):
         from IsoNet.bin.predict import predict

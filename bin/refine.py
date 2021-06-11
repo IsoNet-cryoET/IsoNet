@@ -12,6 +12,13 @@ import sys
 import shutil
 from IsoNet.util.metadata import MetaData, Item, Label
 def run(args):
+    if args.log_level == "debug":
+        logging.basicConfig(format='%(asctime)s, %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
+        datefmt="%H:%M:%S",level=logging.DEBUG,handlers=[logging.StreamHandler(sys.stdout)])
+    else:
+        logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',
+        datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[logging.StreamHandler(sys.stdout)])
+    logging.info('\n######Isonet starts refining######\n')
     try:
         if args.continue_from is None:
             run_whole(args)
@@ -20,8 +27,15 @@ def run(args):
     except Exception:
         import traceback
         #exc_type, exc_value, exc_traceback = sys.exc_info()
-        logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[logging.FileHandler("log.txt"),logging.StreamHandler(sys.stdout)])
-        logging.error(traceback.format_exc())
+        #logging.addHandeler(logging.FileHandler('log.txt'))
+        #basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',
+        #datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[logging.FileHandler('log.txt'),logging.StreamHandler(sys.stderr),logging.StreamHandler(sys.stdout)])
+        #logging.info("comes here")
+        error_text = traceback.format_exc()
+        f =open('log.txt','a+')
+        f.write(error_text)
+        f.close()
+        logging.error(error_text)
         #logging.error(exc_value)
 
 
@@ -65,14 +79,7 @@ def run_whole(args):
     if args.noise_mode is None:
         args.noise_mode = 1
 
-    logger = logging.getLogger('IsoNet.refine')
-    if args.log_level == "debug":
-        logging.basicConfig(format='%(asctime)s, %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.DEBUG,handlers=[logging.FileHandler("log.txt"),logging.StreamHandler(sys.stdout)])
-        #logging.basicConfig(format='%(asctime)s, %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.DEBUG,handlers=[logging.FileHandler("refine_logging.log"),logging.StreamHandler()])
-    else:
-        logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[logging.FileHandler("log.txt"),logging.StreamHandler(sys.stdout)])
-    logging.info('\n######Isonet starts refining######\n')
-        #logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[logging.FileHandler("refine_logging.log"),logging.StreamHandler()])
+
     if len(md) <=0:
         logging.error("Subtomo list is empty!")
         sys.exit(0)
@@ -97,26 +104,28 @@ def run_whole(args):
 
     import tensorflow as tf
     gpu_info =  tf.config.list_physical_devices('GPU')
-    logger.debug(gpu_info)   
+    #logger = logging.getLogger('IsoNet.refine')
+
+    logging.debug(gpu_info)   
     if len(gpu_info)!=args.ngpus:
         if len(gpu_info) == 0:
-            logger.error('No GPU detected, Please check your CUDA version and installation')
+            logging.error('No GPU detected, Please check your CUDA version and installation')
             sys.exit(0)
         else:
-            logger.error('Available number of GPUs don\'t match requested GPUs \n\n Detected GPUs: {} \n\n Requested GPUs: {}'.format(gpu_info,args.gpuID))
+            logging.error('Available number of GPUs don\'t match requested GPUs \n\n Detected GPUs: {} \n\n Requested GPUs: {}'.format(gpu_info,args.gpuID))
             sys.exit(0)
 
     args = prepare_first_iter(args)
-    logger.info("Done preperation for the first iteration!")
+    logging.info("Done preperation for the first iteration!")
     noise_level_series = get_noise_level(args.noise_level,args.noise_start_iter,args.iterations)
     for num_iter in range(1,args.iterations + 1):        
         args.iter_count = num_iter
-        logger.info("Start Iteration{}!".format(num_iter))
+        logging.info("Start Iteration{}!".format(num_iter))
         # pretrained_model case
         if args.pretrained_model is not None and num_iter==1:
             shutil.copyfile(args.pretrained_model,'{}/model_iter{:0>2d}.h5'.format(args.result_dir,1))
             # os.system('cp {} {}'.format(args.pretrained_model,args.result_dir+'{}/model_iter{:0>2d}.h5'.format(args.result_dir,continue_iter)))
-            logger.info('Use Pretrained model as the output model of iteration 1 and predict subtomograms')
+            logging.info('Use Pretrained model as the output model of iteration 1 and predict subtomograms')
             predict(args)
             continue
 
@@ -134,16 +143,16 @@ def run_whole(args):
             pass
     
         get_cubes_list(args)
-        logger.info("Done preparing subtomograms!")
-        logger.info("Start training!")
+        logging.info("Done preparing subtomograms!")
+        logging.info("Start training!")
         history = train_data(args) #train based on init model and save new one as model_iter{num_iter}.h5
         # losses.append(history.history['loss'][-1])
         save_args_json(args,args.result_dir+'/refine_iter{:0>2d}.json'.format(num_iter))
-        logger.info("Done training!")
-        logger.info("Start predicting subtomograms!")
+        logging.info("Done training!")
+        logging.info("Start predicting subtomograms!")
         predict(args)
-        logger.info("Done predicting subtomograms!")
-        logger.info("Done Iteration{}!".format(num_iter))
+        logging.info("Done predicting subtomograms!")
+        logging.info("Done Iteration{}!".format(num_iter))
 
 def run_continue(continue_args):
     
@@ -176,7 +185,7 @@ def run_continue(continue_args):
         args.noise_start_iter = continue_args.noise_start_iter
     if continue_args.noise_mode is not None:
         args.noise_mode = continue_args.noise_mode
-    logger = logging.getLogger('IsoNet.refine')
+    #logger = logging.getLogger('IsoNet.refine')
    
     if len(md) <=0:
         logging.error("Subtomo list is empty!")
@@ -190,23 +199,18 @@ def run_continue(continue_args):
     os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
     os.environ["CUDA_VISIBLE_DEVICES"]=str(args.gpuID)
     os.environ["TF_FORCE_GPU_ALLOW_GROWTH"] = "true"
-    logger = logging.getLogger('IsoNet.refine')
+    #logger = logging.getLogger('IsoNet.refine')
     if args.log_level == "debug":
-        logging.basicConfig(format='%(asctime)s, %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.DEBUG,handlers=[logging.FileHandler("log.txt"),logging.StreamHandler(sys.stdout)])
-        #logging.basicConfig(format='%(asctime)s, %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.DEBUG,handlers=[logging.FileHandler("refine_logging.log"),logging.StreamHandler()])
+        logging.basicConfig(format='%(asctime)s, %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
+        datefmt="%H:%M:%S",level=logging.DEBUG,handlers=[logging.StreamHandler(sys.stdout)])
     else:
-        logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[logging.FileHandler("log.txt"),logging.StreamHandler(sys.stdout)])
+        logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',
+        datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[logging.StreamHandler(sys.stdout)])
     logging.info('\n######Isonet Continues Refining######\n')
     if args.log_level == 'debug':
         os.environ['TF_CPP_MIN_LOG_LEVEL'] = '0'
     else:
         os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
-        
-    if args.log_level == "debug":
-        logging.basicConfig(format='%(asctime)s, %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.DEBUG,handlers=[logging.FileHandler("log.txt"),logging.StreamHandler(sys.stdout)])
-        
-    else:
-        logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[logging.FileHandler("log.txt"),logging.StreamHandler(sys.stdout)])        
         
     from IsoNet.training.predict import predict
     from IsoNet.training.train import prepare_first_model, train_data
@@ -215,10 +219,10 @@ def run_continue(continue_args):
     noise_level_series = get_noise_level(args.noise_level,args.noise_start_iter,args.iterations)
     for num_iter in range(current_iter,args.iterations + 1):
         args.iter_count = num_iter
-        logger.info("Start Iteration{}!".format(num_iter))
+        logging.info("Start Iteration{}!".format(num_iter))
         # Predict subtomos at first
         if continue_args.continue_from is not None:
-            logger.info('Continue from previous model: {}/model_iter{:0>2d}.h5 of iteration {} and predict subtomograms'.format(args.result_dir,num_iter,num_iter))
+            logging.info('Continue from previous model: {}/model_iter{:0>2d}.h5 of iteration {} and predict subtomograms'.format(args.result_dir,num_iter,num_iter))
             predict(args)
             continue_args.continue_from = None
             continue
@@ -232,15 +236,15 @@ def run_continue(continue_args):
             pass
     
         get_cubes_list(args)
-        logger.info("Done preparing subtomograms!")
-        logger.info("Start training!")
+        logging.info("Done preparing subtomograms!")
+        logging.info("Start training!")
         history = train_data(args) #train based on init model and save new one as model_iter{num_iter}.h5
         # losses.append(history.history['loss'][-1])
         save_args_json(args,args.result_dir+'/refine_iter{:0>2d}.json'.format(num_iter))
-        logger.info("Done training!")
-        logger.info("Start predicting subtomograms!")
+        logging.info("Done training!")
+        logging.info("Start predicting subtomograms!")
         predict(args)
-        logger.info("Done predicting subtomograms!")
-        logger.info("Done Iteration{}!".format(num_iter))
+        logging.info("Done predicting subtomograms!")
+        logging.info("Done Iteration{}!".format(num_iter))
 
     

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import numpy as np
-import os
+import os, sys
 import logging
 from IsoNet.preprocessing.simulate import apply_wedge
 from IsoNet.util.norm import normalize
@@ -23,11 +23,19 @@ def predict(args):
     tf_logger.setLevel(logging.ERROR)
 
     logger = logging.getLogger('predict')
+    if args.log_level == "debug":
+        logging.basicConfig(format='%(asctime)s, %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s', 
+        datefmt="%H:%M:%S",level=logging.DEBUG,handlers=[logging.StreamHandler(sys.stdout)])
+    else:
+        logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',
+        datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[logging.StreamHandler(sys.stdout)])
+    logging.info('\n\n######Isonet starts predicting######\n')
+
     args.gpuID = str(args.gpuID)
     ngpus = len(args.gpuID.split(','))
     if args.batch_size is None:
         args.batch_size = max(4, 2 * ngpus)
-    print('batch_size',args.batch_size)
+    #print('batch_size',args.batch_size)
     os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
     os.environ["CUDA_VISIBLE_DEVICES"]=args.gpuID 
 
@@ -78,7 +86,7 @@ def predict_one(args,one_tomo,model,output_file=None):
         else:
             output_file = root_name+'_corrected.mrc'
 
-    print('predicting:{}'.format(root_name))
+    logging.info('predicting:{}'.format(root_name))
 
     with mrcfile.open(one_tomo) as mrcData:
         real_data = mrcData.data.astype(np.float32)*-1
@@ -100,7 +108,8 @@ def predict_one(args,one_tomo,model,output_file=None):
     data = np.append(data, data[0:append_number], axis = 0)
     num_big_batch = data.shape[0]//N
     outData = np.zeros(data.shape)
-    for i in tqdm(range(num_big_batch)):
+    logging.info("total batches: {}".format(num_big_batch))
+    for i in tqdm(range(num_big_batch), file=sys.stdout):
         outData[i*N:(i+1)*N] = model.predict(data[i*N:(i+1)*N], batch_size= args.batch_size,verbose=0)
     outData = outData[0:num_patches]
 
@@ -109,5 +118,5 @@ def predict_one(args,one_tomo,model,output_file=None):
     outData = normalize(outData,percentile=args.normalize_percentile)
     with mrcfile.new(output_file, overwrite=True) as output_mrc:
         output_mrc.set_data(-outData)
-    print('Done predicting')
+    logging.info('Done predicting')
     # predict(args.model,args.weight,args.mrc_file,args.output_file, cubesize=args.cubesize, cropsize=args.cropsize, batch_size=args.batch_size, gpuID=args.gpuID, if_percentile=if_percentile)

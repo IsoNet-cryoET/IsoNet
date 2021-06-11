@@ -15,6 +15,7 @@ class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(910, 860)
+        self.mw = MainWindow
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setStyleSheet("")
         self.centralwidget.setObjectName("centralwidget")
@@ -2078,14 +2079,13 @@ class Ui_MainWindow(object):
         self.lineEdit_epoch.setPlaceholderText(_translate("MainWindow", "10"))
         self.label_iteration.setText(_translate("MainWindow", "iteration"))
         self.lineEdit_iteration.setToolTip(_translate("MainWindow", "<html><head/><body><p><span style=\" font-size:9pt;\">Number of training iterations.</span></p></body></html>"))
-        self.lineEdit_iteration.setPlaceholderText(_translate("MainWindow", "50"))
+        self.lineEdit_iteration.setPlaceholderText(_translate("MainWindow", "30"))
         self.label_lr.setText(_translate("MainWindow", "learning rate"))
         self.lineEdit_lr.setToolTip(_translate("MainWindow", "<html><head/><body><p><span style=\" font-size:9pt;\">Number of training iterations.</span></p></body></html>"))
         self.label_steps_per_epoch.setText(_translate("MainWindow", "steps per epoch"))
         self.lineEdit_steps_per_epoch.setToolTip(_translate("MainWindow", "<html><head/><body><p><span style=\" font-size:9pt;\">Step per epoch. If not defined, the default value will be min(num_of_subtomograms * 6 / batch_size , 200)</span></p></body></html>"))
         self.label_batch_size_refine.setText(_translate("MainWindow", "batch size"))
         self.lineEdit_batch_size.setToolTip(_translate("MainWindow", "<html><head/><body><p><span style=\" font-size:9pt;\">Size of the minibatch.If None, batch_size will be the max(2 * number_of_gpu,4). batch_size should be divisible by the number of gpu.</span></p></body></html>"))
-        self.groupBox_general_option.setToolTip(_translate("MainWindow", "background-color:rgb(240, 240, 240)"))
         self.groupBox_general_option.setTitle(_translate("MainWindow", "General options"))
         self.label_subtomo_star_refine.setText(_translate("MainWindow", "subtomogram star file"))
         self.lineEdit_subtomo_star_refine.setToolTip(_translate("MainWindow", "<html><head/><body><p><span style=\" font-size:9pt;\">star file containing subtomogram(s).</span></p></body></html>"))
