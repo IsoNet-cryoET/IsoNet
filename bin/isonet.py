@@ -298,9 +298,9 @@ class ISONET:
         subtomo_star: str,
         gpuID: str = None,
         iterations: int = None,
-        data_folder: str = None,
+        data_dir: str = None,
         pretrained_model: str = None,
-        log_level: str = "info",
+        log_level: str = None,
         result_dir: str='results',
         preprocessing_ncpus: int = 16,
         continue_from: str=None,
@@ -328,7 +328,7 @@ class ISONET:
         :param gpuID: (0,1,2,3) The ID of gpu to be used during the training. e.g 0,1,2,3.
         :param pretrained_model: (None) A trained neural network model in ".h5" format to start with.
         :param iterations: (30) Number of training iterations.
-        :param data_folder: (data) Temperary folder to save the generated data used for training.
+        :param data_dir: (data) Temperary folder to save the generated data used for training.
         :param log_level: (info) debug level
         :param continue_iter: (0) Which iteration you want to start from?
         :param result_dir: ('results') The name of directory to save refined models and subtomograms

@@ -53,8 +53,8 @@ def run_whole(args):
         args.gpuID = '0,1,2,3'
     else:
         args.gpuID = str(args.gpuID)
-    if args.data_folder is None:
-        args.data_folder = args.result_dir + '/data'
+    if args.data_dir is None:
+        args.data_dir = args.result_dir + '/data'
     if args.iterations is None:
         args.iterations = 30
     args.ngpus = len(args.gpuID.split(','))
@@ -78,7 +78,8 @@ def run_whole(args):
         args.noise_start_iter = (11,16,21,26)
     if args.noise_mode is None:
         args.noise_mode = 1
-
+    if args.log_level is None:
+        args.log_level = "info"
 
     if len(md) <=0:
         logging.error("Subtomo list is empty!")
@@ -138,7 +139,7 @@ def run_whole(args):
         logging.info("Noise Level:{}".format(args.noise_level_current))
 
         try:
-            shutil.rmtree(args.data_folder)     
+            shutil.rmtree(args.data_dir)     
         except OSError:
             pass
     
@@ -166,8 +167,8 @@ def run_continue(continue_args):
     if continue_args.gpuID is not None:
         args.gpuID = str(continue_args.gpuID)
     args.ngpus = len(args.gpuID.split(','))
-    if continue_args.data_folder is not None:
-        args.data_folder = continue_args.data_folder
+    if continue_args.data_dir is not None:
+        args.data_dir = continue_args.data_dir
     if continue_args.batch_size is not None:
         args.batch_size = continue_args.batch_size
     elif continue_args.gpuID is not None:
@@ -185,6 +186,8 @@ def run_continue(continue_args):
         args.noise_start_iter = continue_args.noise_start_iter
     if continue_args.noise_mode is not None:
         args.noise_mode = continue_args.noise_mode
+    if continue_args.log_level is not None:
+        args.log_level = continue_args.log_level
     #logger = logging.getLogger('IsoNet.refine')
    
     if len(md) <=0:
@@ -231,7 +234,7 @@ def run_continue(continue_args):
         args.noise_level_current =  noise_level_series[num_iter]
         logging.info("noise_level:{}".format(args.noise_level_current))
         try:
-            shutil.rmtree(args.data_folder)     
+            shutil.rmtree(args.data_dir)     
         except OSError:
             pass
     
