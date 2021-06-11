@@ -461,7 +461,10 @@ class MainWindowUIClass( Ui_MainWindow ):
             cmd = "{} --epochs {}".format(cmd, self.lineEdit_epoch.text()) 
         if self.lineEdit_steps_per_epoch.text():
             cmd = "{} --steps_per_epoch {}".format(cmd, self.lineEdit_steps_per_epoch.text())
+        if self.lineEdit_lr.text():
+            cmd = "{} --learning_rate {}".format(cmd, self.lineEdit_lr.text())
             
+                
         if self.lineEdit_noise_level.text():
             cmd = "{} --noise_level {}".format(cmd, self.lineEdit_noise_level.text())
         if self.lineEdit_noise_start_iter.text():
