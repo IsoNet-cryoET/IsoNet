@@ -551,6 +551,8 @@ class MainWindowUIClass( Ui_MainWindow ):
     def view_predict_3dmod(self):
         try:
             result_dir_predict = self.lineEdit_result_dir_predict.text()
+            if len(result_dir_predict) < 1:
+                result_dir_predict = 'corrected_tomos'
             list_file = os.listdir(result_dir_predict)
             cmd = "3dmod"
             for f in list_file:
@@ -561,8 +563,9 @@ class MainWindowUIClass( Ui_MainWindow ):
                 os.system(cmd)  
             else:
                 self.warn_window("no mrc or rec file(s) detected in results folder: {}!".format(result_dir_predict))       
-        except:
-            pass
+        except Exception:
+            print('pass')
+            
     
     def open_star( self ):
         options = QtWidgets.QFileDialog.Options()
