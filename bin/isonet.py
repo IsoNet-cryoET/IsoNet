@@ -33,7 +33,7 @@ class ISONET:
         :param defocus: (0.0) defocus in Angstrom. Only need for ctf deconvolution. For phase plate data, you can leave defocus 0. 
         If you have multiple tomograms with different defocus, please modify them in star file or with gui.
         :param number_subtomos: (100) Number of subtomograms to be extracted in later processes. 
-        If you want to extract different number of subtomograms in different tomograms, you can modify them in the geherated star file or with gui.
+        If you want to extract different number of subtomograms in different tomograms, you can modify them in the star file generated with this command or with gui.
 
         """       
         md = MetaData()
@@ -184,7 +184,7 @@ class ISONET:
         :param density_percentage: (50) The approximate percentage of pixels to keep based on their local pixel density. 
         If this value is not set, the program will look for the parameter in the star file. 
         If this value is not set and not found in star file, the default value 50 will be used.
-        :param density_percentage: (50) The approximate percentage of pixels to keel based on their local standard deviation. 
+        :param std_percentage: (50) The approximate percentage of pixels to keel based on their local standard deviation. 
         If this value is not set, the program will look for the parameter in the star file. 
         If this value is not set and not found in star file, the default value 50 will be used.
         :param use_deconv_tomo: (True) If CTF deconvolved tomogram is found in tomogram.star, use that tomogram instead. 
@@ -331,7 +331,7 @@ class ISONET:
         :param iterations: (30) Number of training iterations.
         :param data_dir: (data) Temperary folder to save the generated data used for training.
         :param log_level: (info) debug level, could be 'info' or 'debug'
-        :param continue_from: (None) A Json file to continue from. That json fill is generated at each iteration of refine.  
+        :param continue_from: (None) A Json file to continue from. That json file is generated at each iteration of refine.  
         :param result_dir: ('results') The name of directory to save refined neural network models and subtomograms
         :param preprocessing_ncpus: (16) Number of cpu for preprocessing.
 
