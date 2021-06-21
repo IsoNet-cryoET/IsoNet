@@ -483,9 +483,10 @@ class MainWindowUIClass( Ui_MainWindow ):
             cmd = "{} --kernel {}".format(cmd, self.lineEdit_kernel.text())
         if self.lineEdit_filter_base.text():
             cmd = "{} --filter_base {}".format(cmd, self.lineEdit_filter_base.text())
-        if self.lineEdit_pool.text():
-            cmd = "{} --pool {}".format(cmd, self.lineEdit_pool.text()) 
-            
+        if self.checkBox_pool.isChecked():
+            cmd = "{} --pool {}".format(cmd, True)      
+
+
         if not self.checkBox_batch_normalization.isChecked():
             cmd = "{} --batch_normalization {}".format(cmd, False)    
         if not self.checkBox_normalization_percentile.isChecked():
@@ -522,7 +523,9 @@ class MainWindowUIClass( Ui_MainWindow ):
 
         if self.lineEdit_crop_size_predict.text():
             cmd = "{} --crop_size {}".format(cmd, self.lineEdit_crop_size_predict.text())
-            
+        
+        if not self.checkBox_use_deconv_predict.isChecked():
+            cmd = "{} --use_deconv_tomo {}".format(cmd, False)        
                     
         if self.checkBox_only_print_command_predict.isChecked() and self.pushButton_predict.text() == "Predict":
             print(cmd)
@@ -548,6 +551,8 @@ class MainWindowUIClass( Ui_MainWindow ):
     def view_predict_3dmod(self):
         try:
             result_dir_predict = self.lineEdit_result_dir_predict.text()
+            if len(result_dir_predict) < 1:
+                result_dir_predict = 'corrected_tomos'
             list_file = os.listdir(result_dir_predict)
             cmd = "3dmod"
             for f in list_file:
@@ -558,8 +563,9 @@ class MainWindowUIClass( Ui_MainWindow ):
                 os.system(cmd)  
             else:
                 self.warn_window("no mrc or rec file(s) detected in results folder: {}!".format(result_dir_predict))       
-        except:
-            pass
+        except Exception:
+            print('pass')
+            
     
     def open_star( self ):
         options = QtWidgets.QFileDialog.Options()

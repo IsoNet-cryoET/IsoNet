@@ -99,23 +99,28 @@ def run_whole(args):
     else:
         os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
+    #check gpu
+    import subprocess
+    sp = subprocess.Popen(['nvidia-smi', '-q'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out_str = sp.communicate()
+    out_str = out_str[0].decode('utf-8')
+    if 'CUDA Version' not in out_str:
+        raise RuntimeError('No GPU detected, Please check your CUDA version and installation')
+
     #import tensorflow related modules after setting environment
-
-    from IsoNet.training.predict import predict
-    from IsoNet.training.train import prepare_first_model, train_data
-
     import tensorflow as tf
-    gpu_info =  tf.config.list_physical_devices('GPU')
-    #logger = logging.getLogger('IsoNet.refine')
 
+    gpu_info =  tf.config.list_physical_devices('GPU')
     logging.debug(gpu_info)   
     if len(gpu_info)!=args.ngpus:
         if len(gpu_info) == 0:
             logging.error('No GPU detected, Please check your CUDA version and installation')
-            sys.exit(0)
+            raise RuntimeError('No GPU detected, Please check your CUDA version and installation')
         else:
             logging.error('Available number of GPUs don\'t match requested GPUs \n\n Detected GPUs: {} \n\n Requested GPUs: {}'.format(gpu_info,args.gpuID))
-            sys.exit(0)
+            
+    from IsoNet.training.predict import predict
+    from IsoNet.training.train import prepare_first_model, train_data
 
     args = prepare_first_iter(args)
     logging.info("Done preperation for the first iteration!")
@@ -126,7 +131,6 @@ def run_whole(args):
         # pretrained_model case
         if args.pretrained_model is not None and num_iter==1:
             shutil.copyfile(args.pretrained_model,'{}/model_iter{:0>2d}.h5'.format(args.result_dir,1))
-            # os.system('cp {} {}'.format(args.pretrained_model,args.result_dir+'{}/model_iter{:0>2d}.h5'.format(args.result_dir,continue_iter)))
             logging.info('Use Pretrained model as the output model of iteration 1 and predict subtomograms')
             predict(args)
             continue
@@ -211,7 +215,7 @@ def run_continue(continue_args):
     os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
     os.environ["CUDA_VISIBLE_DEVICES"]=str(args.gpuID)
     os.environ["TF_FORCE_GPU_ALLOW_GROWTH"] = "true"
-    #logger = logging.getLogger('IsoNet.refine')
+
     if args.log_level == "debug":
         logging.basicConfig(format='%(asctime)s, %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
         datefmt="%H:%M:%S",level=logging.DEBUG,handlers=[logging.StreamHandler(sys.stdout)])

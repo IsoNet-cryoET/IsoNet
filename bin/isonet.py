@@ -20,7 +20,7 @@ class ISONET:
     isonet.py predict -h
 
     """
-    log_file = "log.txt"
+    #log_file = "log.txt"
     
     def prepare_star(self,folder_name, output_star='tomograms.star',pixel_size = 10.0, defocus = 0.0, number_subtomos = 100):
         """
@@ -29,37 +29,40 @@ class ISONET:
         :param folder_name: (None) directory containing tomogram(s). Usually 1-5 tomograms are sufficient.
         :param output_star: (tomograms.star) star file similar to that from "relion". You can modify this file manually or with gui.
         :param pixel_size: (10) pixel size in anstroms. Usually you want to bin your tomograms to about 10A pixel size. 
-        Too large or too small pixel sizes are not recommanded, since the target resolution on Z-axis should be about 30A.
-        :param defocus: (0.0) defocus in Angstrom. Only need for ctf deconvolution For phase plate data, you can leave defocus 0. 
+        Too large or too small pixel sizes are not recommanded, since the target resolution on Z-axis of corrected tomograms should be about 30A.
+        :param defocus: (0.0) defocus in Angstrom. Only need for ctf deconvolution. For phase plate data, you can leave defocus 0. 
         If you have multiple tomograms with different defocus, please modify them in star file or with gui.
         :param number_subtomos: (100) Number of subtomograms to be extracted in later processes. 
-        If you have multiple tomograms with different sizes or masks, you can modify them in star file or with gui, in later steps.
+        If you want to extract different number of subtomograms in different tomograms, you can modify them in the star file generated with this command or with gui.
 
         """       
         md = MetaData()
         md.addLabels('rlnIndex','rlnMicrographName','rlnPixelSize','rlnDefocus','rlnNumberSubtomo')
         tomo_list = sorted(os.listdir(folder_name))
-        for i,tomo in enumerate(tomo_list):
-            #TODO check the folder contains only tomograms.
-            it = Item()
-            md.addItem(it)
-            md._setItemValue(it,Label('rlnIndex'),str(i+1))
-            md._setItemValue(it,Label('rlnMicrographName'),os.path.join(folder_name,tomo))
-            md._setItemValue(it,Label('rlnPixelSize'),pixel_size)
-            md._setItemValue(it,Label('rlnDefocus'),defocus)
-            md._setItemValue(it,Label('rlnNumberSubtomo'),number_subtomos)
-            # f.write(str(i+1)+' ' + os.path.join(folder_name,tomo) + '\n')
+        i = 0
+        for tomo in tomo_list:
+            print(tomo[-4:])
+            if tomo[-4:] == '.rec' or tomo[-4:] == 'mrc':
+                i+=1
+                it = Item()
+                md.addItem(it)
+                md._setItemValue(it,Label('rlnIndex'),str(i))
+                md._setItemValue(it,Label('rlnMicrographName'),os.path.join(folder_name,tomo))
+                md._setItemValue(it,Label('rlnPixelSize'),pixel_size)
+                md._setItemValue(it,Label('rlnDefocus'),defocus)
+                md._setItemValue(it,Label('rlnNumberSubtomo'),number_subtomos)
         md.write(output_star)
 
-    def prepare_subtomo_star(self, folder_name, output_star='subtomo.star', pixel_size: float=10.0,cube_size = None):
+    def prepare_subtomo_star(self, folder_name, output_star='subtomo.star', pixel_size: float=10.0, cube_size = None):
         """
-        \nThis command generates a subtomo.star file from a folder containing only subtomogram files (.mrc).
-        This command is usually not necessary because "isonet.py extract" will generate this subtomo.star for you.\n
+        \nThis command generates a subtomo star file from a folder containing only subtomogram files (.mrc).
+        This command is usually not necessary in the traditional workflow, because "isonet.py extract" will generate this subtomo.star for you.\n
         isonet.py prepare_subtomo_star folder_name [--output_star] [--cube_size] 
         :param folder_name: (None) directory containing subtomogram(s).
-        :param output_star: (subtomo.star) star file for subtomograms, will be used as input in refinement.
+        :param output_star: (subtomo.star) output star file for subtomograms, will be used as input in refinement.
+        :param pixel_size: (10) The pixel size in angstrom of your subtomograms. 
         :param cube_size: (None) This is the size of the cubic volumes used for training. This values should be smaller than the size of subtomogram. 
-        And the cube_size should be divisible by 8, eg. 32, 64. If this value isn't set, cube_size is automatically determined as int(subtomo_size / 1.5 + 1)//16 * 16
+        And the cube_size should be divisible by 8. If this value isn't set, cube_size is automatically determined as int(subtomo_size / 1.5 + 1)//16 * 16
         """       
         #TODO check folder valid, logging
         if not os.path.isdir(folder_name):
@@ -106,16 +109,16 @@ class ISONET:
         """
         \nCTF deconvolution for the tomograms.\n
         isonet.py deconv star_file [--deconv_folder] [--snrfalloff] [--deconvstrength] [--highpassnyquist] [--tile] [--overlap_rate] [--ncpu] [--tomo_idx]
-        No need for phase plate data. IsoNet generated tomogram can hardly reach resolution beyond ctf first zero. However, this step is recommanded because it enhances low resolution information for a better visulization. 
-        :param deconv_folder: (./deconv) Folder created to save deconvolution results
+        This step is recommanded because it enhances low resolution information for a better contrast. No need to do deconvolution for phase plate data.  
+        :param deconv_folder: (./deconv) Folder created to save deconvoluted tomograms.
         :param star_file: (None) Star file for tomograms.
-        :param snrfalloff: (None) SNR fall rate with the frequency. High values means losing more high frequency. 
+        :param snrfalloff: (1.0) SNR fall rate with the frequency. High values means losing more high frequency. 
         If this value is not set, the program will look for the parameter in the star file. 
         If this value is not set and not found in star file, the default value 1.0 will be used.
-        :param deconvstrength: (None) Strength of the deconvolution.  
+        :param deconvstrength: (1.0) Strength of the deconvolution.  
         If this value is not set, the program will look for the parameter in the star file. 
         If this value is not set and not found in star file, the default value 1.0 will be used.
-        :param highpassnyquist: (0.1) Keep this default value.
+        :param highpassnyquist: (0.1) Highpass filter for at very low frequency. We suggest to keep this default value.
         :param tile: (1,4,4) The program crop the tomogram in multiple tiles (z,y,x) for multiprocessing and assembly them into one. e.g. (1,2,2)
         :param overlap_rate: (None) The overlapping rate for adjecent tiles.
         :param ncpu: (4) Number of cpus to use. 
@@ -126,7 +129,7 @@ class ISONET:
         logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',
         datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[logging.StreamHandler(sys.stdout)])
         logging.info('\n######Isonet starts ctf deconvolve######\n')
-        #print("deconv")
+
         try: 
             md = MetaData()
             md.read(star_file)
@@ -156,6 +159,7 @@ class ISONET:
                     md._setItemValue(it,Label('rlnDeconvTomoName'),deconv_tomo_name)
                 md.write(star_file)
             logging.info('\n######Isonet done ctf deconvolve######\n')
+            
         except Exception:
             error_text = traceback.format_exc()
             f =open('log.txt','a+')
@@ -172,20 +176,17 @@ class ISONET:
                 z_crop:float=None,
                 tomo_idx=None):
         """
-        \ngenerate a mask to include sample area and exclude "empty" area of the tomogram. The masks do not need to be precise. In general, the number of subtomograms (a value in star file) should be lesser if you masked out larger area. \n
-        isonet.py make_mask star_file [--mask_folder] [--patch_size] [--percentile] [--threshold] [--use_deconv_tomo] [--tomo_idx]
+        \ngenerate a mask that include sample area and exclude "empty" area of the tomogram. The masks do not need to be precise. In general, the number of subtomograms (a value in star file) should be lesser if you masked out larger area. \n
+        isonet.py make_mask star_file [--mask_folder] [--patch_size] [--density_percentage] [--std_percentage] [--use_deconv_tomo] [--tomo_idx]
         :param star_file: path to the tomogram or tomogram folder
         :param mask_folder: path and name of the mask to save as
         :param patch_size: (4) The size of the box from which the max-filter and std-filter are calculated. 
-        :param percentile: (30) The approximate percentage, ranging from 0 to 100, of the area of meaningful content in tomograms. 
+        :param density_percentage: (50) The approximate percentage of pixels to keep based on their local pixel density. 
         If this value is not set, the program will look for the parameter in the star file. 
-        If this value is not set and not found in star file, the default value 99 will be used.
-        :param threshold: (1.0) A factor of overall standard deviation and its default value is 1. 
-        This parameter only affect the std-mask. 
-        Make the threshold smaller (larger) when you want to enlarge (shrink) mask area. 
-        When you don't want to use the std-mask, set the value to 0.
+        If this value is not set and not found in star file, the default value 50 will be used.
+        :param std_percentage: (50) The approximate percentage of pixels to keel based on their local standard deviation. 
         If this value is not set, the program will look for the parameter in the star file. 
-        If this value is not set and not found in star file, the default value 1.0 will be used.      
+        If this value is not set and not found in star file, the default value 50 will be used.
         :param use_deconv_tomo: (True) If CTF deconvolved tomogram is found in tomogram.star, use that tomogram instead. 
         :param z_crop: If exclude the top and bottom regions of tomograms along z axis. For example, "--z_crop 0.2" will mask out the top 20% and bottom 20% region along z axis. 
         :param tomo_idx: (None) If this value is set, process only the tomograms listed in this index. e.g. 1,2,4 or 5-10,15,16   
@@ -330,9 +331,9 @@ class ISONET:
         :param pretrained_model: (None) A trained neural network model in ".h5" format to start with.
         :param iterations: (30) Number of training iterations.
         :param data_dir: (data) Temperary folder to save the generated data used for training.
-        :param log_level: (info) debug level
-        :param continue_iter: (0) Which iteration you want to start from?
-        :param result_dir: ('results') The name of directory to save refined models and subtomograms
+        :param log_level: (info) debug level, could be 'info' or 'debug'
+        :param continue_from: (None) A Json file to continue from. That json file is generated at each iteration of refine.  
+        :param result_dir: ('results') The name of directory to save refined neural network models and subtomograms
         :param preprocessing_ncpus: (16) Number of cpu for preprocessing.
 
         ************************Training settings************************
@@ -343,26 +344,22 @@ class ISONET:
 
         ************************Denoise settings************************
 
-        :param noise_level: (0.05) Level of noise STD(added noise)/STD(data) to start with. Set zero to disable noise reduction.
-        :param noise_start_iter: (15) Iteration that start to add trainning noise.
-        :param noise_pause: (5) Iters trainning noise remain at one level. The noise_level in each iteraion is defined as (((num_iter - noise_start_iter)//noise_pause)+1)*noise_level
+        :param noise_level: (0.05,0.1,0.15,0.2) Level of noise STD(added noise)/STD(data) after the iteration defined in noise_start_iter. 
+        :param noise_start_iter: (11,16,21,26) Iteration that start to add noise of corresponding noise level.
+        :param noise_mode: (1) Choose between one and two, one means using 3D white noise with missing wedge, 2 means backprojection 2D white noise.
 
         ************************Network settings************************
 
         :param drop_out: (0.3) Drop out rate to reduce overfitting.
+        :param learning_rate: (0.0004) learning rate for network training.
         :param convs_per_depth: (3) Number of convolution layer for each depth.
         :param kernel: (3,3,3) Kernel for convolution
-        :param unet_depth: (3) Number of convolution layer for each depth.
-        :param filter_base: (64) The base number of channels after convolution
-        :param batch_normalization: (False) Sometimes batch normalization may induce artifacts for extreme pixels in the first several iterations. Those could be restored in further iterations.
+        :param unet_depth: (3) Depth of UNet.
+        :param filter_base: (64) The base number of channels after convolution.
+        :param batch_normalization: (True) Use Batch Normalization layer
+        :param pool: (False) Use pooling layer instead of stride convolution layer.
         :param normalize_percentile: (True) Normalize the 5 percent and 95 percent pixel intensity to 0 and 1 respectively. If this is set to False, normalize the input to 0 mean and 1 standard dievation.
-
-        Typical training strategy:
-        1. Train tomo with no pretrained model
-        2. Continue train with previous interupted model
-        3. Continue train with pre-trained model
         """
-        #TODO: Test rotation list 16/20
         from IsoNet.bin.refine import run
         d = locals()
         d_args = Arg(d)
@@ -374,21 +371,21 @@ class ISONET:
         run(d_args)
 
     def predict(self, star_file: str, model: str, output_dir: str='./corrected_tomos', gpuID: str = None, cube_size:int=48,
-    crop_size:int=64,use_deconv_tomo=True, batch_size:int=None,normalize_percentile: bool=True,log_level: str="info",Ntile:int=1,tomo_idx=None):
+    crop_size:int=64,use_deconv_tomo=True, batch_size:int=None,normalize_percentile: bool=True,log_level: str="info", tomo_idx=None):
         """
-        \nPredict tomograms using trained model including model.json and weight(xxx.h5)\n
-        isonet.py predict star_file model [--gpuID] [--output_dir] [--cube_size] [--crop_size] [--batch_size] [--tomo_idx] [--ntile]
-        :param star_file: star for tomogram
+        \nPredict tomograms using trained model\n
+        isonet.py predict star_file model [--gpuID] [--output_dir] [--cube_size] [--crop_size] [--batch_size] [--tomo_idx]
+        :param star_file: star for tomograms.
         :param output_dir: file_name of output predicted tomograms
         :param model: path to trained network model .h5
         :param gpuID: (0,1,2,3) The gpuID to used during the training. e.g 0,1,2,3.
         :param cube_size: (64) The tomogram is divided into cubes to predict due to the memory limitation of GPUs.
-        :param crop_size: (96) The side-length of cubes cropping from tomogram in an overlapping strategy
+        :param crop_size: (96) The side-length of cubes cropping from tomogram in an overlapping patch strategy, make this value larger if you see the patchy artifacts
         :param batch_size: The batch size of the cubes grouped into for network predicting
-        :param normalize_percentile: (True) if normalize the tomograms by percentile
-        :param log_level: ("debug") level of message to be displayed
-        :param Ntile: divide data into Ntile part and then predict. 
+        :param normalize_percentile: (True) if normalize the tomograms by percentile. Should be the same with that in refine parameter.
+        :param log_level: ("debug") level of message to be displayed, could be 'info' or 'debug'
         :param tomo_idx: (None) If this value is set, process only the tomograms listed in this index. e.g. 1,2,4 or 5-10,15,16  
+        :param use_deconv_tomo: (True) If CTF deconvolved tomogram is found in tomogram.star, use that tomogram instead. 
         :raises: AttributeError, KeyError
         """
         d = locals()
