@@ -105,7 +105,7 @@ def prepare_cubes(X,Y,size=32,num=500):
 class DataCubes:
 
     def __init__(self, tomogram, tomogram2 = None, nCubesPerImg=32, cubeSideLen=32, cropsize=32, mask = None, 
-    validationSplit=0.1, noise_folder = None, noise_level = 0, noise_mode = 1):
+    validationSplit=0.1, noise_folder = None, noise_level = 0, noise_mode = 'ramp'):
 
         #TODO nCubesPerImg is always 1. We should not use this variable @Zhang Heng.
         #TODO consider add gaussian filter here

@@ -310,7 +310,8 @@ class ISONET:
 
         noise_level:  tuple=None,
         noise_start_iter: tuple=None,
-        noise_mode: int = None,
+        noise_mode: str = None,
+        noise_dir: str = None,
         learning_rate: float = None,
         drop_out: float = 0.3,
         convs_per_depth: int = 3,

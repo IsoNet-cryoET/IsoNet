@@ -11,6 +11,7 @@ import os
 import sys
 import shutil
 from IsoNet.util.metadata import MetaData, Item, Label
+from IsoNet.util.utils import mkfolder
 def run(args):
     if args.log_level == "debug":
         logging.basicConfig(format='%(asctime)s, %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
@@ -46,8 +47,8 @@ def run_whole(args):
     args.crop_size = md._data[0].rlnCropSize
     args.cube_size = md._data[0].rlnCubeSize
     args.predict_cropsize = args.crop_size
-    args.noise_dir = None
-
+    args.noise_dir = args.result_dir +'/training_noise'
+    num_noise_volume = 1000
     #*******calculate parameters********
     if args.gpuID is None:
         args.gpuID = '0,1,2,3'
@@ -77,7 +78,7 @@ def run_whole(args):
     if args.noise_start_iter is None:
         args.noise_start_iter = (11,16,21,26)
     if args.noise_mode is None:
-        args.noise_mode = 1
+        args.noise_mode = 'ramp'
     if args.log_level is None:
         args.log_level = "info"
 
@@ -135,7 +136,15 @@ def run_whole(args):
         else:
             args.init_model = '{}/model_iter{:0>2d}.h5'.format(args.result_dir,args.iter_count-1)
         
+        # Noise settings
         args.noise_level_current =  noise_level_series[num_iter]
+        if num_iter>=args.noise_start_iter[0] and (not os.path.isdir(args.noise_dir) or len(os.listdir(args.noise_dir))< num_noise_volume ):
+
+            from IsoNet.util.noise_generator import make_noise_folder
+            print(args.noise_mode)
+            make_noise_folder(args.noise_dir,args.noise_mode,args.cube_size,num_noise_volume,ncpus=args.preprocessing_ncpus)
+                
+                        
         logging.info("Noise Level:{}".format(args.noise_level_current))
 
         try:

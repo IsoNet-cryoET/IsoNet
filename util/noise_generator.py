@@ -5,6 +5,8 @@ from scipy.ndimage import rotate
 from IsoNet.preprocessing.simulate import apply_wedge
 import os
 import mrcfile
+from skimage.transform import iradon
+from IsoNet.util.utils import mkfolder
 
 def simulate_noise1(params):
     np.random.seed(random.randint(0,100000))
@@ -59,13 +61,67 @@ def make_noise_one(cubesize=64, minangle=-60,maxangle=60, anglestep=2, mode=1):
     return simu_noise
 
 
-# if __name__ == "__main__":
-#     import time
-#     import mrcfile
-#     start = time.time()
-#     a = make_noise_one(mode=1)
-#     end = time.time()
-#     print('Time consuming:',end-start)
+##### Another Strategy for generating noise: 
+# 1. Generate a large noise volume at the first iteration that the training needs noises
+# 2. Crop out thousands noise volumes and save them in ./$result_dir/training_noise
+# 3. In Later iterations, these volumes will be re-used and no need to generate any more.
+class NoiseMap:
+    noise_map = None
+
+    @staticmethod
+    def refresh(size_big, filter = 'ramp' , ncpus = 1):
+        NoiseMap.noise_map = simulate_noise([size_big, filter, ncpus])
+
+    @staticmethod
+    def get_one(size):
+        shp = NoiseMap.noise_map.shape
+        start = np.random.randint(0, shp[0]-size, 3)
+        return NoiseMap.noise_map[start[0]:start[0]+size, start[1]:start[1]+size,start[2]:start[2]+size]
+
+#filters = ['ramp', 'shepp-logan', 'cosine', 'hamming', 'hann']
+angles = np.arange(-60,62,3)
+
+def part_iradon_ramp(x):
+    return iradon(x, angles, filter_name = 'ramp' )
+
+def part_iradon_hamming(x):
+    return iradon(x, angles, filter_name = 'hamming' )
+
+def part_iradon_shepp(x):
+    return iradon(x, angles, filter_name = 'shepp-logan' )
+
+def part_iradon_cosine(x):
+    return iradon(x, angles, filter_name = 'cosine' )
+
+def part_iradon_nofilter(x):
+    return iradon(x, angles, filter_name = None)
+
+def simulate_noise(params):
+    size = params[0]
+    sinograms = np.random.normal(size=(size,int(size*1.4),len(angles)))
+    start=int(params[0]*0.2)
+    from multiprocessing import Pool
+    with Pool(params[2]) as p:
+        if params[1] == 'ramp':
+            res = p.map(part_iradon_ramp,sinograms)
+        elif params[1] == 'hamming':
+            res = p.map(part_iradon_hamming,sinograms)
+        else:
+            res = p.map(part_iradon_nofilter,sinograms)
+            
+        
+    iradon_image = np.rot90(np.array(list(res), dtype=np.float32)[:,start:start+params[0],start:start+params[0]], k = 1 , axes = (0,1))
+    return iradon_image
+
+def make_noise_folder(noise_folder,noise_filter,cube_size,num_noise=1000,ncpus=1,large_side=1000):
+    mkfolder(noise_folder)
+    print('generating large noise volume; mode: {}'.format(noise_filter))
+    NoiseMap.refresh(large_side, noise_filter, ncpus)
+                        
+    for i in range(num_noise):
+        img = NoiseMap.get_one(cube_size)
+        with mrcfile.new('{}/n_{:0>5d}.mrc'.format(noise_folder,i), overwrite=True) as output_mrc:
+            output_mrc.set_data(img)
 
 if __name__ == '__main__':
     import mrcfile

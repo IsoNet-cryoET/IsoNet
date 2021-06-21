@@ -4,7 +4,7 @@ global logger
 logger = logging.getLogger('main')
 logger.setLevel(logging.INFO)
 global refine_param, predict_param, extract_param, param_to_check, param_to_set_attr
-refine_param = [ 'normalize_percentile', 'batch_normalization', 'filter_base', 'unet_depth', 'pool', 'kernel', 'convs_per_depth', 'drop_out', 'noise_mode', 'noise_pause', 'noise_start_iter','learning_rate', 'noise_level', 'steps_per_epoch', 'batch_size', 'epochs', 'continue_from', 'preprocessing_ncpus', 'result_dir', 'continue_iter', 'log_level', 'pretrained_model', 'data_dir', 'iterations', 'gpuID', 'subtomo_star']
+refine_param = [ 'normalize_percentile', 'batch_normalization', 'filter_base', 'unet_depth', 'pool', 'kernel', 'convs_per_depth', 'drop_out','noise_dir', 'noise_mode', 'noise_pause', 'noise_start_iter','learning_rate', 'noise_level', 'steps_per_epoch', 'batch_size', 'epochs', 'continue_from', 'preprocessing_ncpus', 'result_dir', 'continue_iter', 'log_level', 'pretrained_model', 'data_dir', 'iterations', 'gpuID', 'subtomo_star']
 predict_param = ['tomo_idx', 'Ntile', 'log_level', 'normalize_percentile', 'batch_size', 'use_deconv_tomo', 'crop_size', 'cube_size', 'gpuID', 'output_dir', 'model', 'star_file']
 extract_param = ['log_level', 'cube_size', 'subtomo_star', 'subtomo_folder', 'use_deconv_tomo', 'star_file','tomo_idx']
 deconv_param = ['star_file', 'deconv_folder', 'snrfalloff', 'deconvstrength', 'highpassnyquist', 'tile', 'overlap_rate', 'ncpu', 'tomo_idx']
