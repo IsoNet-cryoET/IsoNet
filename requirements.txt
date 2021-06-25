@@ -4,5 +4,6 @@ scipy
 fire
 tqdm
 PyQt5
+scikit-image
 ###### Requirements with Version Specifiers ######
-tensorflow==2.4.0
+tensorflow-gpu==2.3.0
