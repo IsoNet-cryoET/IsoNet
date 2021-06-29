@@ -2,20 +2,20 @@
     File name: Isonet_star_app.py
     Author: Hui Wang (EICN)
     Date created: 4/21/2021
-    Date last modified: 5/8/2021
+    Date last modified: 06/01/2021
     Python Version: 3.6.5
 '''
-import pandas as pd
+import sys,os
+
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtWidgets import QTableWidgetItem
-from PyQt5.QtCore import QObject, pyqtSlot
+from PyQt5.QtWidgets import QTableWidgetItem,QMessageBox
+from PyQt5.QtCore import QObject, pyqtSlot, QProcess
+
+#Isonet packages
 from IsoNet.gui.isonet_gui import Ui_MainWindow ##need to change in the package
-import sys
-import os
 from IsoNet.gui.model_star import Model, setTableWidget #need to change in the package
-import time
-from threading import Thread
 from IsoNet.util.metadata import MetaData,Label,Item
+
 
 class MainWindowUIClass( Ui_MainWindow ):
     def __init__( self ):
@@ -23,35 +23,40 @@ class MainWindowUIClass( Ui_MainWindow ):
         '''
         super().__init__()
         self.model = Model()
-
+        
+        #reset process as None
+        self.p = None
+        self.previous_log_line = ""
+        
+        # check for pid in last running
+        #if os.path.isfile(self.model.pid_file):
+        #    os.remove(self.model.pid_file)
+        
+        
     def setupUi( self, MW ):
         ''' Setup the UI of the super class, and add here code
         that relates to the way we want our UI to operate.
         '''
         super().setupUi( MW )
-
+        
+        #load default content in tomograms.star 
         setTableWidget(self.tableWidget, self.model.md)
-
+        
+        #set up functions when cells be clicked
         self.tableWidget.cellPressed[int, int].connect(self.browseSlotTable)
-
-        #self.tableWidget = TableWidget(df)
-        #self.tableWidget.setCurrentCell(0,0)
-        #self.tableWidget.currentCellChanged[int,int,int,int].connect(self.updateMDItem) 
         self.tableWidget.cellChanged[int,int].connect(self.updateMDItem) 
-        #self.tableWidget.setCellWidget(0,0,self.pushButton_insert)
-        #self.horizontalLayout.addWidget(self.tableWidget)
 
         ########################
         # connect function to buttons
         ########################
         self.pushButton_insert.clicked.connect(self.copyRow)
         self.pushButton_delete.clicked.connect(self.removeRow)
-        #self.pushButton_update.clicked.connect(self.updateMD)
         self.pushButton_open_star.clicked.connect(self.open_star)
         self.pushButton_3dmod.clicked.connect(self.view_3dmod)
 
         self.button_deconov_dir.clicked.connect(lambda: self.browseFolderSlot("deconv_dir"))
         self.button_mask_dir.clicked.connect(lambda: self.browseFolderSlot("mask_dir"))
+        self.button_subtomo_dir.clicked.connect(lambda: self.browseFolderSlot("subtomo_dir"))
         self.button_result_dir_refine.clicked.connect(lambda: self.browseFolderSlot("result_dir_refine"))
         self.button_result_dir_predict.clicked.connect(lambda: self.browseFolderSlot("result_dir_predict"))
         
@@ -59,6 +64,7 @@ class MainWindowUIClass( Ui_MainWindow ):
         self.button_pretrain_model_refine.clicked.connect(lambda: self.browseSlot("pretrain_model_refine"))
         self.button_tomo_star_predict.clicked.connect(lambda: self.browseSlot("tomo_star_predict"))
         self.button_pretrain_model_predict.clicked.connect(lambda: self.browseSlot("pretrain_model_predict"))
+        self.button_continue_iter.clicked.connect(lambda: self.browseSlot("continue_from"))
         
         self.pushButton_deconv.clicked.connect(self.deconvolve)
         self.pushButton_generate_mask.clicked.connect(self.make_mask)
@@ -67,10 +73,13 @@ class MainWindowUIClass( Ui_MainWindow ):
         self.pushButton_predict.clicked.connect(self.predict)
         self.pushButton_predict_3dmod.clicked.connect(self.view_predict_3dmod)
 
-        
+        self.actionGithub.triggered.connect(self.openGithub)
+
         #########################
         #set icon location
         #########################
+
+        #get the root path for isonet
         isonet_path = os.popen("which isonet.py").read()
         tmp = isonet_path.split("bin/isonet.py")
         root_path = tmp[0]
@@ -80,11 +89,96 @@ class MainWindowUIClass( Ui_MainWindow ):
         self.button_deconov_dir.setIcon(icon)
         self.button_mask_dir.setIcon(icon)
         self.button_subtomo_star_refine.setIcon(icon)
+        self.button_subtomo_dir.setIcon(icon)
         self.button_pretrain_model_refine.setIcon(icon)
         self.button_result_dir_refine.setIcon(icon)
         self.button_tomo_star_predict.setIcon(icon)
         self.button_pretrain_model_predict.setIcon(icon)
         self.button_result_dir_predict.setIcon(icon)
+        self.button_continue_iter.setIcon(icon)
+        
+        ###Set up log file monitor###
+        import datetime
+        now = datetime.datetime.now()
+        
+        #create a empty log file
+        if not self.model.isValid(self.model.log_file):
+            os.system("echo {} > {}".format(now.strftime("%Y-%m-%d %H:%M:%S"), self.model.log_file))
+            
+        self.textBrowser_log.setText(self.model.getLogContent(self.model.log_file))
+        self.textBrowser_log.moveCursor(QtGui.QTextCursor.End)
+        
+        ####################
+        #self.log_watcher = QtCore.QFileSystemWatcher([self.model.log_file])
+        #self.log_watcher.fileChanged.connect(self.update_log)
+    
+
+    #connect to all the main function button to run the process in the background
+    #cmd is the command need to be excuted, and btn pass the button object 
+    def start_process(self, cmd, btn):
+        if self.mw.p is None:  # No process running.
+            self.mw.p = QProcess()
+            #change the status of the current botton 
+            if btn.text() in ["Deconvolve","Generate Mask","Extract","Refine","Predict"]:
+                self.model.btn_pressed_text =  btn.text()
+                btn.setText("Stop")
+                btn.setStyleSheet('QPushButton {color: red;}')
+            else:
+                btn.setEnabled(False)
+            self.mw.p.readyReadStandardOutput.connect(self.dataReady)
+            self.mw.p.finished.connect(lambda: self.process_finished(btn))
+            self.mw.p.start(cmd)
+
+        elif btn.text() =="Stop":
+            if self.mw.p:
+                self.mw.p.kill()
+            else:
+                if self.model.btn_pressed_text:
+                    btn.setText(self.model.btn_pressed_text)
+        else:
+            self.warn_window("Already runing another job, please wait until it finished!")
+
+    def process_finished(self, btn):
+        if btn.text() == "Stop":
+            if self.model.btn_pressed_text:
+                btn.setText(self.model.btn_pressed_text)
+                #btn.setText("Refine")
+                self.model.btn_pressed_text = None
+                btn.setStyleSheet('QPushButton {color: black;}')
+        else:
+            btn.setEnabled(True)
+        self.model.read_star()
+        setTableWidget(self.tableWidget, self.model.md)   
+        self.mw.p = None
+        
+    #link to log window to display output of stdout
+    def dataReady(self):
+        cursor = self.textBrowser_log.textCursor()
+        cursor.movePosition(cursor.End)
+        # have transfer byte string to unicode string
+        import string
+        printable = set(string.printable)
+        printable.add(u'\u2588')
+
+        txt = str(self.mw.p.readAll(),'utf-8')
+        #txt += self.mw.p.errorString()
+
+
+        printable_txt = "".join(list(filter(lambda x: x in printable, txt)))
+        
+        if '[' in self.previous_log_line and '[' in printable_txt:
+            cursor.movePosition(cursor.StartOfLine, cursor.MoveAnchor)
+            cursor.movePosition(cursor.End, cursor.KeepAnchor)
+            cursor.removeSelectedText()
+            cursor.deletePreviousChar()
+        cursor.insertText(printable_txt)
+        f = open(self.model.log_file, 'a+')
+        f.write(printable_txt)
+        f.close()
+
+        self.previous_log_line = printable_txt
+        self.textBrowser_log.ensureCursorVisible()
+        self.textBrowser_log.moveCursor(QtGui.QTextCursor.End)
         
     def removeRow(self):
         #print(self.tableWidget.selectionModel().selectedIndexes()[0].row())
@@ -102,7 +196,10 @@ class MainWindowUIClass( Ui_MainWindow ):
         if rowCount <=0 :
             self.tableWidget.insertRow(self.tableWidget.rowCount())
             for j in range(columnCount):
-                self.tableWidget.setItem(0, j, QTableWidgetItem('0'))
+                #self.model.md._setItemValue(it,Label(self.model.header[j+1]),self.tableWidget.item(i, j).text())
+                #print(self.default_value(self.model.header[j+1]))
+                self.tableWidget.setItem(0, j, QTableWidgetItem(self.default_value(self.model.header[j+1])))
+                #print(self.tableWidget.item(0, j).text())
         else:
             indices = self.tableWidget.selectionModel().selectedRows() 
 
@@ -120,6 +217,36 @@ class MainWindowUIClass( Ui_MainWindow ):
                     if not self.tableWidget.item(rowCount-2, j) is None:
                         self.tableWidget.setItem(rowCount-1, j, QTableWidgetItem(self.tableWidget.item(rowCount-2, j).text()))
         self.updateMD()
+    
+    def default_value(self, label):
+        switcher = {
+            "rlnMicrographName": "None",
+            "rlnPixelSize": "1",
+            "rlnDefocus": "0",
+            "rlnNumberSubtomo":"100",
+            "rlnSnrFalloff":"1",
+            "rlnDeconvStrength": "1",
+            "rlnDeconvTomoName":"None",
+            "rlnMaskDensityPercentage": "50",
+            "rlnMaskStdPercentage": "50",
+            "rlnMaskName": "None"
+        }
+        return switcher.get(label, "None")
+        
+    def switch_btn(self, btn):
+        switcher = {
+            "mask_dir": self.lineEdit_mask_dir,
+            "deconv_dir": self.lineEdit_deconv_dir,
+            "subtomo_dir": self.lineEdit_subtomo_dir,
+            "result_dir_refine": self.lineEdit_result_dir_refine,
+            "result_dir_predict": self.lineEdit_result_dir_predict,
+            "subtomo_star_refine":self.lineEdit_subtomo_star_refine,
+            "pretrain_model_refine":self.lineEdit_pretrain_model_refine,
+            "tomo_star_predict": self.lineEdit_tomo_star_predict,
+            "pretrain_model_predict":self.lineEdit_pretrain_model_predict,
+            "continue_from": self.lineEdit_continue_iter
+        }
+        return switcher.get(btn, "Invaid btn name")
 
     def updateMD ( self ):
         star_file = self.model.tomogram_star
@@ -139,6 +266,7 @@ class MainWindowUIClass( Ui_MainWindow ):
             self.model.md._setItemValue(it,Label('rlnIndex'),str(i+1))
             for j in range(columnCount):
                 try:
+                    #print("update:",Label(self.model.header[j+1]),self.tableWidget.item(i, j).text())
                     self.model.md._setItemValue(it,Label(self.model.header[j+1]),self.tableWidget.item(i, j).text())
 
                     #self.model.md._setItemValue(it,Label(self.tableWidget.horizontalHeaderItem(j).text()),self.tableWidget.item(i, j).text())
@@ -161,31 +289,6 @@ class MainWindowUIClass( Ui_MainWindow ):
         except:
             pass
      
-    def view_3dmod(self):
-        i = self.tableWidget.currentRow()
-        j = self.tableWidget.currentColumn() 
-        item = self.tableWidget.item(i, j).text()
-        if item[-4:] == '.mrc':
-            cmd = "3dmod {}".format(item)
-            os.system(cmd)
-        else:
-            print("The current item is not a mrc file!")
-    # slot
-    
-    def switch_btn(self, btn):
-        switcher = {
-            "mask_dir": self.lineEdit_mask_dir,
-            "deconv_dir": self.lineEdit_deconv_dir,
-            "result_dir_refine": self.lineEdit_result_dir_refine,
-            "subtomo_star_refine":self.lineEdit_subtomo_star_refine,
-            "pretrain_model_refine":self.lineEdit_pretrain_model_refine,
-            "tomo_star_predict": self.lineEdit_tomo_star_predict,
-            "pretrain_model_predict":self.lineEdit_pretrain_model_predict,
-            "result_dir_predict": self.lineEdit_result_dir_predict
-        }
-        return switcher.get(btn, "Invaid btn name")
-        
-        
     def browseSlot( self , btn ):
         ''' Called when the user presses the Browse button
         '''
@@ -196,11 +299,19 @@ class MainWindowUIClass( Ui_MainWindow ):
         options = QtWidgets.QFileDialog.Options()
         options |= QtWidgets.QFileDialog.DontUseNativeDialog
         
+        flt = "All Files (*)"
+        if btn == "continue_from":
+            flt = "json file (*.json);;All Files (*)"
+        if btn == "subtomo_star_refine" or btn == "tomo_star_predict":
+            flt = "star file (*.star);;All Files (*)"
+        if btn == "pretrain_model_refine" or btn == "pretrain_model_predict":
+            flt = "model file (*.h5);;All Files (*)"
+            
         fileName, _ = QtWidgets.QFileDialog.getOpenFileName(
                         None,
                         "Choose File",
                         "",
-                        "All Files (*)",
+                        flt,
                         options=options)
         if fileName:
             #self.model.setFileName( fileName )
@@ -251,7 +362,7 @@ class MainWindowUIClass( Ui_MainWindow ):
                                 None,
                                 "Choose File",
                                 "",
-                                "All Files (*)",
+                                "mrc or rec file (*.mrc *.rec) ;; All Files (*)",
                                 options=options)
                 if not fileName:
                     fileName = self.tableWidget.item(i, j).text()
@@ -267,10 +378,10 @@ class MainWindowUIClass( Ui_MainWindow ):
             pass
 
     def deconvolve( self ):
+
         tomogram_star = self.model.tomogram_star
-
         cmd = "isonet.py deconv {} ".format(tomogram_star)
-
+        
         if self.lineEdit_deconv_dir.text():
             cmd = "{} --deconv_folder {}".format(cmd, self.lineEdit_deconv_dir.text())
         if self.lineEdit_tomo_index_deconv.text():
@@ -284,17 +395,14 @@ class MainWindowUIClass( Ui_MainWindow ):
         if self.lineEdit_overlap.text():
             cmd = "{} --overlap {}".format(cmd, self.lineEdit_overlap.text())
 
-        if self.checkBox_only_print_command_prepare.isChecked():
+        if self.checkBox_only_print_command_prepare.isChecked() and self.pushButton_deconv.text() == 'Deconvolve':
             print(cmd)
         else:
-            os.system(cmd)
-        
-        self.model.read_star()
-        setTableWidget(self.tableWidget, self.model.md)
-        
+            self.start_process(cmd,self.pushButton_deconv)
 
     def make_mask( self ):
-        print("#####making mask############")
+        #print("#####making mask############")
+
         tomogram_star = self.model.tomogram_star
 
         cmd = "isonet.py make_mask {} ".format(tomogram_star)
@@ -310,20 +418,21 @@ class MainWindowUIClass( Ui_MainWindow ):
         if self.lineEdit_z_crop.text():
             cmd = "{} --z_crop {}".format(cmd, self.lineEdit_z_crop.text())
 
-        if self.checkBox_only_print_command_prepare.isChecked():
+        if self.checkBox_only_print_command_prepare.isChecked() and self.pushButton_generate_mask.text() == 'Generate Mask':
             print(cmd)
         else:
-            print(cmd)
-            os.system(cmd)
-                          
-        self.model.read_star()
-        setTableWidget(self.tableWidget, self.model.md)
+            self.start_process(cmd,self.pushButton_generate_mask)
+
 
     def extract_subtomo( self ):
         tomogram_star = self.model.tomogram_star
 
         cmd = "isonet.py extract {} ".format(tomogram_star)
-
+        
+        if self.lineEdit_subtomo_dir.text():
+            cmd = "{} --subtomo_folder {}".format(cmd, self.lineEdit_subtomo_dir.text())
+        if self.lineEdit_subtomo_star_extract.text():
+            cmd = "{} --subtomo_star {}".format(cmd, self.lineEdit_subtomo_star_extract.text())
         if self.lineEdit_cube_size_extract.text():
             cmd = "{} --cube_size {}".format(cmd, self.lineEdit_cube_size_extract.text())
         if not self.checkBox_use_deconv_extract.isChecked():
@@ -331,10 +440,11 @@ class MainWindowUIClass( Ui_MainWindow ):
         if self.lineEdit_tomo_index_extract.text():
             cmd = "{} --tomo_idx {}".format(cmd, self.lineEdit_tomo_index_extract.text())
         
-        if self.checkBox_only_print_command_prepare.isChecked():
+        if self.checkBox_only_print_command_prepare.isChecked() and self.pushButton_extract.text() == 'Extract':
             print(cmd)
         else:
-            os.system(cmd)
+            self.start_process(cmd,self.pushButton_extract)
+
 
     def refine( self ):
 
@@ -347,7 +457,7 @@ class MainWindowUIClass( Ui_MainWindow ):
         if self.lineEdit_pretrain_model_refine.text():
             cmd = "{} --pretrained_model {}".format(cmd, self.lineEdit_pretrain_model_refine.text())
         if self.lineEdit_continue_iter.text():
-            cmd = "{} --continue_iter {}".format(cmd, self.lineEdit_continue_iter.text())
+            cmd = "{} --continue_from {}".format(cmd, self.lineEdit_continue_iter.text())
         if self.lineEdit_result_dir_refine.text():
             cmd = "{} --result_dir {}".format(cmd, self.lineEdit_result_dir_refine.text())
         if self.lineEdit_preprocessing_ncpus.text():
@@ -361,13 +471,16 @@ class MainWindowUIClass( Ui_MainWindow ):
             cmd = "{} --epochs {}".format(cmd, self.lineEdit_epoch.text()) 
         if self.lineEdit_steps_per_epoch.text():
             cmd = "{} --steps_per_epoch {}".format(cmd, self.lineEdit_steps_per_epoch.text())
+        if self.lineEdit_lr.text():
+            cmd = "{} --learning_rate {}".format(cmd, self.lineEdit_lr.text())
             
+                
         if self.lineEdit_noise_level.text():
             cmd = "{} --noise_level {}".format(cmd, self.lineEdit_noise_level.text())
         if self.lineEdit_noise_start_iter.text():
             cmd = "{} --noise_start_iter {}".format(cmd, self.lineEdit_noise_start_iter.text())
-        if self.lineEdit_noise_pause.text():
-            cmd = "{} --noise_pause {}".format(cmd, self.lineEdit_noise_pause.text())
+        if self.lineEdit_noise_mode.text():
+            cmd = "{} --noise_mode {}".format(cmd, self.lineEdit_noise_mode.text())
         
         if self.lineEdit_drop_out.text():
             cmd = "{} --drop_out {}".format(cmd, self.lineEdit_drop_out.text())
@@ -379,33 +492,38 @@ class MainWindowUIClass( Ui_MainWindow ):
             cmd = "{} --kernel {}".format(cmd, self.lineEdit_kernel.text())
         if self.lineEdit_filter_base.text():
             cmd = "{} --filter_base {}".format(cmd, self.lineEdit_filter_base.text())
-        if self.lineEdit_pool.text():
-            cmd = "{} --pool {}".format(cmd, self.lineEdit_pool.text()) 
-            
-        if self.checkBox_batch_normalization.isChecked():
-            cmd = "{} --batch_normalization {}".format(cmd, True)    
+        if self.checkBox_pool.isChecked():
+            cmd = "{} --pool {}".format(cmd, True)      
+
+
+        if not self.checkBox_batch_normalization.isChecked():
+            cmd = "{} --batch_normalization {}".format(cmd, False)    
         if not self.checkBox_normalization_percentile.isChecked():
             cmd = "{} --normalize_percentile {}".format(cmd, False)
             
             
-        if self.checkBox_only_print_command_refine.isChecked():
+        if self.checkBox_only_print_command_refine.isChecked() and self.pushButton_refine.text() == 'Refine':
             print(cmd)
         else:
-            os.system(cmd)
+            self.start_process(cmd,self.pushButton_refine)
             
     def predict( self ):
-        tomo_star = self.lineEdit_tomo_star_predict.text() if self.lineEdit_tomo_star_predict.text() else "tomogram.star"
-
-        cmd = "isonet.py predict {} ".format(tomo_star)
+        tomo_star = self.lineEdit_tomo_star_predict.text() if self.lineEdit_tomo_star_predict.text() else "tomograms.star"
+        gpuID = self.lineEdit_gpuID_predict.text() if self.lineEdit_gpuID_predict.text() else '0,1,2,3'
+        cmd = "isonet.py predict {}".format(tomo_star)
         
         if self.lineEdit_pretrain_model_predict.text() and self.model.isValid(self.lineEdit_pretrain_model_predict.text()):
             cmd = "{} {}".format(cmd, self.lineEdit_pretrain_model_predict.text())
         else:
-            print("no pretrain model detected")
+            self.warn_window("no trained model detected")
             return
-        if self.lineEdit_gpuID_predict.text():
-            cmd = "{} --gpuID {}".format(cmd, self.lineEdit_gpuID_predict.text())
-            
+        # if self.lineEdit_gpuID_predict.text():
+        #     cmd = "{} --gpuID {}".format(cmd, self.lineEdit_gpuID_predict.text())
+        cmd = "{} --gpuID {}".format(cmd,gpuID)
+        
+        if self.lineEdit_tomo_index_predict.text():
+            cmd = "{} --tomo_idx {}".format(cmd, self.lineEdit_tomo_index_predict.text())
+
         if self.lineEdit_result_dir_predict.text():
             cmd = "{} --output_dir {}".format(cmd, self.lineEdit_result_dir_predict.text())
         
@@ -414,20 +532,49 @@ class MainWindowUIClass( Ui_MainWindow ):
 
         if self.lineEdit_crop_size_predict.text():
             cmd = "{} --crop_size {}".format(cmd, self.lineEdit_crop_size_predict.text())
-            
+        
+        if not self.checkBox_use_deconv_predict.isChecked():
+            cmd = "{} --use_deconv_tomo {}".format(cmd, False)        
                     
-        if self.checkBox_only_print_command_predict.isChecked():
+        if self.checkBox_only_print_command_predict.isChecked() and self.pushButton_predict.text() == "Predict":
             print(cmd)
         else:
-            os.system(cmd)
+            self.start_process(cmd,self.pushButton_predict)
+     
+    def view_3dmod(self):
+        slected_items = self.tableWidget.selectedItems()
+        if len(slected_items) > 0:
+            cmd = "3dmod"
+            for item in slected_items:
+                i = item.row()
+                j = item.column()
+                item_text = self.tableWidget.item(i, j).text()
+                if item_text[-4:] == '.mrc' or item_text[-4:] == '.rec':
+                    cmd = "{} {}".format(cmd,item_text)
+            #print(cmd)
+            if cmd != "3dmod":
+                os.system(cmd)
+            else:
+                self.warn_window("selected items are not mrc or rec file(s)")
             
     def view_predict_3dmod(self):
         try:
             result_dir_predict = self.lineEdit_result_dir_predict.text()
-            cmd = "3dmod {}/*.mrc {}/*.rec".format(result_dir_predict,result_dir_predict)
-            os.system(cmd)
-        except:
-            pass
+            if len(result_dir_predict) < 1:
+                result_dir_predict = 'corrected_tomos'
+            list_file = os.listdir(result_dir_predict)
+            cmd = "3dmod"
+            for f in list_file:
+                if f[-4:] == ".mrc" or f[-4:] == ".rec":                   
+                    cmd = "{} {}/{}".format(cmd,result_dir_predict,f)
+            
+            if cmd != "3dmod":
+                os.system(cmd)  
+            else:
+                self.warn_window("no mrc or rec file(s) detected in results folder: {}!".format(result_dir_predict))       
+        except Exception:
+            print('pass')
+            
     
     def open_star( self ):
         options = QtWidgets.QFileDialog.Options()
@@ -441,12 +588,60 @@ class MainWindowUIClass( Ui_MainWindow ):
         if fileName:
             try:
                 tomo_file = self.model.sim_path(self.model.pwd, fileName)
-                self.model.read_star_gui(tomo_file)
-                setTableWidget(self.tableWidget, self.model.md)
+                read_result = self.model.read_star_gui(tomo_file)
+                if read_result == 1:
+                    self.warn_window("The input star file is not legid!")
+                else:
+                    setTableWidget(self.tableWidget, self.model.md)
             except:
-                print("warn")
+                print("warning")
                 pass
+                
+    def openGithub(self):
+        import webbrowser
+        webbrowser.open(self.model.github_addr)
+        
+    def warn_window(self,text):
+        msg = QMessageBox()
+        msg.setWindowTitle("Warning!")
+        msg.setText(text)
+        msg.setStandardButtons(QMessageBox.Ok)
+        msg.setIcon(QMessageBox.Warning)
+        msg.exec_()
+        
+     
+class MyWindow(QtWidgets.QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.p = None
 
+    def closeEvent(self, event):
+        if self.p:
+        
+            result = QtWidgets.QMessageBox.question(self,
+                          "Confirm Exit...",
+                          "Do you want to continue the existing job in the background?",
+                          QtWidgets.QMessageBox.Yes| QtWidgets.QMessageBox.No | QtWidgets.QMessageBox.Cancel)
+            event.ignore()
+            if result == QtWidgets.QMessageBox.Yes:
+                event.accept()
+            if result == QtWidgets.QMessageBox.No:
+                self.p.kill()
+                event.accept()
+                #kill the old process
+        else:
+            result = QtWidgets.QMessageBox.question(self,
+                          "Confirm Exit...",
+                          "Do you want to exit? ",
+                          QtWidgets.QMessageBox.Yes| QtWidgets.QMessageBox.No )
+            event.ignore()
+            if result == QtWidgets.QMessageBox.Yes:
+                event.accept()
+            if result == QtWidgets.QMessageBox.No:
+                pass
+                #kill the old process
+
+     
 def main():
     """
     This is the MAIN ENTRY POINT of our application.  The code at the end
@@ -454,9 +649,9 @@ def main():
     our main program.   We have simply copied the code from mainwindow.py here
     since it was automatically generated by '''pyuic5'''.
     """
-
     app = QtWidgets.QApplication(sys.argv)
-    MainWindow = QtWidgets.QMainWindow()
+    MainWindow = MyWindow()
+    #MainWindow = QtWidgets.QMainWindow()
     ui = MainWindowUIClass()
     ui.setupUi(MainWindow)
     MainWindow.show()

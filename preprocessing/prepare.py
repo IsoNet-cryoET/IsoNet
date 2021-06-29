@@ -57,42 +57,43 @@ def extract_subtomos(settings):
     subtomo_md.addLabels('rlnSubtomoIndex','rlnImageName','rlnCubeSize','rlnCropSize','rlnPixelSize')
     count=0
     for it in md:
-        pixel_size = it.rlnPixelSize
-        if settings.use_deconv_tomo and "rlnDeconvTomoName" in md.getLabels() and os.path.isfile(it.rlnDeconvTomoName):
-            logging.info("Extract from deconvolved tomogram {}".format(it.rlnDeconvTomoName))
-            with mrcfile.open(it.rlnDeconvTomoName) as mrcData:
-                orig_data = mrcData.data.astype(np.float32)
-        else:        
-            print("Extract from origional tomogram {}".format(it.rlnMicrographName))
-            with mrcfile.open(it.rlnMicrographName) as mrcData:
-                orig_data = mrcData.data.astype(np.float32)
-        
+        if settings.tomo_idx is None or str(it.rlnIndex) in settings.tomo_idx:
+            pixel_size = it.rlnPixelSize
+            if settings.use_deconv_tomo and "rlnDeconvTomoName" in md.getLabels() and os.path.isfile(it.rlnDeconvTomoName):
+                logging.info("Extract from deconvolved tomogram {}".format(it.rlnDeconvTomoName))
+                with mrcfile.open(it.rlnDeconvTomoName) as mrcData:
+                    orig_data = mrcData.data.astype(np.float32)
+            else:        
+                print("Extract from origional tomogram {}".format(it.rlnMicrographName))
+                with mrcfile.open(it.rlnMicrographName) as mrcData:
+                    orig_data = mrcData.data.astype(np.float32)
+            
 
-        if "rlnMaskName" in md.getLabels() and it.rlnMaskName is not None:
-            with mrcfile.open(it.rlnMaskName) as m:
-                mask_data = m.data
-        else:
-            mask_data = None
-            logging.info(" mask not been used for tomogram {}!".format(it.rlnIndex))
+            if "rlnMaskName" in md.getLabels() and it.rlnMaskName not in [None, "None"]:
+                with mrcfile.open(it.rlnMaskName) as m:
+                    mask_data = m.data
+            else:
+                mask_data = None
+                logging.info(" mask not been used for tomogram {}!".format(it.rlnIndex))
 
-        seeds=create_cube_seeds(orig_data, it.rlnNumberSubtomo, settings.crop_size,mask=mask_data)
-        subtomos=crop_cubes(orig_data,seeds,settings.crop_size)
+            seeds=create_cube_seeds(orig_data, it.rlnNumberSubtomo, settings.crop_size,mask=mask_data)
+            subtomos=crop_cubes(orig_data,seeds,settings.crop_size)
 
-        # save sampled subtomo to {results_dir}/subtomos instead of subtomo_dir (as previously does)
-        base_name = os.path.splitext(os.path.basename(it.rlnMicrographName))[0]
-        
-        for j,s in enumerate(subtomos):
-            im_name = '{}/{}_{:0>6d}.mrc'.format(settings.subtomo_dir, base_name, j)
-            with mrcfile.new(im_name, overwrite=True) as output_mrc:
-                count+=1
-                subtomo_it = Item()
-                subtomo_md.addItem(subtomo_it)
-                subtomo_md._setItemValue(subtomo_it,Label('rlnSubtomoIndex'), str(count))
-                subtomo_md._setItemValue(subtomo_it,Label('rlnImageName'), im_name)
-                subtomo_md._setItemValue(subtomo_it,Label('rlnCubeSize'),settings.cube_size)
-                subtomo_md._setItemValue(subtomo_it,Label('rlnCropSize'),settings.crop_size)
-                subtomo_md._setItemValue(subtomo_it,Label('rlnPixelSize'),pixel_size)
-                output_mrc.set_data(s.astype(np.float32))
+            # save sampled subtomo to {results_dir}/subtomos instead of subtomo_dir (as previously does)
+            base_name = os.path.splitext(os.path.basename(it.rlnMicrographName))[0]
+            
+            for j,s in enumerate(subtomos):
+                im_name = '{}/{}_{:0>6d}.mrc'.format(settings.subtomo_dir, base_name, j)
+                with mrcfile.new(im_name, overwrite=True) as output_mrc:
+                    count+=1
+                    subtomo_it = Item()
+                    subtomo_md.addItem(subtomo_it)
+                    subtomo_md._setItemValue(subtomo_it,Label('rlnSubtomoIndex'), str(count))
+                    subtomo_md._setItemValue(subtomo_it,Label('rlnImageName'), im_name)
+                    subtomo_md._setItemValue(subtomo_it,Label('rlnCubeSize'),settings.cube_size)
+                    subtomo_md._setItemValue(subtomo_it,Label('rlnCropSize'),settings.crop_size)
+                    subtomo_md._setItemValue(subtomo_it,Label('rlnPixelSize'),pixel_size)
+                    output_mrc.set_data(s.astype(np.float32))
     subtomo_md.write(settings.subtomo_star)
 
 
@@ -126,9 +127,9 @@ def get_cubes_one(data, settings, start = 0, mask = None, add_noise = 0):
     data_cubes = DataCubes(data, nCubesPerImg=1, cubeSideLen = settings.cube_size, cropsize = settings.crop_size, 
     mask = mask, noise_folder = settings.noise_dir,noise_level = settings.noise_level_current,noise_mode = settings.noise_mode)
     for i,img in enumerate(data_cubes.cubesX):
-        with mrcfile.new('{}/train_x/x_{}.mrc'.format(settings.data_folder, i+start), overwrite=True) as output_mrc:
+        with mrcfile.new('{}/train_x/x_{}.mrc'.format(settings.data_dir, i+start), overwrite=True) as output_mrc:
             output_mrc.set_data(img.astype(np.float32))
-        with mrcfile.new('{}/train_y/y_{}.mrc'.format(settings.data_folder, i+start), overwrite=True) as output_mrc:
+        with mrcfile.new('{}/train_y/y_{}.mrc'.format(settings.data_dir, i+start), overwrite=True) as output_mrc:
             output_mrc.set_data(data_cubes.cubesY[i].astype(np.float32))
     return 0
 
@@ -170,10 +171,10 @@ def get_cubes_list(settings):
     '''
     import os
     dirs_tomake = ['train_x','train_y', 'test_x', 'test_y']
-    if not os.path.exists(settings.data_folder):
-        os.makedirs(settings.data_folder)
+    if not os.path.exists(settings.data_dir):
+        os.makedirs(settings.data_dir)
     for d in dirs_tomake:
-        folder = '{}/{}'.format(settings.data_folder, d)
+        folder = '{}/{}'.format(settings.data_dir, d)
         if not os.path.exists(folder):
             os.makedirs(folder)
     inp=[]
@@ -190,14 +191,14 @@ def get_cubes_list(settings):
         for i in inp:
             get_cubes(settings,i)
 
-    all_path_x = os.listdir(settings.data_folder+'/train_x')
+    all_path_x = os.listdir(settings.data_dir+'/train_x')
     num_test = int(len(all_path_x) * 0.1) 
     num_test = num_test - num_test%settings.ngpus + settings.ngpus
     all_path_y = ['y_'+i.split('_')[1] for i in all_path_x ]
     ind = np.random.permutation(len(all_path_x))[0:num_test]
     for i in ind:
-        os.rename('{}/train_x/{}'.format(settings.data_folder, all_path_x[i]), '{}/test_x/{}'.format(settings.data_folder, all_path_x[i]) )
-        os.rename('{}/train_y/{}'.format(settings.data_folder, all_path_y[i]), '{}/test_y/{}'.format(settings.data_folder, all_path_y[i]) )
+        os.rename('{}/train_x/{}'.format(settings.data_dir, all_path_x[i]), '{}/test_x/{}'.format(settings.data_dir, all_path_x[i]) )
+        os.rename('{}/train_y/{}'.format(settings.data_dir, all_path_y[i]), '{}/test_y/{}'.format(settings.data_dir, all_path_y[i]) )
         #os.rename('data/train_y/'+all_path_y[i], 'data/test_y/'+all_path_y[i])
 
 def get_noise_level(noise_level_tuple,noise_start_iter_tuple,iterations):

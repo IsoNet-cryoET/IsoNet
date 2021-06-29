@@ -41,16 +41,21 @@ class Model:
         the file name and its contents.
         '''
         self.tomogram_star = "tomograms.star"
+        self.github_addr = "https://github.com/Heng-Z/IsoNet"
+        self.pid_file = "pid.txt"
         #self.commands2run = []
         self.read_star()
         self.pwd = os.getcwd().replace("\\","/")
+        self.log_file = "log.txt"
+        self.btn_pressed_text = None
 
 
     def read_star(self):
         if not self.isValid(self.tomogram_star):
+            
             self.md = MetaData()
-            self.md.addLabels('rlnIndex','rlnMicrographName','rlnPixelSize','rlnDefocus','rlnNumberSubtomo')
-            #self.md.addLabels('rlnIndex','rlnMicrographName','rlnPixelSize','rlnDefocus','rlnNumberSubtomo','rlnSnrFalloff','rlnDeconvStrength','rlnMaskDensityPercentage','rlnMaskStdPercentage')
+            #self.md.addLabels('rlnIndex','rlnMicrographName','rlnPixelSize','rlnDefocus','rlnNumberSubtomo')
+            self.md.addLabels('rlnIndex','rlnMicrographName','rlnPixelSize','rlnDefocus','rlnNumberSubtomo','rlnSnrFalloff','rlnDeconvStrength','rlnDeconvTomoName','rlnMaskDensityPercentage','rlnMaskStdPercentage','rlnMaskName')
             self.md.write(self.tomogram_star)
 
         else:
@@ -62,10 +67,16 @@ class Model:
     def read_star_gui(self,star_file):
 
         if self.isValid(star_file):
-            self.tomogram_star = star_file
-            self.md = MetaData()
-            self.md.read(self.tomogram_star)
-            self.header = self.md.getLabels()
+            md_cad = MetaData()
+            md_cad.read(star_file)
+            if "rlnMicrographName" not in md_cad.getLabels():
+                return 1
+            else:
+                self.tomogram_star = star_file
+                self.md = MetaData()
+                self.md.read(self.tomogram_star)
+                self.header = self.md.getLabels()
+            return 0
 
     def isValid(self, fileName):
         '''
@@ -111,3 +122,16 @@ class Model:
             return "." + path[len(pwd):]
         else:
             return path
+            
+    def getLogContent( self, fileName ):
+        '''
+        sets the member fileName to the value of the argument
+        if the file exists.  Otherwise resets both the filename
+        and file contents members.
+        '''
+        if self.isValid( fileName ):
+            self.fileName = fileName
+            content = open( fileName, 'r' ).read()
+            return content
+        else:
+            return None
