@@ -346,7 +346,7 @@ class ISONET:
 
         :param noise_level: (0.05,0.1,0.15,0.2) Level of noise STD(added noise)/STD(data) after the iteration defined in noise_start_iter. 
         :param noise_start_iter: (11,16,21,26) Iteration that start to add noise of corresponding noise level.
-        :param noise_mode: ('None') Filter names when generating noise volumes, can be 'ramp', 'hamming' and 'None' 
+        :param noise_mode: (None) Filter names when generating noise volumes, can be 'ramp', 'hamming' and 'noFilter' 
         ************************Network settings************************
 
         :param drop_out: (0.3) Drop out rate to reduce overfitting.
