@@ -101,19 +101,37 @@ def tom_deconv_tomo(vol_file, angpix, defocus, snrfalloff, deconvstrength, highp
     return os.path.splitext(vol_file)[0]+'_deconv.mrc'
 
 class Chunks:
-    def __init__(self,num=2,overlap=0.25):
+    def __init__(self,chunk_size=200,overlap=0.25):
         self.overlap = overlap
         #num can be either int or tuple
-        if type(num) is int:
-            self.num = (num,num,num)
-        else:
-            self.num = num
+        self.chunk_size = chunk_size
 
     def get_chunks(self,tomo_name):
         #side*(1-overlap)*(num-1)+side = sp + side*overlap -> side *(1-overlap) * num = side
         root_name = os.path.splitext(os.path.basename(tomo_name))[0]
         with mrcfile.open(tomo_name) as f:
             vol = f.data#.astype(np.float32)
+        cropsize = int(self.chunk_size*(1+self.overlap))
+        cubesize = self.chunk_size
+        sp = np.array(vol.shape)
+        self._sp = sp
+        self._N = sp//cubesize+1
+        padi = np.int((cropsize - cubesize)/2)
+        padsize = (self._N*cubesize + padi - sp).astype(int)
+        data = np.pad(vol,((padi,padsize[0]),(padi,padsize[1]),(padi,padsize[2])),'symmetric')
+        chunks_file_list = []
+        for i in range(self._N[0]):
+            for j in range(self._N[1]):
+                for k in range(self._N[2]):
+                    cube = data[i*cubesize:i*cubesize+cropsize,
+                            j*cubesize:j*cubesize+cropsize,
+                            k*cubesize:k*cubesize+cropsize]
+                    file_name = './deconv_temp/'+root_name+'_{}_{}_{}.mrc'.format(i,j,k)
+                    with mrcfile.new(file_name,overwrite=True) as n:
+                        n.set_data(cube)
+                    chunks_file_list.append(file_name)
+        return chunks_file_list
+
         cube_size = np.round(np.array(vol.shape)/((1-self.overlap)*np.array(self.num))).astype(np.int16)
         overlap_len = np.round(cube_size*self.overlap).astype(np.int16)
         overlap_len = overlap_len + overlap_len %2
@@ -148,6 +166,23 @@ class Chunks:
         return chunks_file_list
 
     def restore(self,new_file_list):
+        cropsize = int(self.chunk_size*(1+self.overlap))
+        cubesize = self.chunk_size
+        new = np.zeros((self._N[0]*cubesize,self._N[1]*cubesize,self._N[2]*cubesize),dtype = np.float32)
+        start=int((cropsize-cubesize)/2)
+        end=int((cropsize+cubesize)/2)
+        
+        for i in range(self._N[0]):
+            for j in range(self._N[1]):
+                for k in range(self._N[2]):
+                    one_chunk_file = new_file_list[i*self._N[1]*self._N[2]+j*self._N[2]+k]
+                    with mrcfile.open(one_chunk_file) as f:
+                        one_chunk_data = f.data
+                    new[i*cubesize:(i+1)*cubesize,j*cubesize:(j+1)*cubesize,k*cubesize:(k+1)*cubesize] \
+                            = one_chunk_data[start:end,start:end,start:end]
+        return new[0:self._sp[0],0:self._sp[1],0:self._sp[2]]
+
+
         overlap_len = self.overlap_len
         new_vol = np.zeros(self.padded_shape,dtype = np.float32)
         for n1,i in enumerate(self.slice1):
@@ -196,7 +231,7 @@ def deconv_one(tomo, out_tomo,defocus=1.0, pixel_size=1.0,snrfalloff=1.0, deconv
 
     root_name = os.path.splitext(os.path.basename(tomo))[0]
     logging.info('deconv: {}| pixel: {}| defocus: {}| snrfalloff:{}| deconvstrength:{}'.format(tomo, pixel_size, defocus ,snrfalloff, deconvstrength))
-    c = Chunks(num=tile,overlap=overlap_rate)
+    c = Chunks(overlap=overlap_rate)
     chunks_list = c.get_chunks(tomo) # list of name of subtomograms
     # chunks_gpu_num_list = [[array,j%num_gpu] for j,array in enumerate(chunks_list)]
     # print(chunks_list)

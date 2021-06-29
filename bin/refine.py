@@ -202,7 +202,7 @@ def run_continue(continue_args):
     if continue_args.log_level is not None:
         args.log_level = continue_args.log_level
     #logger = logging.getLogger('IsoNet.refine')
-   
+    num_noise_volume = 1000
     if len(md) <=0:
         logging.error("Subtomo list is empty!")
         sys.exit(0)
@@ -244,7 +244,13 @@ def run_continue(continue_args):
             continue
         ##
         args.init_model = '{}/model_iter{:0>2d}.h5'.format(args.result_dir,args.iter_count-1)
+         # Noise settings
         args.noise_level_current =  noise_level_series[num_iter]
+        if num_iter>=args.noise_start_iter[0] and (not os.path.isdir(args.noise_dir) or len(os.listdir(args.noise_dir))< num_noise_volume ):
+
+            from IsoNet.util.noise_generator import make_noise_folder
+            print(args.noise_mode)
+            make_noise_folder(args.noise_dir,args.noise_mode,args.cube_size,num_noise_volume,ncpus=args.preprocessing_ncpus)
         logging.info("noise_level:{}".format(args.noise_level_current))
         try:
             shutil.rmtree(args.data_dir)     

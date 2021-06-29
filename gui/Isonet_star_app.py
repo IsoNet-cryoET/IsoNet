@@ -26,6 +26,7 @@ class MainWindowUIClass( Ui_MainWindow ):
         
         #reset process as None
         self.p = None
+        self.previous_log_line = ""
         
         # check for pid in last running
         #if os.path.isfile(self.model.pid_file):
@@ -164,10 +165,18 @@ class MainWindowUIClass( Ui_MainWindow ):
 
 
         printable_txt = "".join(list(filter(lambda x: x in printable, txt)))
+        
+        if '[' in self.previous_log_line and '[' in printable_txt:
+            cursor.movePosition(cursor.StartOfLine, cursor.MoveAnchor)
+            cursor.movePosition(cursor.End, cursor.KeepAnchor)
+            cursor.removeSelectedText()
+            cursor.deletePreviousChar()
         cursor.insertText(printable_txt)
         f = open(self.model.log_file, 'a+')
         f.write(printable_txt)
         f.close()
+
+        self.previous_log_line = printable_txt
         self.textBrowser_log.ensureCursorVisible()
         self.textBrowser_log.moveCursor(QtGui.QTextCursor.End)
         
