@@ -479,8 +479,8 @@ class MainWindowUIClass( Ui_MainWindow ):
             cmd = "{} --noise_level {}".format(cmd, self.lineEdit_noise_level.text())
         if self.lineEdit_noise_start_iter.text():
             cmd = "{} --noise_start_iter {}".format(cmd, self.lineEdit_noise_start_iter.text())
-        if self.lineEdit_noise_mode.text():
-            cmd = "{} --noise_mode {}".format(cmd, self.lineEdit_noise_mode.text())
+        if not self.comboBox_noise_mode.currentText() == "noFilter":
+            cmd = "{} --noise_mode {}".format(cmd, self.comboBox_noise_mode.currentText())
         
         if self.lineEdit_drop_out.text():
             cmd = "{} --drop_out {}".format(cmd, self.lineEdit_drop_out.text())
