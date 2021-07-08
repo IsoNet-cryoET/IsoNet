@@ -320,7 +320,7 @@ class ISONET:
         pool: tuple = None,
         unet_depth: int = 3,
         filter_base: int = None,
-        batch_normalization: bool = True,
+        batch_normalization: bool = False,
         normalize_percentile: bool = True,
     ):
         """

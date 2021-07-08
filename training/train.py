@@ -164,7 +164,7 @@ def prepare_first_model(settings):
             batch_norm=settings.batch_normalization, 
             dropout=settings.drop_out,
             pool=settings.pool,
-            residual = True,
+            residual = settings.residual,
             last_activation = 'linear',
             loss = 'mae',
             lr = settings.learning_rate)
