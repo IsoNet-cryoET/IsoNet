@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file '.\isonet_star_0611.ui'
+# Form implementation generated from reading ui file '.\isonet_star_0630.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.2
 #
@@ -858,20 +858,12 @@ class Ui_MainWindow(object):
         self.label_noise_mode.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
         self.label_noise_mode.setObjectName("label_noise_mode")
         self.horizontalLayout_39.addWidget(self.label_noise_mode)
-        self.lineEdit_noise_mode = QtWidgets.QLineEdit(self.groupBox_denoise_setting)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Expanding)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(5)
-        sizePolicy.setHeightForWidth(self.lineEdit_noise_mode.sizePolicy().hasHeightForWidth())
-        self.lineEdit_noise_mode.setSizePolicy(sizePolicy)
-        self.lineEdit_noise_mode.setMinimumSize(QtCore.QSize(0, 25))
-        self.lineEdit_noise_mode.setMaximumSize(QtCore.QSize(16777215, 25))
-        font = QtGui.QFont()
-        font.setPointSize(10)
-        self.lineEdit_noise_mode.setFont(font)
-        self.lineEdit_noise_mode.setStyleSheet("background-color:rgb(255, 255, 255)")
-        self.lineEdit_noise_mode.setObjectName("lineEdit_noise_mode")
-        self.horizontalLayout_39.addWidget(self.lineEdit_noise_mode)
+        self.comboBox_noise_mode = QtWidgets.QComboBox(self.groupBox_denoise_setting)
+        self.comboBox_noise_mode.setObjectName("comboBox_noise_mode")
+        self.comboBox_noise_mode.addItem("")
+        self.comboBox_noise_mode.addItem("")
+        self.comboBox_noise_mode.addItem("")
+        self.horizontalLayout_39.addWidget(self.comboBox_noise_mode)
         self.horizontalLayout_10.addLayout(self.horizontalLayout_39)
         self.gridLayout_7.addLayout(self.horizontalLayout_10, 0, 0, 1, 1)
         self.gridLayout_9.addWidget(self.groupBox_denoise_setting, 2, 0, 1, 1)
@@ -2035,8 +2027,10 @@ class Ui_MainWindow(object):
         self.lineEdit_noise_start_iter.setToolTip(_translate("MainWindow", "<html><head/><body><p><span style=\" font-size:9pt;\">Iteration that start to add trainning noise.</span></p></body></html>"))
         self.lineEdit_noise_start_iter.setPlaceholderText(_translate("MainWindow", "11,16,21,26"))
         self.label_noise_mode.setText(_translate("MainWindow", "noise mode"))
-        self.lineEdit_noise_mode.setToolTip(_translate("MainWindow", "<html><head/><body><p><span style=\" font-size:9pt;\">noise mode</span></p></body></html>"))
-        self.lineEdit_noise_mode.setPlaceholderText(_translate("MainWindow", "1"))
+        self.comboBox_noise_mode.setToolTip(_translate("MainWindow", "<html><head/><body><p><span style=\" font-size:9pt;\">Filter names when generating noise volumes, can be \'ramp\', \'hamming\' and \'noFilter\' </span></p></body></html>"))
+        self.comboBox_noise_mode.setItemText(0, _translate("MainWindow", "noFilter"))
+        self.comboBox_noise_mode.setItemText(1, _translate("MainWindow", "ramp"))
+        self.comboBox_noise_mode.setItemText(2, _translate("MainWindow", "hamming"))
         self.groupBox_training_setting_2.setTitle(_translate("MainWindow", "Network setting"))
         self.label_drop_out.setText(_translate("MainWindow", "drop out"))
         self.lineEdit_drop_out.setToolTip(_translate("MainWindow", "<html><head/><body><p><span style=\" font-size:9pt;\">Drop out rate to reduce overfitting.</span></p></body></html>"))
