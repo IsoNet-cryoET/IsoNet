@@ -66,7 +66,7 @@ def unet_block(filter_base=32,depth=2,convs_per_depth=2,
                             batch_norm=batch_norm,name="middle_%s" % convs_per_depth)(layer)
 
         for n in reversed(range(depth)):
-            print('depth is : %d' % n)
+            # print('depth is : %d' % n)
 
             layer = Concatenate(axis=-1)([UpSampling(pool)(layer),concatenate[n]])
             for i in range(convs_per_depth-1):
