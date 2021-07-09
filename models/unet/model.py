@@ -1,10 +1,10 @@
-from IsoNet.models.unet import builder,builder_fullconv,builder_fullconv_old
+from IsoNet.models.unet import builder,builder_fullconv,builder_fullconv_old,build_old_net
 from tensorflow.keras.layers import Input,Add,Activation
 from tensorflow.keras.models import Model
 from IsoNet.losses.wedge_power import wedge_power_gain
 from tensorflow.keras.optimizers import Adam
 def Unet(filter_base=32,
-        depth=2,
+        depth=3,
         convs_per_depth=3,
         kernel=(3,3,3),
         batch_norm=True,
@@ -20,11 +20,17 @@ def Unet(filter_base=32,
     #            batch_norm,
     #            dropout,
     #            pool)
-    model = builder_fullconv.build_unet(filter_base,depth,convs_per_depth,
-            kernel,
-            batch_norm,
-            dropout,
-            pool)
+    # model = builder_fullconv.build_unet(filter_base,depth,convs_per_depth,
+    #         kernel,
+    #         batch_norm,
+    #         dropout,
+    #         pool)
+
+    model = build_old_net.unet_block(filter_base,depth,convs_per_depth,
+               kernel,
+               batch_norm,
+               dropout,
+               (2,2,2))
     # import os
     # import sys
     # cwd = os.getcwd()
@@ -42,7 +48,7 @@ def Unet(filter_base=32,
         outputs = Add()([unet_out, inputs])
     else:
         outputs = unet_out
-    outputs = Activation(activation=last_activation)(outputs)
+    # outputs = Activation(activation=last_activation)(outputs)
     model = Model(inputs=inputs, outputs=outputs)
     optimizer = Adam(lr=lr)
     if loss == 'mae' or loss == 'mse':

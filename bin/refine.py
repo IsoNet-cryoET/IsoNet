@@ -47,8 +47,8 @@ def run_whole(args):
     args.crop_size = md._data[0].rlnCropSize
     args.cube_size = md._data[0].rlnCubeSize
     args.predict_cropsize = args.crop_size
-    args.noise_dir = args.result_dir +'/training_noise'
     num_noise_volume = 1000
+    args.residual = False
     #*******calculate parameters********
     if args.gpuID is None:
         args.gpuID = '0,1,2,3'
@@ -79,6 +79,8 @@ def run_whole(args):
         args.noise_start_iter = (11,16,21,26)
     if args.noise_mode is None:
         args.noise_mode = 'ramp'
+    if args.noise_dir is None:
+        args.noise_dir = args.result_dir +'/training_noise'
     if args.log_level is None:
         args.log_level = "info"
 
