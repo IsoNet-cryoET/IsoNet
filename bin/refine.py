@@ -78,7 +78,7 @@ def run_whole(args):
     if args.noise_start_iter is None:
         args.noise_start_iter = (11,16,21,26)
     if args.noise_mode is None:
-        args.noise_mode = 'ramp'
+        args.noise_mode = 'noFilter'
     if args.noise_dir is None:
         args.noise_dir = args.result_dir +'/training_noise'
     if args.log_level is None:
