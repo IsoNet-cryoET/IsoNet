@@ -361,11 +361,8 @@ class ISONET:
         from IsoNet.bin.refine import run
         d = locals()
         d_args = Arg(d)
-    
-        # logging.debug('debug test')
-        with open('./refine.log','w') as f:
-            f.write(' '.join(sys.argv[1:]))
-        # d_args.only_extract_subtomos = False
+        with open('log.txt','a+') as f:
+            f.write(' '.join(sys.argv[0:]) + '\n')
         run(d_args)
 
     def predict(self, star_file: str, model: str, output_dir: str='./corrected_tomos', gpuID: str = None, cube_size:int=48,
