@@ -1,5 +1,4 @@
 ## Installation
-### Install from source
 python version at least 3.5 is required.
 
 1.  IsoNet relies on Tensorflow with version at least 2.0
@@ -24,6 +23,9 @@ export PATH=PATH_TO_ISONET_FOLDER/bin:$PATH
 
 export PYTHOHPATH=PATH_TO_PARENT_FOLDER_OF_ISONET_FOLDER:$PYTHONPATH 
 ```
-4. Open a new terminal, enter your working directory and run "isonet.py check"
+4. Open a new terminal, enter your working directory and run 
+```
+isonet.py check
+```
 
 Tutorial data set and tutorial videos are on google drive https://drive.google.com/drive/folders/1DXjIsz6-EiQm7mBMuMHHwdZErZ_bXAgp
