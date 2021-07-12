@@ -27,4 +27,4 @@ export PYTHOHPATH=PATH_TO_PARENT_FOLDER_OF_ISONET_FOLDER:$PYTHONPATH
 4. run isonet.py
 
 
-Tutorial data set is on google drive https://drive.google.com/drive/folders/1r6wF2XDZj1Q9yV7WmZK7Ic0X0fFStc0_?usp=sharing
+Tutorial data set and tutorial video is on google drive https://drive.google.com/drive/folders/1DXjIsz6-EiQm7mBMuMHHwdZErZ_bXAgp
