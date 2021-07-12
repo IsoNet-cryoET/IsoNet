@@ -406,6 +406,9 @@ class ISONET:
     def check(self):
         from IsoNet.bin.predict import predict
         from IsoNet.bin.refine import run
+        import skimage
+        import PyQt5 
+        import tqdm
         print('IsoNet --version 0.1 installed')
        
     def gui(self):
