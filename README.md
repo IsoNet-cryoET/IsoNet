@@ -21,7 +21,7 @@ For example add following lines in your ~/.bashrc
 ```
 export PATH=PATH_TO_ISONET_FOLDER/bin:$PATH 
 
-export PYTHOHPATH=PATH_TO_PARENT_FOLDER_OF_ISONET_FOLDER:$PYTHONPATH 
+export PYTHONPATH=PATH_TO_PARENT_FOLDER_OF_ISONET_FOLDER:$PYTHONPATH 
 ```
 4. Open a new terminal, enter your working directory and run 
 ```
