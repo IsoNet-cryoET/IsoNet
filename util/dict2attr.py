@@ -27,6 +27,10 @@ class Arg:
                 sys.exit(0)
             if k == 'gpuID' and type(v) is tuple:
                 v = ','.join([str(i) for i in v])
+            if k == 'noise_start_iter' and type(v) is int:
+                v = tuple([v])
+            if k == 'noise_level' and type(v) in [int,float]:
+                v = tuple([v])
             if k in param_to_set_attr:
                 setattr(self, k, v)
          
