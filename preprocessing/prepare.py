@@ -209,5 +209,4 @@ def get_noise_level(noise_level_tuple,noise_start_iter_tuple,iterations):
         noise_level[noise_start_iter_tuple[i]:noise_start_iter_tuple[i+1]] = noise_level_tuple[i]
     assert noise_level_tuple[-1] < iterations 
     noise_level[noise_start_iter_tuple[-1]:] = noise_level_tuple[-1]
-    print(noise_level)
     return noise_level
