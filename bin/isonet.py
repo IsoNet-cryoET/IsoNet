@@ -42,7 +42,7 @@ class ISONET:
         i = 0
         for tomo in tomo_list:
             print(tomo[-4:])
-            if tomo[-4:] == '.rec' or tomo[-4:] == 'mrc':
+            if tomo[-4:] == '.rec' or tomo[-4:] == '.mrc':
                 i+=1
                 it = Item()
                 md.addItem(it)
