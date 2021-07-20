@@ -9,7 +9,7 @@ from tensorflow.keras.callbacks import TensorBoard, ModelCheckpoint
 from tensorflow.keras.utils import Sequence
 import tensorflow.keras.backend as K
 import numpy as np
-from tensorflow.keras.utils import multi_gpu_model
+# from tensorflow.keras.utils import multi_gpu_model
 from tensorflow.keras import regularizers
 
 def conv_blocks(n_filter, kernel,
