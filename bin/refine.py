@@ -48,7 +48,7 @@ def run_whole(args):
     args.cube_size = md._data[0].rlnCubeSize
     args.predict_cropsize = args.crop_size
     num_noise_volume = 1000
-    args.residual = False
+    args.residual = True
     #*******calculate parameters********
     if args.gpuID is None:
         args.gpuID = '0,1,2,3'

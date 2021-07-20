@@ -20,17 +20,17 @@ def Unet(filter_base=32,
     #            batch_norm,
     #            dropout,
     #            pool)
-    # model = builder_fullconv.build_unet(filter_base,depth,convs_per_depth,
-    #         kernel,
-    #         batch_norm,
-    #         dropout,
-    #         pool)
+    model = builder_fullconv.build_unet(filter_base,depth,convs_per_depth,
+            kernel,
+            batch_norm,
+            dropout,
+            pool)
 
-    model = build_old_net.unet_block(filter_base,depth,convs_per_depth,
-               kernel,
-               batch_norm,
-               dropout,
-               (2,2,2))
+    # model = build_old_net.unet_block(filter_base,depth,convs_per_depth,
+    #            kernel,
+    #            batch_norm,
+    #            dropout,
+    #            (2,2,2))
     # import os
     # import sys
     # cwd = os.getcwd()
