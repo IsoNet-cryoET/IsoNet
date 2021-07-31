@@ -94,7 +94,7 @@ def tom_deconv_tomo(vol_file, angpix, defocus, snrfalloff, deconvstrength, highp
     del r
     #ramp = np.interp(data,wiener,r);
     deconv = np.real(np.fft.ifftn(np.fft.fftn(vol) * ramp))
-
+    deconv = deconv/np.std(deconv) * np.std(vol) + np.average(vol)
     with mrcfile.new(os.path.splitext(vol_file)[0]+'_deconv.mrc',overwrite=True) as n:
         n.set_data(deconv.astype(np.float32)) #.astype(type(vol[0,0,0]))
     #return real(ifftn(fftn(single(vol)).*ramp));
@@ -203,7 +203,7 @@ class Chunks:
                     overlap_len[1]//2:-(overlap_len[1]//2),
                     overlap_len[2]//2:-(overlap_len[2]//2)]
 
-def deconv_one(tomo, out_tomo,defocus=1.0, pixel_size=1.0,snrfalloff=1.0, deconvstrength=1.0,highpassnyquist=0.1,tile=(1,4,4),overlap_rate = 0.25,ncpu=4):
+def deconv_one(tomo, out_tomo,defocus=1.0, pixel_size=1.0,snrfalloff=1.0, deconvstrength=1.0,highpassnyquist=0.02,tile=(1,4,4),overlap_rate = 0.25,ncpu=4):
     """
     \nGenerate recommanded parameters for "isonet.py refine" for users\n
     if is phase plate, keep defocus 0.0 if defocus different change manually in the output tomogram.star

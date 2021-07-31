@@ -101,7 +101,7 @@ class ISONET:
         deconv_folder:str="./deconv", 
         snrfalloff: float=None, 
         deconvstrength: float=None, 
-        highpassnyquist: float=0.1,
+        highpassnyquist: float=0.02,
         tile: tuple=(1,4,4),
         overlap_rate = 0.25,
         ncpu:int=4,

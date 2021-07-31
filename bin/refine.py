@@ -58,7 +58,7 @@ def run_whole(args):
         args.data_dir = args.result_dir + '/data'
     if args.iterations is None:
         args.iterations = 30
-    args.ngpus = len(args.gpuID.split(','))
+    args.ngpus = len(list(set(args.gpuID.split(','))))
     if args.result_dir is None:
         args.result_dir = 'results'
     if args.batch_size is None:
@@ -102,25 +102,7 @@ def run_whole(args):
         os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
     #check gpu
-    import subprocess
-    sp = subprocess.Popen(['nvidia-smi', '-q'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    out_str = sp.communicate()
-    out_str = out_str[0].decode('utf-8')
-    if 'CUDA Version' not in out_str:
-        raise RuntimeError('No GPU detected, Please check your CUDA version and installation')
-
-    #import tensorflow related modules after setting environment
-    import tensorflow as tf
-
-    gpu_info =  tf.config.list_physical_devices('GPU')
-    logging.debug(gpu_info)   
-    if len(gpu_info)!=args.ngpus:
-        if len(gpu_info) == 0:
-            logging.error('No GPU detected, Please check your CUDA version and installation')
-            raise RuntimeError('No GPU detected, Please check your CUDA version and installation')
-        else:
-            logging.error('Available number of GPUs don\'t match requested GPUs \n\n Detected GPUs: {} \n\n Requested GPUs: {}'.format(gpu_info,args.gpuID))
-            
+    check_gpu(args)
     from IsoNet.training.predict import predict
     from IsoNet.training.train import prepare_first_model, train_data
 
@@ -229,9 +211,11 @@ def run_continue(continue_args):
         os.environ['TF_CPP_MIN_LOG_LEVEL'] = '0'
     else:
         os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
-        
+
+    check_gpu(args)    
     from IsoNet.training.predict import predict
     from IsoNet.training.train import prepare_first_model, train_data
+    
     # start REFINE LOOP
     current_iter = args.iter_count
     noise_level_series = get_noise_level(args.noise_level,args.noise_start_iter,args.iterations)
@@ -271,4 +255,24 @@ def run_continue(continue_args):
         logging.info("Done predicting subtomograms!")
         logging.info("Done Iteration{}!".format(num_iter))
 
-    
+
+def check_gpu(args):
+    import subprocess
+    sp = subprocess.Popen(['nvidia-smi', '-q'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out_str = sp.communicate()
+    out_str = out_str[0].decode('utf-8')
+    if 'CUDA Version' not in out_str:
+        raise RuntimeError('No GPU detected, Please check your CUDA version and installation')
+
+    #import tensorflow related modules after setting environment
+    import tensorflow as tf
+
+    gpu_info =  tf.config.list_physical_devices('GPU')
+    logging.debug(gpu_info)   
+    if len(gpu_info)!=args.ngpus:
+        if len(gpu_info) == 0:
+            logging.error('No GPU detected, Please check your CUDA version and installation')
+            raise RuntimeError('No GPU detected, Please check your CUDA version and installation')
+        else:
+            logging.error('Available number of GPUs don\'t match requested GPUs \n\n Detected GPUs: {} \n\n Requested GPUs: {}'.format(gpu_info,args.gpuID))
+            raise RuntimeError('Re-enter correct gpuID')

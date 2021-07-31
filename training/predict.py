@@ -1,3 +1,6 @@
+import tensorflow as tf
+import logging
+tf.get_logger().setLevel(logging.ERROR)
 from tensorflow.keras.models import load_model
 import mrcfile
 from IsoNet.preprocessing.img_processing import normalize

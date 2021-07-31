@@ -57,3 +57,16 @@ def get_gen(x_set,y_set,batch_size,shuffle=True):
 
                 yield rx,ry
     return gen
+
+def get_gen_single(x_set,batch_size,shuffle=True):
+    def gen():
+        while True:
+            all_idx = np.arange(len(x_set))
+            if shuffle:
+                np.random.shuffle(all_idx)
+            for i in range(len(x_set)//batch_size):
+                idx = slice(i * batch_size,(i+1) * batch_size)
+                idx = all_idx[idx]
+                rx = np.array([mrcfile.open(x_set[j]).data[:,:,:,np.newaxis] for j in idx])
+                yield rx
+    return gen

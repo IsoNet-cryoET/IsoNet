@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import numpy as np
 import os, sys
-import logging
 from IsoNet.preprocessing.simulate import apply_wedge
 from IsoNet.util.norm import normalize
 from IsoNet.util.toTile import reform3D
@@ -10,6 +9,7 @@ from IsoNet.util.image import *
 from IsoNet.util.metadata import MetaData,Label,Item
 from IsoNet.util.dict2attr import idx2list
 from tqdm import tqdm
+# from IsoNet.training.data_sequence import get_gen_single
 def predict(args):
 
     if args.log_level == 'debug':
@@ -32,18 +32,20 @@ def predict(args):
     logging.info('\n\n######Isonet starts predicting######\n')
 
     args.gpuID = str(args.gpuID)
-    ngpus = len(args.gpuID.split(','))
+    args.ngpus = len(list(set(args.gpuID.split(','))))
     if args.batch_size is None:
-        args.batch_size = max(4, 2 * ngpus)
+        args.batch_size = max(4, 2 * args.ngpus)
     #print('batch_size',args.batch_size)
     os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
     os.environ["CUDA_VISIBLE_DEVICES"]=args.gpuID 
-
+    #check gpu settings
+    from IsoNet.bin.refine import check_gpu
+    check_gpu(args)
 
     logger.debug('percentile:{}'.format(args.normalize_percentile))
 
     logger.info('gpuID:{}'.format(args.gpuID))
-    if ngpus >1:
+    if args.ngpus >1:
         strategy = tf.distribute.MirroredStrategy()
         with strategy.scope():
             model = tf.keras.models.load_model(args.model)
@@ -77,7 +79,7 @@ def predict(args):
     
 def predict_one(args,one_tomo,model,output_file=None):
     #predict one tomogram in mrc format INPUT: mrc_file string OUTPUT: output_file(str) or <root_name>_corrected.mrc
-
+    import logging
     root_name = one_tomo.split('/')[-1].split('.')[0]
 
     if output_file is None:
@@ -98,8 +100,7 @@ def predict_one(args,one_tomo,model,output_file=None):
     #imposing wedge to every cubes
     #data=wedge_imposing(data)
 
-    ngpus = len(args.gpuID.split(','))
-    N = args.batch_size * ngpus * 4 # 8*4*8 
+    N = args.batch_size * args.ngpus * 4 # 8*4*8 
     num_patches = data.shape[0]
     if num_patches%N == 0:
         append_number = 0
@@ -110,7 +111,10 @@ def predict_one(args,one_tomo,model,output_file=None):
     outData = np.zeros(data.shape)
     logging.info("total batches: {}".format(num_big_batch))
     for i in tqdm(range(num_big_batch), file=sys.stdout):
-        outData[i*N:(i+1)*N] = model.predict(data[i*N:(i+1)*N], batch_size= args.batch_size,verbose=0)
+        in_data = data[i*N:(i+1)*N]
+        # in_data_gen = get_gen_single(in_data,args.batch_size,shuffle=False)
+        # in_data_tf = tf.data.Dataset.from_generator(in_data_gen,output_types=tf.float32)
+        outData[i*N:(i+1)*N] = model.predict(in_data,verbose=0)
     outData = outData[0:num_patches]
 
     outData=reform_ins.restore_from_cubes_new(outData.reshape(outData.shape[0:-1]), args.cube_size, args.crop_size)

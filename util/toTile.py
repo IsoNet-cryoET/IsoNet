@@ -1,19 +1,4 @@
 import numpy as np
-from tensorflow.keras.utils import Sequence
-
-
-class DataWrapper(Sequence):
-
-   def __init__(self, X,  batch_size):
-       self.X = X
-       self.batch_size = batch_size
-   def __len__(self):
-       return int(np.ceil(len(self.X) / float(self.batch_size)))
-   def __getitem__(self, i):
-       idx = slice(i*self.batch_size,(i+1)*self.batch_size)
-       return self.X[idx]
-
-
 
 class reform3D:
     def __init__(self,data3D):
