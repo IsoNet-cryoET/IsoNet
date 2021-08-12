@@ -1,9 +1,9 @@
 ## Installation
-python version at least 3.5 is required.
+python version at least 3.5 is required. If you download the package as a zip file from github, please rename the folder IsoNet-master to IsoNet.
 
 1.  IsoNet relies on Tensorflow with version at least 2.0
 
-Please find your cuda version and corresponding tensorflow version here: https://www.tensorflow.org/install/source#gpu. 
+Please find your cuda version, cuDNN version and corresponding tensorflow version here: https://www.tensorflow.org/install/source#gpu. 
 
 For example, if you are using cude 10.1, you should install tensorflow 2.3:
 ```
