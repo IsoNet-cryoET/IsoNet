@@ -118,7 +118,7 @@ class ISONET:
         :param deconvstrength: (1.0) Strength of the deconvolution.  
         If this value is not set, the program will look for the parameter in the star file. 
         If this value is not set and not found in star file, the default value 1.0 will be used.
-        :param highpassnyquist: (0.1) Highpass filter for at very low frequency. We suggest to keep this default value.
+        :param highpassnyquist: (0.02) Highpass filter for at very low frequency. We suggest to keep this default value.
         :param tile: (1,4,4) The program crop the tomogram in multiple tiles (z,y,x) for multiprocessing and assembly them into one. e.g. (1,2,2)
         :param overlap_rate: (None) The overlapping rate for adjecent tiles.
         :param ncpu: (4) Number of cpus to use. 
