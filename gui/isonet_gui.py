@@ -1969,7 +1969,7 @@ class Ui_MainWindow(object):
         self.lineEdit_tile.setToolTip(_translate("MainWindow", "<html><head/><body><p><span style=\" font-size:9pt;\">The program crop the tomogram in multiple tiles (z,y,x) for multiprocessing and assembly them into one. e.g. (1,2,2)</span></p></body></html>"))
         self.lineEdit_tile.setPlaceholderText(_translate("MainWindow", "1,4,4"))
         self.label_highpassnyquist.setText(_translate("MainWindow", "highpassnyquist"))
-        self.lineEdit_highpassnyquist.setToolTip(_translate("MainWindow", "<html><head/><body><p><span style=\" font-size:9pt;\">(0.1) Keep this default value.</span></p></body></html>"))
+        self.lineEdit_highpassnyquist.setToolTip(_translate("MainWindow", "<html><head/><body><p><span style=\" font-size:9pt;\">(0.02) Keep this default value.</span></p></body></html>"))
         self.lineEdit_highpassnyquist.setPlaceholderText(_translate("MainWindow", "0.1"))
         self.label_overlap.setText(_translate("MainWindow", "overlap"))
         self.lineEdit_overlap.setToolTip(_translate("MainWindow", "<html><head/><body><p><span style=\" font-size:9pt;\">The overlapping rate for adjecent tiles.</span></p></body></html>"))
