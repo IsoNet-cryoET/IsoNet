@@ -24,7 +24,7 @@ def predict(args):
 
     logger = logging.getLogger('predict')
     if args.log_level == "debug":
-        logging.basicConfig(format='%(asctime)s, %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s', 
+        logging.basicConfig(format='%(asctime)s, %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
         datefmt="%H:%M:%S",level=logging.DEBUG,handlers=[logging.StreamHandler(sys.stdout)])
     else:
         logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',
@@ -37,7 +37,7 @@ def predict(args):
         args.batch_size = max(4, 2 * args.ngpus)
     #print('batch_size',args.batch_size)
     os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
-    os.environ["CUDA_VISIBLE_DEVICES"]=args.gpuID 
+    os.environ["CUDA_VISIBLE_DEVICES"]=args.gpuID
     #check gpu settings
     from IsoNet.bin.refine import check_gpu
     check_gpu(args)
@@ -59,7 +59,7 @@ def predict(args):
         # write star percentile threshold
     md = MetaData()
     md.read(args.star_file)
-    if not 'rlnCorrectedTomoName' in md.getLabels():    
+    if not 'rlnCorrectedTomoName' in md.getLabels():
         md.addLabels('rlnCorrectedTomoName')
         for it in md:
             md._setItemValue(it,Label('rlnCorrectedTomoName'),None)
@@ -76,7 +76,7 @@ def predict(args):
                 predict_one(args,tomo_file,model,output_file=tomo_out_name)
                 md._setItemValue(it,Label('rlnCorrectedTomoName'),tomo_out_name)
         md.write(args.star_file)
-    
+
 def predict_one(args,one_tomo,model,output_file=None):
     #predict one tomogram in mrc format INPUT: mrc_file string OUTPUT: output_file(str) or <root_name>_corrected.mrc
     import logging
@@ -92,6 +92,7 @@ def predict_one(args,one_tomo,model,output_file=None):
 
     with mrcfile.open(one_tomo) as mrcData:
         real_data = mrcData.data.astype(np.float32)*-1
+        voxelsize = mrcData.voxel_size
     real_data = normalize(real_data,percentile=args.normalize_percentile)
     data=np.expand_dims(real_data,axis=-1)
     reform_ins = reform3D(data)
@@ -100,7 +101,7 @@ def predict_one(args,one_tomo,model,output_file=None):
     #imposing wedge to every cubes
     #data=wedge_imposing(data)
 
-    N = args.batch_size * args.ngpus * 4 # 8*4*8 
+    N = args.batch_size * args.ngpus * 4 # 8*4*8
     num_patches = data.shape[0]
     if num_patches%N == 0:
         append_number = 0
@@ -122,5 +123,6 @@ def predict_one(args,one_tomo,model,output_file=None):
     outData = normalize(outData,percentile=args.normalize_percentile)
     with mrcfile.new(output_file, overwrite=True) as output_mrc:
         output_mrc.set_data(-outData)
+        output_mrc.voxel_size = voxelsize
     logging.info('Done predicting')
     # predict(args.model,args.weight,args.mrc_file,args.output_file, cubesize=args.cubesize, cropsize=args.cropsize, batch_size=args.batch_size, gpuID=args.gpuID, if_percentile=if_percentile)

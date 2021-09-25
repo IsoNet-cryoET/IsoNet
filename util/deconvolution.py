@@ -44,6 +44,7 @@ def wiener1d(angpix, defocus, snrfalloff, deconvstrength, highpassnyquist, phase
 def tom_deconv_tomo(vol_file, angpix, defocus, snrfalloff, deconvstrength, highpassnyquist, phaseflipped, phaseshift):
     with mrcfile.open(vol_file) as f:
         vol = f.data
+        voxelsize = f.voxel_size
     data = np.arange(0,1+1/2047.,1/2047.)
     highpass = np.minimum(np.ones(data.shape[0]), data/highpassnyquist) * np.pi;
     highpass = 1-np.cos(highpass);
@@ -65,15 +66,15 @@ def tom_deconv_tomo(vol_file, angpix, defocus, snrfalloff, deconvstrength, highp
 
     s1 = - int(np.shape(vol)[1] / 2)
     f1 = s1 + np.shape(vol)[1] - 1
-    m1 = np.arange(s1,f1+1)     
+    m1 = np.arange(s1,f1+1)
 
     s2 = - int(np.shape(vol)[0] / 2)
     f2 = s2 + np.shape(vol)[0] - 1
-    m2 = np.arange(s2,f2+1)     
+    m2 = np.arange(s2,f2+1)
 
     s3 = - int(np.shape(vol)[2] / 2)
     f3 = s3 + np.shape(vol)[2] - 1
-    m3 = np.arange(s3,f3+1)     
+    m3 = np.arange(s3,f3+1)
 
 #s3 = -floor(size(vol,3)/2);
 #f3 = s3 + size(vol,3) - 1;
@@ -97,6 +98,7 @@ def tom_deconv_tomo(vol_file, angpix, defocus, snrfalloff, deconvstrength, highp
     deconv = deconv/np.std(deconv) * np.std(vol) + np.average(vol)
     with mrcfile.new(os.path.splitext(vol_file)[0]+'_deconv.mrc',overwrite=True) as n:
         n.set_data(deconv.astype(np.float32)) #.astype(type(vol[0,0,0]))
+        n.voxel_size = voxelsize
     #return real(ifftn(fftn(single(vol)).*ramp));
     return os.path.splitext(vol_file)[0]+'_deconv.mrc'
 
@@ -171,7 +173,7 @@ class Chunks:
         new = np.zeros((self._N[0]*cubesize,self._N[1]*cubesize,self._N[2]*cubesize),dtype = np.float32)
         start=int((cropsize-cubesize)/2)
         end=int((cropsize+cubesize)/2)
-        
+
         for i in range(self._N[0]):
             for j in range(self._N[1]):
                 for k in range(self._N[2]):
@@ -194,10 +196,10 @@ class Chunks:
                         one_chuck = f.data
                     # print(one_chuck[overlap_len[0]//2:-(overlap_len[0]//2),overlap_len[1]//2:-(overlap_len[1]//2),overlap_len[2]//2:-(overlap_len[2]//2)].shape)
                     # print(one_chuck.shape)
-                    new_vol[i[0]+overlap_len[0]//2:i[1]-overlap_len[0]//2,j[0]+overlap_len[1]//2:j[1]-overlap_len[1]//2, 
+                    new_vol[i[0]+overlap_len[0]//2:i[1]-overlap_len[0]//2,j[0]+overlap_len[1]//2:j[1]-overlap_len[1]//2,
                     k[0]+overlap_len[2]//2:k[1]-overlap_len[2]//2] = one_chuck[overlap_len[0]//2:-(overlap_len[0]//2),overlap_len[1]//2:-(overlap_len[1]//2),overlap_len[2]//2:-(overlap_len[2]//2)]
-                    
-         
+
+
         # return np.multiply(new_vol,1/factor_vol)
         return new_vol[overlap_len[0]//2:-(overlap_len[0]//2),
                     overlap_len[1]//2:-(overlap_len[1]//2),
@@ -214,20 +216,20 @@ def deconv_one(tomo, out_tomo,defocus=1.0, pixel_size=1.0,snrfalloff=1.0, deconv
     :param ngpu: (4) number of avaliable gpu cards
     :param gpu_memory: (10) memory of each gpu
     :param pixel_size: (10) pixel size in anstroms
-    :param: snrfalloff: (1.0) The larger this values, more high frequency informetion are filtered out. 
-    :param deconvstrength: (1.0) 
+    :param: snrfalloff: (1.0) The larger this values, more high frequency informetion are filtered out.
+    :param deconvstrength: (1.0)
     """
     import mrcfile
     from multiprocessing import Pool
     from functools import partial
     from IsoNet.util.deconvolution import tom_deconv_tomo,Chunks
     import shutil
-    import time 
+    import time
     t1 = time.time()
     if os.path.isdir('./deconv_temp'):
         shutil.rmtree('./deconv_temp')
     os.mkdir('./deconv_temp')
-    
+
 
     root_name = os.path.splitext(os.path.basename(tomo))[0]
     logging.info('deconv: {}| pixel: {}| defocus: {}| snrfalloff:{}| deconvstrength:{}'.format(tomo, pixel_size, defocus ,snrfalloff, deconvstrength))
@@ -237,19 +239,23 @@ def deconv_one(tomo, out_tomo,defocus=1.0, pixel_size=1.0,snrfalloff=1.0, deconv
     # print(chunks_list)
     chunks_deconv_list = []
     with Pool(ncpu) as p:
-        partial_func = partial(tom_deconv_tomo,angpix=pixel_size, defocus=defocus, snrfalloff=snrfalloff, 
+        partial_func = partial(tom_deconv_tomo,angpix=pixel_size, defocus=defocus, snrfalloff=snrfalloff,
                 deconvstrength=deconvstrength, highpassnyquist=highpassnyquist, phaseflipped=False, phaseshift=0 )
         # results = p.map(partial_func,chunks_gpu_num_list,chunksize=1)
         chunks_deconv_list = list(p.map(partial_func,chunks_list))
     # pool_process(partial_func,chunks_list_single_pool,ncpu)
         # chunks_deconv_list += results
     vol_restored = c.restore(chunks_deconv_list)
+    with mrcfile.open(tomo) as mrc:
+        voxelsize = mrc.voxel_size
+
     with mrcfile.new(out_tomo, overwrite=True) as mrc:
         mrc.set_data(vol_restored)
+        mrc.voxel_size = voxelsize
     shutil.rmtree('./deconv_temp')
     t2 = time.time()
     logging.info('time consumed: {:10.4f} s'.format(t2-t1))
-    
+
 
 
 
@@ -261,16 +267,17 @@ def deconv_gpu(tomo, defocus: float=1.0, pixel_size: float=1.0,snrfalloff: float
     :param tomo: tomogram file
     :param defocus: (1) defocus in um
     :param pixel_size: (10) pixel size in anstroms
-    :param: snrfalloff: (1.0) The larger this values, more high frequency informetion are filtered out. 
-    :param deconvstrength: (1.0) 
+    :param: snrfalloff: (1.0) The larger this values, more high frequency informetion are filtered out.
+    :param deconvstrength: (1.0)
     """
     import mrcfile
     from multiprocessing import Pool
     from functools import partial
     from IsoNet.util.deconv_gpu import Chunks,tom_deconv_tomo
     import sys
-    # from IsoNet.util.deconvolution import 
+    # from IsoNet.util.deconvolution import
     with mrcfile.open(tomo) as mrc:
+        voxelsize = mrc.voxel_size
         vol = mrc.data
 
     outname = os.path.splitext(os.path.basename(tomo))[0] +'-deconv.rec'
@@ -281,7 +288,7 @@ def deconv_gpu(tomo, defocus: float=1.0, pixel_size: float=1.0,snrfalloff: float
     chunks_gpu_num_list = [[array,j%num_gpu] for j,array in enumerate(chunks_list)]
     print('chunks_list',chunks_list.__sizeof__())
     with Pool(ncpu) as p:
-        partial_func = partial(tom_deconv_tomo,angpix=pixel_size, defocus=defocus, snrfalloff=snrfalloff, 
+        partial_func = partial(tom_deconv_tomo,angpix=pixel_size, defocus=defocus, snrfalloff=snrfalloff,
             deconvstrength=deconvstrength, highpassnyquist=0.1, phaseflipped=False, phaseshift=0 )
         # chunks_deconv_list = list(p.map(partial_func,chunks_gpu_num_list,chunksize=1))
         # results = p.map(partial_func,chunks_list)
@@ -309,5 +316,5 @@ if __name__=='__main__':
     parser.add_argument("--ncpu",type=int,default=8)
     args = parser.parse_args()
     start = time.time()
-    
+
     deconv_one(args.mrcFile, args.outFile,defocus=args.defocus/10000.0, pixel_size=args.pixsize,snrfalloff=args.snrfalloff, deconvstrength=args.deconvstrength,tile=args.tile,ncpu=args.ncpu)
