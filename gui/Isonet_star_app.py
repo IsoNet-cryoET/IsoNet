@@ -391,7 +391,7 @@ class MainWindowUIClass( Ui_MainWindow ):
         if self.lineEdit_highpassnyquist.text():
             cmd = "{} --highpassnyquist {}".format(cmd, self.lineEdit_highpassnyquist.text())
         if self.lineEdit_tile.text():
-            cmd = "{} --tile {}".format(cmd, self.lineEdit_tile.text())
+            cmd = "{} --chunk_size {}".format(cmd, self.lineEdit_tile.text())
         if self.lineEdit_overlap.text():
             cmd = "{} --overlap {}".format(cmd, self.lineEdit_overlap.text())
 

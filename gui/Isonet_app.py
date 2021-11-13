@@ -195,7 +195,7 @@ class MainWindowUIClass( Ui_MainWindow ):
                 if not self.model.isValidPath(tomo_dir_deconv):
                     os.mkdir(tomo_dir_deconv)
                 for file in fileList:
-                    basename = os.path.basename(file)
+                    basename = os.path.basename(file) 
                     
                     line = "python deconvolve.py {} {} {} {} ".format( tomo_dir+"/"+file, tomo_dir_deconv+"/"+basename, angpix, defocus)
                     #cmd = "echo {} >> log.txt".format( line )

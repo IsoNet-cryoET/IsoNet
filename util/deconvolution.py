@@ -2,6 +2,9 @@ import numpy as np
 import mrcfile
 import os
 import logging
+import gc
+import scipy.fft
+
 def tom_ctf1d(pixelsize, voltage, cs, defocus, amplitude, phaseshift, bfactor, length=2048):
 
     ny = 1 / pixelsize
@@ -41,7 +44,7 @@ def wiener1d(angpix, defocus, snrfalloff, deconvstrength, highpassnyquist, phase
     wiener = ctf/(ctf*ctf+1/snr)
     return ctf, wiener
 
-def tom_deconv_tomo(vol_file, angpix, defocus, snrfalloff, deconvstrength, highpassnyquist, phaseflipped, phaseshift):
+def tom_deconv_tomo(vol_file, out_file,angpix, defocus, snrfalloff, deconvstrength, highpassnyquist, phaseflipped, phaseshift, ncpu=8):
     with mrcfile.open(vol_file) as f:
         vol = f.data
         voxelsize = f.voxel_size
@@ -79,25 +82,40 @@ def tom_deconv_tomo(vol_file, angpix, defocus, snrfalloff, deconvstrength, highp
 #s3 = -floor(size(vol,3)/2);
 #f3 = s3 + size(vol,3) - 1;
     x, y, z = np.meshgrid(m1,m2,m3)
-    # print(np.shape(x))
     x = x.astype(np.float32) / np.abs(s1)
     y = y.astype(np.float32) / np.abs(s2)
     z = z.astype(np.float32) / np.maximum(1, np.abs(s3))
     #z = z.astype(float) / np.abs(s3);
     r = np.sqrt(x**2+y**2+z**2)
     del x,y,z
+    gc.collect()
     r = np.minimum(1, r)
     r = np.fft.ifftshift(r)
 
     #x = 0:1/2047:1;
-    # print(data.shape, wiener.shape, r.shape)
     ramp = np.interp(r, data,wiener).astype(np.float32)
     del r
+    gc.collect()
+        
     #ramp = np.interp(data,wiener,r);
-    deconv = np.real(np.fft.ifftn(np.fft.fftn(vol) * ramp))
-    deconv = deconv/np.std(deconv) * np.std(vol) + np.average(vol)
-    with mrcfile.new(os.path.splitext(vol_file)[0]+'_deconv.mrc',overwrite=True) as n:
-        n.set_data(deconv.astype(np.float32)) #.astype(type(vol[0,0,0]))
+    deconv = np.real(scipy.fft.ifftn(scipy.fft.fftn(vol, overwrite_x=True, workers=ncpu) * ramp, overwrite_x=True, workers=ncpu))
+    deconv = deconv.astype(np.float32)
+    std_deconv = np.std(deconv)
+    std_vol = np.std(vol)
+    ave_vol = np.average(vol)
+    del vol,ramp
+    gc.collect()
+    # deconv = deconv/std_deconv* std_vol + ave_vol
+    deconv /= std_deconv
+    deconv *= std_vol
+    deconv += ave_vol
+    gc.collect()
+    if out_file is not None:
+        out_name = out_file
+    else:
+        out_name = os.path.splitext(vol_file)[0]+'_deconv.mrc'
+    with mrcfile.new(out_name,overwrite=True) as n:
+        n.set_data(deconv) #.astype(type(vol[0,0,0]))
         n.voxel_size = voxelsize
     #return real(ifftn(fftn(single(vol)).*ramp));
     return os.path.splitext(vol_file)[0]+'_deconv.mrc'
@@ -134,38 +152,6 @@ class Chunks:
                     chunks_file_list.append(file_name)
         return chunks_file_list
 
-        cube_size = np.round(np.array(vol.shape)/((1-self.overlap)*np.array(self.num))).astype(np.int16)
-        overlap_len = np.round(cube_size*self.overlap).astype(np.int16)
-        overlap_len = overlap_len + overlap_len %2
-        eff_len = cube_size-overlap_len
-        padded_vol = np.pad(vol,pad_width=[(ol//2,ol//2) for ol in overlap_len],mode='symmetric')
-        sp = padded_vol.shape
-        chunks_file_list = []
-        slice1 = [(i*eff_len[0],i*eff_len[0]+cube_size[0]) for i in range(self.num[0]-1)]
-        slice1.append(((self.num[0]-1)*eff_len[0],sp[0]))
-        slice2 = [(i*eff_len[1],i*eff_len[1]+cube_size[1]) for i in range(self.num[1]-1)]
-        slice2.append(((self.num[1]-1)*eff_len[1],sp[1]))
-        slice3 = [(i*eff_len[2],i*eff_len[2]+cube_size[2]) for i in range(self.num[2]-1)]
-        slice3.append(((self.num[2]-1)*eff_len[2],sp[2]))
-        # print(slice1)
-        # print(slice2)
-        # print(slice3)
-        for n1,i in enumerate(slice1):
-            for n2,j in enumerate(slice2):
-                for n3,k in enumerate(slice3):
-                    one_chunk = padded_vol[i[0]:i[1],j[0]:j[1],k[0]:k[1]]
-                    file_name = './deconv_temp/'+root_name+'_{}_{}_{}.mrc'.format(n1,n2,n3)
-                    with mrcfile.new(file_name,overwrite=True) as n:
-                        n.set_data(one_chunk)
-                    chunks_file_list.append(file_name)
-        self.shape = vol.shape
-        self.padded_shape = sp
-        self.slice1 = slice1
-        self.slice2 = slice2
-        self.slice3 = slice3
-        self.overlap_len = overlap_len
-        self.datatype = type(vol[0,0,0])
-        return chunks_file_list
 
     def restore(self,new_file_list):
         cropsize = int(self.chunk_size*(1+self.overlap))
@@ -173,7 +159,6 @@ class Chunks:
         new = np.zeros((self._N[0]*cubesize,self._N[1]*cubesize,self._N[2]*cubesize),dtype = np.float32)
         start=int((cropsize-cubesize)/2)
         end=int((cropsize+cubesize)/2)
-
         for i in range(self._N[0]):
             for j in range(self._N[1]):
                 for k in range(self._N[2]):
@@ -182,43 +167,11 @@ class Chunks:
                         one_chunk_data = f.data
                     new[i*cubesize:(i+1)*cubesize,j*cubesize:(j+1)*cubesize,k*cubesize:(k+1)*cubesize] \
                             = one_chunk_data[start:end,start:end,start:end]
+                    
         return new[0:self._sp[0],0:self._sp[1],0:self._sp[2]]
 
 
-        overlap_len = self.overlap_len
-        new_vol = np.zeros(self.padded_shape,dtype = np.float32)
-        for n1,i in enumerate(self.slice1):
-            for n2,j in enumerate(self.slice2):
-                for n3,k in enumerate(self.slice3):
-                    # print(n1,n2,n3)
-                    one_chunk_file = new_file_list[n1*len(self.slice2)*len(self.slice3)+n2*len(self.slice3)+n3]
-                    with mrcfile.open(one_chunk_file) as f:
-                        one_chuck = f.data
-                    # print(one_chuck[overlap_len[0]//2:-(overlap_len[0]//2),overlap_len[1]//2:-(overlap_len[1]//2),overlap_len[2]//2:-(overlap_len[2]//2)].shape)
-                    # print(one_chuck.shape)
-                    new_vol[i[0]+overlap_len[0]//2:i[1]-overlap_len[0]//2,j[0]+overlap_len[1]//2:j[1]-overlap_len[1]//2,
-                    k[0]+overlap_len[2]//2:k[1]-overlap_len[2]//2] = one_chuck[overlap_len[0]//2:-(overlap_len[0]//2),overlap_len[1]//2:-(overlap_len[1]//2),overlap_len[2]//2:-(overlap_len[2]//2)]
-
-
-        # return np.multiply(new_vol,1/factor_vol)
-        return new_vol[overlap_len[0]//2:-(overlap_len[0]//2),
-                    overlap_len[1]//2:-(overlap_len[1]//2),
-                    overlap_len[2]//2:-(overlap_len[2]//2)]
-
-def deconv_one(tomo, out_tomo,defocus=1.0, pixel_size=1.0,snrfalloff=1.0, deconvstrength=1.0,highpassnyquist=0.02,tile=(1,4,4),overlap_rate = 0.25,ncpu=4):
-    """
-    \nGenerate recommanded parameters for "isonet.py refine" for users\n
-    if is phase plate, keep defocus 0.0 if defocus different change manually in the output tomogram.star
-    Only print command, not run it.
-    :param input_dir: (None) directory containing tomogram(s) from which subtomos are extracted; format: .mrc or .rec
-    :param mask_dir: (None) folder containing mask files, Eash mask file corresponds to one tomogram file, usually basename-mask.mrc
-    :param ncpu: (10) number of avaliable cpu cores
-    :param ngpu: (4) number of avaliable gpu cards
-    :param gpu_memory: (10) memory of each gpu
-    :param pixel_size: (10) pixel size in anstroms
-    :param: snrfalloff: (1.0) The larger this values, more high frequency informetion are filtered out.
-    :param deconvstrength: (1.0)
-    """
+def deconv_one(tomo, out_tomo,defocus=1.0, pixel_size=1.0,snrfalloff=1.0, deconvstrength=1.0,highpassnyquist=0.02,chunk_size=200,overlap_rate = 0.25,ncpu=4):
     import mrcfile
     from multiprocessing import Pool
     from functools import partial
@@ -233,69 +186,27 @@ def deconv_one(tomo, out_tomo,defocus=1.0, pixel_size=1.0,snrfalloff=1.0, deconv
 
     root_name = os.path.splitext(os.path.basename(tomo))[0]
     logging.info('deconv: {}| pixel: {}| defocus: {}| snrfalloff:{}| deconvstrength:{}'.format(tomo, pixel_size, defocus ,snrfalloff, deconvstrength))
-    c = Chunks(overlap=overlap_rate)
-    chunks_list = c.get_chunks(tomo) # list of name of subtomograms
-    # chunks_gpu_num_list = [[array,j%num_gpu] for j,array in enumerate(chunks_list)]
-    # print(chunks_list)
-    chunks_deconv_list = []
-    with Pool(ncpu) as p:
-        partial_func = partial(tom_deconv_tomo,angpix=pixel_size, defocus=defocus, snrfalloff=snrfalloff,
-                deconvstrength=deconvstrength, highpassnyquist=highpassnyquist, phaseflipped=False, phaseshift=0 )
-        # results = p.map(partial_func,chunks_gpu_num_list,chunksize=1)
-        chunks_deconv_list = list(p.map(partial_func,chunks_list))
-    # pool_process(partial_func,chunks_list_single_pool,ncpu)
-        # chunks_deconv_list += results
-    vol_restored = c.restore(chunks_deconv_list)
-    with mrcfile.open(tomo) as mrc:
-        voxelsize = mrc.voxel_size
+    if chunk_size is None:
+        tom_deconv_tomo(tomo,out_tomo,pixel_size,defocus,snrfalloff,deconvstrength,highpassnyquist,phaseflipped=False, phaseshift=0,ncpu=ncpu)
+    else:    
+        c = Chunks(chunk_size=chunk_size,overlap=overlap_rate)
+        chunks_list = c.get_chunks(tomo) # list of name of subtomograms
+        # chunks_gpu_num_list = [[array,j%num_gpu] for j,array in enumerate(chunks_list)]
+        chunks_deconv_list = []
+        with Pool(ncpu) as p:
+            partial_func = partial(tom_deconv_tomo,out_file=None,angpix=pixel_size, defocus=defocus, snrfalloff=snrfalloff,
+                    deconvstrength=deconvstrength, highpassnyquist=highpassnyquist, phaseflipped=False, phaseshift=0,ncpu=1) 
+            chunks_deconv_list = list(p.map(partial_func,chunks_list))
+        vol_restored = c.restore(chunks_deconv_list)
+        
 
-    with mrcfile.new(out_tomo, overwrite=True) as mrc:
-        mrc.set_data(vol_restored)
-        mrc.voxel_size = voxelsize
-    shutil.rmtree('./deconv_temp')
+        with mrcfile.new(out_tomo, overwrite=True) as mrc:
+            mrc.set_data(vol_restored)
+            mrc.voxel_size = pixel_size
+        shutil.rmtree('./deconv_temp')
     t2 = time.time()
     logging.info('time consumed: {:10.4f} s'.format(t2-t1))
 
-
-
-
-
-#TODO: make deconv_one compatible with deconv_gpu
-def deconv_gpu(tomo, defocus: float=1.0, pixel_size: float=1.0,snrfalloff: float=1.0, deconvstrength: float=1.0,tile: tuple=(1,4,4),num_gpu:int=0,ncpu:int=4):
-    """
-    \nCTF deconvolutin with weiner filter\n
-    :param tomo: tomogram file
-    :param defocus: (1) defocus in um
-    :param pixel_size: (10) pixel size in anstroms
-    :param: snrfalloff: (1.0) The larger this values, more high frequency informetion are filtered out.
-    :param deconvstrength: (1.0)
-    """
-    import mrcfile
-    from multiprocessing import Pool
-    from functools import partial
-    from IsoNet.util.deconv_gpu import Chunks,tom_deconv_tomo
-    import sys
-    # from IsoNet.util.deconvolution import
-    with mrcfile.open(tomo) as mrc:
-        voxelsize = mrc.voxel_size
-        vol = mrc.data
-
-    outname = os.path.splitext(os.path.basename(tomo))[0] +'-deconv.rec'
-    print('outName: ',outname)
-    print('angpix:',pixel_size, 'defocus',defocus, 'snrfalloff',snrfalloff)
-    c = Chunks(num=tile,overlap=0.25)
-    chunks_list = c.get_chunks(vol)
-    chunks_gpu_num_list = [[array,j%num_gpu] for j,array in enumerate(chunks_list)]
-    print('chunks_list',chunks_list.__sizeof__())
-    with Pool(ncpu) as p:
-        partial_func = partial(tom_deconv_tomo,angpix=pixel_size, defocus=defocus, snrfalloff=snrfalloff,
-            deconvstrength=deconvstrength, highpassnyquist=0.1, phaseflipped=False, phaseshift=0 )
-        # chunks_deconv_list = list(p.map(partial_func,chunks_gpu_num_list,chunksize=1))
-        # results = p.map(partial_func,chunks_list)
-        p.map(partial_func,chunks_gpu_num_list,chunksize=1)
-    # vol_restored = c.restore(chunks_deconv_list)
-    # with mrcfile.new(outname, overwrite=True) as mrc:
-    #     mrc.set_data(vol_restored)
 
 
 if __name__=='__main__':
@@ -317,4 +228,6 @@ if __name__=='__main__':
     args = parser.parse_args()
     start = time.time()
 
-    deconv_one(args.mrcFile, args.outFile,defocus=args.defocus/10000.0, pixel_size=args.pixsize,snrfalloff=args.snrfalloff, deconvstrength=args.deconvstrength,tile=args.tile,ncpu=args.ncpu)
+    # deconv_one(args.mrcFile, args.outFile,defocus=args.defocus/10000.0, pixel_size=args.pixsize,snrfalloff=args.snrfalloff, deconvstrength=args.deconvstrength,tile=args.tile,ncpu=args.ncpu)
+    tom_deconv_tomo(args.mrcFile,defocus=args.defocus/10000.0, angpix=args.pixsize,snrfalloff=args.snrfalloff, deconvstrength=args.deconvstrength,
+                    highpassnyquist=0.1, phaseflipped=False, phaseshift=0)
