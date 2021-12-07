@@ -37,7 +37,7 @@ class ISONET:
 
         """
         md = MetaData()
-        md.addLabels('rlnIndex','rlnMicrographName','rlnPixelSize','rlnDefocus','rlnNumberSubtomo')
+        md.addLabels('rlnIndex','rlnMicrographName','rlnPixelSize','rlnDefocus','rlnNumberSubtomo','rlnMaskBoundary')
         tomo_list = sorted(os.listdir(folder_name))
         i = 0
         for tomo in tomo_list:
@@ -50,6 +50,7 @@ class ISONET:
                 md._setItemValue(it,Label('rlnPixelSize'),pixel_size)
                 md._setItemValue(it,Label('rlnDefocus'),defocus)
                 md._setItemValue(it,Label('rlnNumberSubtomo'),number_subtomos)
+                md._setItemValue(it,Label('rlnMaskBoundary'),None)
         md.write(output_star)
 
     def prepare_subtomo_star(self, folder_name, output_star='subtomo.star', pixel_size: float=10.0, cube_size = None):
@@ -169,6 +170,7 @@ class ISONET:
     def make_mask(self,star_file,
                 mask_folder: str = 'mask',
                 patch_size: int=4,
+                mask_boundary: str=None,
                 density_percentage: int=None,
                 std_percentage: int=None,
                 use_deconv_tomo:bool=True,
@@ -183,7 +185,7 @@ class ISONET:
         :param density_percentage: (50) The approximate percentage of pixels to keep based on their local pixel density.
         If this value is not set, the program will look for the parameter in the star file.
         If this value is not set and not found in star file, the default value 50 will be used.
-        :param std_percentage: (50) The approximate percentage of pixels to keel based on their local standard deviation.
+        :param std_percentage: (50) The approximate percentage of pixels to keep based on their local standard deviation.
         If this value is not set, the program will look for the parameter in the star file.
         If this value is not set and not found in star file, the default value 50 will be used.
         :param use_deconv_tomo: (True) If CTF deconvolved tomogram is found in tomogram.star, use that tomogram instead.
@@ -221,13 +223,20 @@ class ISONET:
                     tomo_root_name = os.path.splitext(os.path.basename(tomo_file))[0]
 
                     if os.path.isfile(tomo_file):
-                        logging.info('make_mask: {}| dir_to_save: {}| percentage: {}| window_scale: {}'.format(tomo_file,mask_folder,it.rlnMaskDensityPercentage,patch_size))
+                        logging.info('make_mask: {}| dir_to_save: {}| percentage: {}| window_scale: {}'.format(tomo_file,
+                        mask_folder, it.rlnMaskDensityPercentage, patch_size))
+                        
+                        if mask_boundary is None:
+                            if "rlnMaskBoundary" in md.getLabels() and it.rlnMaskBoundary not in [None, "None"]:
+                                mask_boundary = it.rlnMaskBoundary 
+
                         mask_out_name = '{}/{}_mask.mrc'.format(mask_folder,tomo_root_name)
                         make_mask(tomo_file,
                                 mask_out_name,
+                                mask_boundary=mask_boundary,
                                 side=patch_size,
-                                percentile=it.rlnMaskDensityPercentage,
-                                threshold=it.rlnMaskStdPercentage,
+                                density_percentage=it.rlnMaskDensityPercentage,
+                                std_percentage=it.rlnMaskStdPercentage,
                                 surface = z_crop)
 
                     md._setItemValue(it,Label('rlnMaskName'),mask_out_name)
