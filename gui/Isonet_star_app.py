@@ -43,7 +43,8 @@ class MainWindowUIClass( Ui_MainWindow ):
         setTableWidget(self.tableWidget, self.model.md)
         
         #set up functions when cells be clicked
-        self.tableWidget.cellPressed[int, int].connect(self.browseSlotTable)
+        #self.tableWidget.cellPressed[int, int].connect(self.browseSlotTable)
+        self.tableWidget.cellDoubleClicked[int, int].connect(self.browseSlotTable)
         self.tableWidget.cellChanged[int,int].connect(self.updateMDItem) 
 
         ########################
