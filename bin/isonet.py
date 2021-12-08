@@ -108,7 +108,7 @@ class ISONET:
         tomo_idx: str=None):
         """
         \nCTF deconvolution for the tomograms.\n
-        isonet.py deconv star_file [--deconv_folder] [--snrfalloff] [--deconvstrength] [--highpassnyquist][--overlap_rate] [--ncpu] [--tomo_idx]
+        isonet.py deconv star_file [--deconv_folder] [--snrfalloff] [--deconvstrength] [--highpassnyquist] [--overlap_rate] [--ncpu] [--tomo_idx]
         This step is recommanded because it enhances low resolution information for a better contrast. No need to do deconvolution for phase plate data.
         :param deconv_folder: (./deconv) Folder created to save deconvoluted tomograms.
         :param star_file: (None) Star file for tomograms.

@@ -46,6 +46,9 @@ class MainWindowUIClass( Ui_MainWindow ):
         #self.tableWidget.cellPressed[int, int].connect(self.browseSlotTable)
         self.tableWidget.cellDoubleClicked[int, int].connect(self.browseSlotTable)
         self.tableWidget.cellChanged[int,int].connect(self.updateMDItem) 
+        #self.tableWidget.horizontalHeaderItem(1).setToolTip("Header 0");
+        #for i,lab in enumerate(self.model.header):
+        #    self.tableWidget.horizontalHeaderItem(i-1).setToolTip(self.get_toolTip(lab))
 
         ########################
         # connect function to buttons
@@ -256,6 +259,21 @@ class MainWindowUIClass( Ui_MainWindow ):
             "rlnMaskBoundary": "mod file (*.mod) ;; All Files (*)" 
         }
         return switcher.get(item, "Invaid file types")
+    def get_toolTip(self,label):
+        switcher = {
+            "rlnMicrographName": "Your tomogram filenames",
+            "rlnPixelSize": "pixel size of your input tomograms",
+            "rlnDefocus": "estimated defocus value around 0 degree",
+            "rlnNumberSubtomo":"number of subtomograms to be extraced",
+            "rlnSnrFalloff":"SNR fall rate with the frequency",
+            "rlnDeconvStrength": "(1.0) Strength of the deconvolution",
+            "rlnDeconvTomoName":"automaticly saved deconved tomogram filename",
+            "rlnMaskBoundary":"model file that define your mask boundary(optional)",
+            "rlnMaskDensityPercentage": "The approximate percentage of pixels to keep based on their local pixel density",
+            "rlnMaskStdPercentage": "The approximate percentage of pixels to keep based on their local standard deviation",
+            "rlnMaskName": "automaticly saved mask tomogram filename"
+        }
+        return switcher.get(label, "None")
 
     def updateMD ( self ):
         star_file = self.model.tomogram_star
@@ -400,8 +418,8 @@ class MainWindowUIClass( Ui_MainWindow ):
             cmd = "{} --ncpu {}".format(cmd, self.lineEdit_ncpu.text())
         if self.lineEdit_highpassnyquist.text():
             cmd = "{} --highpassnyquist {}".format(cmd, self.lineEdit_highpassnyquist.text())
-        if self.lineEdit_tile.text():
-            cmd = "{} --chunk_size {}".format(cmd, self.lineEdit_tile.text())
+        if self.lineEdit_chunk_size.text():
+            cmd = "{} --chunk_size {}".format(cmd, self.lineEdit_chunk_size.text())
         if self.lineEdit_overlap.text():
             cmd = "{} --overlap {}".format(cmd, self.lineEdit_overlap.text())
 
@@ -555,13 +573,24 @@ class MainWindowUIClass( Ui_MainWindow ):
         slected_items = self.tableWidget.selectedItems()
         if len(slected_items) > 0:
             cmd = "3dmod"
+            model_file=""
+            previous_i = -1
             for item in slected_items:
                 i = item.row()
                 j = item.column()
+                if previous_i != -1 and i != previous_i:
+                    cmd = "{} {} {}".format(cmd,model_file,"3dmod")
+                    model_file=""
                 item_text = self.tableWidget.item(i, j).text()
                 if item_text[-4:] == '.mrc' or item_text[-4:] == '.rec':
                     cmd = "{} {}".format(cmd,item_text)
-            #print(cmd)
+                if self.model.header[j+1]=="rlnMaskBoundary" and item_text != "None":
+                    model_file = "{}{}".format(item_text,";")
+                previous_i = i
+            
+            cmd = "{} {}".format(cmd,model_file)
+            print(cmd)
+
             if cmd != "3dmod":
                 os.system(cmd)
             else:

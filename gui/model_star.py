@@ -19,20 +19,55 @@ def setTableWidget(tw, md):
         tw.setColumnCount(nColumns- 1 ) 
         tw.setRowCount(nRows)
 
-        label_2 = [label[3:] for label in labels]
+        label_2 = [label for label in labels]
         for i,lab in enumerate(label_2):
-            if lab == 'Defocus' or lab == 'PixelSize':
-                label_2[i] =  lab+" (A)"
+            #tw.horizontalHeaderItem(i).setToolTip(get_toolTip(lab))
+            label_2[i] = get_display_name(lab)
+            #if lab == 'Defocus' or lab == 'PixelSize':
+            #    label_2[i] =  lab+" (A)"
 
         tw.setHorizontalHeaderLabels(label_2[1:])
         tw.verticalHeader().setSectionResizeMode(QHeaderView.Fixed)
         tw.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-
+        for i,lab in enumerate(labels):
+            if i > 0:
+                tw.horizontalHeaderItem(i-1).setToolTip(get_toolTip(lab))
         # data insertion
         for i, it in enumerate(md):
             for j in range(tw.columnCount()):
                 tw.setItem(i, j, QTableWidgetItem(str(getattr(it,labels[j+1]))))
 
+def get_toolTip(label):
+    switcher = {
+        "rlnMicrographName": "Your tomogram filenames",
+        "rlnPixelSize": "pixel size of your input tomograms",
+        "rlnDefocus": "estimated defocus value around 0 degree",
+        "rlnNumberSubtomo":"number of subtomograms to be extraced",
+        "rlnSnrFalloff":"SNR fall rate with the frequency",
+        "rlnDeconvStrength": "(1.0) Strength of the deconvolution",
+        "rlnDeconvTomoName":"automaticly saved deconved tomogram filename",
+        "rlnMaskBoundary":"model file that define your mask boundary(optional)",
+        "rlnMaskDensityPercentage": "The approximate percentage of pixels to keep based on their local pixel density",
+        "rlnMaskStdPercentage": "The approximate percentage of pixels to keep based on their local standard deviation",
+        "rlnMaskName": "automaticly saved mask tomogram filename"
+    }
+    return switcher.get(label, "None")
+
+def get_display_name(label):
+    switcher = {
+        "rlnMicrographName": "MicrographName",
+        "rlnPixelSize": "PixelSize (A)",
+        "rlnDefocus": "Defocus (A)",
+        "rlnNumberSubtomo":"NSubtomo",
+        "rlnSnrFalloff":"SFO",
+        "rlnDeconvStrength": "DS",
+        "rlnDeconvTomoName":"DeconvedTomo",
+        "rlnMaskBoundary":"MaskBoundary",
+        "rlnMaskDensityPercentage": "MDP",
+        "rlnMaskStdPercentage": "MSP",
+        "rlnMaskName": "Mask"
+    }
+    return switcher.get(label, "Unkown header")
 
 class Model:
     def __init__(self):
