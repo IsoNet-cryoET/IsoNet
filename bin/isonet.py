@@ -18,7 +18,7 @@ class ISONET:
     isonet.py extract -h
     isonet.py refine -h
     isonet.py predict -h
-
+    isonet.py gui -h
     """
     #log_file = "log.txt"
 
@@ -420,6 +420,9 @@ class ISONET:
         print('IsoNet --version 0.1 installed')
 
     def gui(self):
+        """
+        \nGraphic User Interface\n
+        """
         import IsoNet.gui.Isonet_star_app as app
         app.main()
 
