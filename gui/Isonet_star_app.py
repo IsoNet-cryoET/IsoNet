@@ -227,6 +227,7 @@ class MainWindowUIClass( Ui_MainWindow ):
             "rlnSnrFalloff":"1",
             "rlnDeconvStrength": "1",
             "rlnDeconvTomoName":"None",
+            "rlnMaskBoundary":"None",
             "rlnMaskDensityPercentage": "50",
             "rlnMaskStdPercentage": "50",
             "rlnMaskName": "None"
@@ -247,6 +248,13 @@ class MainWindowUIClass( Ui_MainWindow ):
             "continue_from": self.lineEdit_continue_iter
         }
         return switcher.get(btn, "Invaid btn name")
+    
+    def file_types(self, item):
+        switcher = {
+            "rlnMicrographName":"mrc or rec file (*.mrc *.rec) ;; All Files (*)",
+            "rlnMaskBoundary": "mod file (*.mod) ;; All Files (*)" 
+        }
+        return switcher.get(item, "Invaid file types")
 
     def updateMD ( self ):
         star_file = self.model.tomogram_star
@@ -353,8 +361,9 @@ class MainWindowUIClass( Ui_MainWindow ):
     def browseSlotTable( self , i, j):
         ''' Called when the user presses the Browse folder button
         '''
-        if j == 0:
+        if j == 0 or self.model.header[j+1]=="rlnMaskBoundary":
             #lineEdit = self.switch_btn(btn)
+
             try:
                 options = QtWidgets.QFileDialog.Options()
                 options |= QtWidgets.QFileDialog.DontUseNativeDialog
@@ -362,7 +371,7 @@ class MainWindowUIClass( Ui_MainWindow ):
                                 None,
                                 "Choose File",
                                 "",
-                                "mrc or rec file (*.mrc *.rec) ;; All Files (*)",
+                                self.file_types(self.model.header[j+1]),
                                 options=options)
                 if not fileName:
                     fileName = self.tableWidget.item(i, j).text()
