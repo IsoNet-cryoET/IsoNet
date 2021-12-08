@@ -58,14 +58,14 @@ def get_display_name(label):
         "rlnMicrographName": "MicrographName",
         "rlnPixelSize": "PixelSize (A)",
         "rlnDefocus": "Defocus (A)",
-        "rlnNumberSubtomo":"NSubtomo",
-        "rlnSnrFalloff":"SFO",
-        "rlnDeconvStrength": "DS",
-        "rlnDeconvTomoName":"DeconvedTomo",
+        "rlnNumberSubtomo":"NunberSubtomo",
+        "rlnSnrFalloff":"SnrFalloff",
+        "rlnDeconvStrength": "DeconvStrength",
+        "rlnDeconvTomoName":"DeconvTomoName",
         "rlnMaskBoundary":"MaskBoundary",
-        "rlnMaskDensityPercentage": "MDP",
-        "rlnMaskStdPercentage": "MSP",
-        "rlnMaskName": "Mask"
+        "rlnMaskDensityPercentage": "MaskDensityPercentage",
+        "rlnMaskStdPercentage": "MaskStdPercentage",
+        "rlnMaskName": "MaskName"
     }
     return switcher.get(label, "Unkown header")
 

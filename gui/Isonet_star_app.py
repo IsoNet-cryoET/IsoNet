@@ -256,6 +256,8 @@ class MainWindowUIClass( Ui_MainWindow ):
     def file_types(self, item):
         switcher = {
             "rlnMicrographName":"mrc or rec file (*.mrc *.rec) ;; All Files (*)",
+            "rlnDeconvTomoName":"mrc or rec file (*.mrc *.rec) ;; All Files (*)",
+            "rlnMaskName":"mrc or rec file (*.mrc *.rec) ;; All Files (*)",
             "rlnMaskBoundary": "mod file (*.mod) ;; All Files (*)" 
         }
         return switcher.get(item, "Invaid file types")
@@ -380,9 +382,7 @@ class MainWindowUIClass( Ui_MainWindow ):
     def browseSlotTable( self , i, j):
         ''' Called when the user presses the Browse folder button
         '''
-        if j == 0 or self.model.header[j+1]=="rlnMaskBoundary":
-            #lineEdit = self.switch_btn(btn)
-
+        if self.model.header[j+1] in ["rlnMicrographName", "rlnMaskBoundary","rlnDeconvTomoName","rlnMaskName"]:
             try:
                 options = QtWidgets.QFileDialog.Options()
                 options |= QtWidgets.QFileDialog.DontUseNativeDialog
