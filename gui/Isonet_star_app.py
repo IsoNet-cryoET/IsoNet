@@ -38,7 +38,8 @@ class MainWindowUIClass( Ui_MainWindow ):
         that relates to the way we want our UI to operate.
         '''
         super().setupUi( MW )
-        
+
+
         #load default content in tomograms.star 
         setTableWidget(self.tableWidget, self.model.md)
         
@@ -111,6 +112,13 @@ class MainWindowUIClass( Ui_MainWindow ):
             
         self.textBrowser_log.setText(self.model.getLogContent(self.model.log_file))
         self.textBrowser_log.moveCursor(QtGui.QTextCursor.End)
+
+        #self.horizontalLayout_48.hide()
+        for widgets in self.horizontalLayout_44.children():
+            print(widgets.widget())
+            #for widget in widgets.children():
+                #print(widget)
+            #    widget.hide()
         
         ####################
         #self.log_watcher = QtCore.QFileSystemWatcher([self.model.log_file])
@@ -277,7 +285,7 @@ class MainWindowUIClass( Ui_MainWindow ):
         }
         return switcher.get(label, "None")
 
-    def updateMD ( self ):
+    def updateMD ( self ):        
         star_file = self.model.tomogram_star
         rowCount = self.tableWidget.rowCount()
         columnCount = self.tableWidget.columnCount()
