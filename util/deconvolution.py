@@ -46,6 +46,7 @@ def wiener1d(angpix, defocus, snrfalloff, deconvstrength, highpassnyquist, phase
 
 def tom_deconv_tomo(vol_file, out_file,angpix, defocus, snrfalloff, deconvstrength, highpassnyquist, phaseflipped, phaseshift, ncpu=8):
     with mrcfile.open(vol_file) as f:
+        header_in = f.header
         vol = f.data
         voxelsize = f.voxel_size
     data = np.arange(0,1+1/2047.,1/2047.)
@@ -114,9 +115,14 @@ def tom_deconv_tomo(vol_file, out_file,angpix, defocus, snrfalloff, deconvstreng
         out_name = out_file
     else:
         out_name = os.path.splitext(vol_file)[0]+'_deconv.mrc'
+    
+
+    
     with mrcfile.new(out_name,overwrite=True) as n:
         n.set_data(deconv) #.astype(type(vol[0,0,0]))
         n.voxel_size = voxelsize
+        n.header.origin = header_in.origin
+        n.header.nversion = header_in.nversion
     #return real(ifftn(fftn(single(vol)).*ramp));
     return os.path.splitext(vol_file)[0]+'_deconv.mrc'
 
@@ -199,11 +205,18 @@ def deconv_one(tomo, out_tomo,defocus=1.0, pixel_size=1.0,snrfalloff=1.0, deconv
             chunks_deconv_list = list(p.map(partial_func,chunks_list))
         vol_restored = c.restore(chunks_deconv_list)
         
+        with mrcfile.open(tomo) as n:
+            header_input = n.header
+            pixel_size = n.voxel_size
 
         with mrcfile.new(out_tomo, overwrite=True) as mrc:
             mrc.set_data(vol_restored)
             mrc.voxel_size = pixel_size
-        shutil.rmtree('./deconv_temp')
+            #print(header_input)
+            #print(mrc.header)
+            mrc.header.origin = header_input.origin
+            mrc.header.nversion=header_input.nversion
+    shutil.rmtree('./deconv_temp')
     t2 = time.time()
     logging.info('time consumed: {:10.4f} s'.format(t2-t1))
 

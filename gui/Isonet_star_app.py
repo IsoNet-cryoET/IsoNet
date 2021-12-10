@@ -54,6 +54,11 @@ class MainWindowUIClass( Ui_MainWindow ):
         ########################
         # connect function to buttons
         ########################
+        self.pushButton_insert.setStyleSheet("background-color : lightblue")
+        self.pushButton_delete.setStyleSheet("background-color : lightblue")
+        self.pushButton_open_star.setStyleSheet("background-color : lightblue")
+        self.pushButton_3dmod.setStyleSheet("background-color : lightblue")
+
         self.pushButton_insert.clicked.connect(self.copyRow)
         self.pushButton_delete.clicked.connect(self.removeRow)
         self.pushButton_open_star.clicked.connect(self.open_star)
@@ -114,8 +119,8 @@ class MainWindowUIClass( Ui_MainWindow ):
         self.textBrowser_log.moveCursor(QtGui.QTextCursor.End)
 
         #self.horizontalLayout_48.hide()
-        for widgets in self.horizontalLayout_44.children():
-            print(widgets.widget())
+        #for widgets in self.horizontalLayout_44.children():
+            #print(widgets.widget())
             #for widget in widgets.children():
                 #print(widget)
             #    widget.hide()
@@ -220,13 +225,18 @@ class MainWindowUIClass( Ui_MainWindow ):
                     self.tableWidget.insertRow(self.tableWidget.rowCount())
                     rowCount = self.tableWidget.rowCount()
                     for j in range(columnCount):
+                        if self.model.header[j+1] in ["rlnDeconvTomoName","rlnMaskName","rlnCorrectedTomoName","rlnMaskBoundary"]:
+                            self.tableWidget.setItem(rowCount-1, j, QTableWidgetItem("None"))
                         #self.tableWidget.cellChanged[rowCount-1, j].connect(self.updateMD)  
-                        self.tableWidget.setItem(rowCount-1, j, QTableWidgetItem(self.tableWidget.item(index.row(), j).text()))
+                        else:
+                            self.tableWidget.setItem(rowCount-1, j, QTableWidgetItem(self.tableWidget.item(index.row(), j).text()))
             else:
                 self.tableWidget.insertRow(self.tableWidget.rowCount())
                 rowCount = self.tableWidget.rowCount()
                 for j in range(columnCount):
-                    if not self.tableWidget.item(rowCount-2, j) is None:
+                    if self.model.header[j+1] in ["rlnDeconvTomoName","rlnMaskName","rlnCorrectedTomoName","rlnMaskBoundary"]:
+                            self.tableWidget.setItem(rowCount-1, j, QTableWidgetItem("None"))
+                    elif not self.tableWidget.item(rowCount-2, j) is None:
                         self.tableWidget.setItem(rowCount-1, j, QTableWidgetItem(self.tableWidget.item(rowCount-2, j).text()))
         self.updateMD()
     

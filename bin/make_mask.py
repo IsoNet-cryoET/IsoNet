@@ -26,7 +26,11 @@ def make_mask_dir(tomo_dir,mask_dir,side = 8, density_percentage=30,std_percenta
 def make_mask(tomo_path, mask_name, mask_boundary = None, side = 5, density_percentage=50., std_percentage=50., surface=None):
     from scipy.ndimage.filters import gaussian_filter
     from skimage.transform import resize
+    
     with mrcfile.open(tomo_path) as n:
+        header_input = n.header
+        #print(header_input)
+        pixel_size = n.voxel_size
         tomo = n.data.astype(np.float32)
     sp=np.array(tomo.shape)
     sp2 = sp//2
@@ -72,6 +76,11 @@ def make_mask(tomo_path, mask_name, mask_boundary = None, side = 5, density_perc
     with mrcfile.new(mask_name,overwrite=True) as n:
         n.set_data(out_mask)
 
+        n.header.extra2 = header_input.extra2
+        n.header.origin = header_input.origin
+        n.header.nversion = header_input.nversion
+        n.voxel_size = pixel_size
+        #print(n.header)
     # with mrcfile.new('./test_mask1.rec',overwrite=True) as n:
     #     n.set_data(mask1.astype(np.float32))    
     # with mrcfile.new('./test_mask2.rec',overwrite=True) as n:
