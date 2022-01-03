@@ -6,7 +6,7 @@
     Python Version: 3.6.5
 '''
 import sys,os
-
+import logging
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QTableWidgetItem,QMessageBox
 from PyQt5.QtCore import QObject, pyqtSlot, QProcess
@@ -50,7 +50,8 @@ class MainWindowUIClass( Ui_MainWindow ):
         #self.tableWidget.horizontalHeaderItem(1).setToolTip("Header 0");
         #for i,lab in enumerate(self.model.header):
         #    self.tableWidget.horizontalHeaderItem(i-1).setToolTip(self.get_toolTip(lab))
-
+        logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',
+        datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[logging.StreamHandler(sys.stdout)])
         ########################
         # connect function to buttons
         ########################
@@ -58,7 +59,23 @@ class MainWindowUIClass( Ui_MainWindow ):
         self.pushButton_delete.setStyleSheet("background-color : lightblue")
         self.pushButton_open_star.setStyleSheet("background-color : lightblue")
         self.pushButton_3dmod.setStyleSheet("background-color : lightblue")
-
+        self.button_deconov_dir.setStyleSheet("background-color : lightblue")
+        self.button_mask_dir.setStyleSheet("background-color : lightblue")
+        self.button_subtomo_dir.setStyleSheet("background-color : lightblue")
+        self.button_result_dir_refine.setStyleSheet("background-color : lightblue")
+        self.button_result_dir_predict.setStyleSheet("background-color : lightblue")
+        self.button_subtomo_star_refine.setStyleSheet("background-color : lightblue")
+        self.button_pretrain_model_refine.setStyleSheet("background-color : lightblue")
+        self.button_tomo_star_predict.setStyleSheet("background-color : lightblue")
+        self.button_pretrain_model_predict.setStyleSheet("background-color : lightblue")
+        self.button_continue_iter.setStyleSheet("background-color : lightblue")
+        self.pushButton_deconv.setStyleSheet("background-color : lightblue")
+        self.pushButton_generate_mask.setStyleSheet("background-color : lightblue")
+        self.pushButton_extract.setStyleSheet("background-color : lightblue")
+        self.pushButton_refine.setStyleSheet("background-color : lightblue")
+        self.pushButton_predict.setStyleSheet("background-color : lightblue")
+        self.pushButton_predict_3dmod.setStyleSheet("background-color : lightblue")
+        
         self.pushButton_insert.clicked.connect(self.copyRow)
         self.pushButton_delete.clicked.connect(self.removeRow)
         self.pushButton_open_star.clicked.connect(self.open_star)
@@ -139,7 +156,7 @@ class MainWindowUIClass( Ui_MainWindow ):
             if btn.text() in ["Deconvolve","Generate Mask","Extract","Refine","Predict"]:
                 self.model.btn_pressed_text =  btn.text()
                 btn.setText("Stop")
-                btn.setStyleSheet('QPushButton {color: red;}')
+                btn.setStyleSheet('QPushButton {background-color : lightblue;color: red;}')
             else:
                 btn.setEnabled(False)
             self.mw.p.readyReadStandardOutput.connect(self.dataReady)
@@ -161,7 +178,7 @@ class MainWindowUIClass( Ui_MainWindow ):
                 btn.setText(self.model.btn_pressed_text)
                 #btn.setText("Refine")
                 self.model.btn_pressed_text = None
-                btn.setStyleSheet('QPushButton {color: black;}')
+                btn.setStyleSheet("QPushButton {background-color : lightblue;color: black;}")
         else:
             btn.setEnabled(True)
         self.model.read_star()
@@ -443,6 +460,7 @@ class MainWindowUIClass( Ui_MainWindow ):
 
         if self.checkBox_only_print_command_prepare.isChecked() and self.pushButton_deconv.text() == 'Deconvolve':
             print(cmd)
+            #logging.info(cmd)
         else:
             self.start_process(cmd,self.pushButton_deconv)
 

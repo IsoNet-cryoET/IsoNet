@@ -192,7 +192,7 @@ class Ui_MainWindow(object):
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.label_chunk_size.sizePolicy().hasHeightForWidth())
         self.label_chunk_size.setSizePolicy(sizePolicy)
-        self.label_chunk_size.setMinimumSize(QtCore.QSize(80, 0))
+        self.label_chunk_size.setMinimumSize(QtCore.QSize(100, 0))
         font = QtGui.QFont()
         font.setPointSize(12)
         font.setBold(False)
