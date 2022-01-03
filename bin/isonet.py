@@ -226,10 +226,10 @@ class ISONET:
                         logging.info('make_mask: {}| dir_to_save: {}| percentage: {}| window_scale: {}'.format(tomo_file,
                         mask_folder, it.rlnMaskDensityPercentage, patch_size))
                         
-                        if mask_boundary is None:
-                            if "rlnMaskBoundary" in md.getLabels() and it.rlnMaskBoundary not in [None, "None"]:
-                                mask_boundary = it.rlnMaskBoundary 
-
+                        #if mask_boundary is None:
+                        if "rlnMaskBoundary" in md.getLabels() and it.rlnMaskBoundary not in [None, "None"]:
+                            mask_boundary = it.rlnMaskBoundary 
+                              
                         mask_out_name = '{}/{}_mask.mrc'.format(mask_folder,tomo_root_name)
                         make_mask(tomo_file,
                                 mask_out_name,
