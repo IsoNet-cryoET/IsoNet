@@ -145,6 +145,7 @@ def run_whole(args):
         logging.info("Start training!")
         history = train_data(args) #train based on init model and save new one as model_iter{num_iter}.h5
         # losses.append(history.history['loss'][-1])
+        args.losses = history.history['loss']
         save_args_json(args,args.result_dir+'/refine_iter{:0>2d}.json'.format(num_iter))
         logging.info("Done training!")
         logging.info("Start predicting subtomograms!")
@@ -247,7 +248,7 @@ def run_continue(continue_args):
         logging.info("Done preparing subtomograms!")
         logging.info("Start training!")
         history = train_data(args) #train based on init model and save new one as model_iter{num_iter}.h5
-        # losses.append(history.history['loss'][-1])
+        args.losses = history.history['loss'][-1]
         save_args_json(args,args.result_dir+'/refine_iter{:0>2d}.json'.format(num_iter))
         logging.info("Done training!")
         logging.info("Start predicting subtomograms!")
