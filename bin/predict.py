@@ -101,7 +101,7 @@ def predict_one(args,one_tomo,model,output_file=None):
     #imposing wedge to every cubes
     #data=wedge_imposing(data)
 
-    N = args.batch_size * args.ngpus * 4 # 8*4*8
+    N = args.batch_size * 4 # 8*4*8
     num_patches = data.shape[0]
     if num_patches%N == 0:
         append_number = 0
