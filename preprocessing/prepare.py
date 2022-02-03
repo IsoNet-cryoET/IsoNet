@@ -189,7 +189,7 @@ def get_cubes_list(settings):
             res = p.map(func,inp)
     if settings.preprocessing_ncpus == 1:
         for i in inp:
-            get_cubes(settings,i)
+            get_cubes(i, settings)
 
     all_path_x = os.listdir(settings.data_dir+'/train_x')
     num_test = int(len(all_path_x) * 0.1) 
