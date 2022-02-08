@@ -258,6 +258,7 @@ class ISONET:
         :param subtomo_folder: (subtomo) folder for output subtomograms.
         :param subtomo_star: (subtomo.star) star file for output subtomograms.
         :param cube_size: (64) Size of cubes for training, should be divisible by 8, eg. 32, 64. The actual sizes of extracted subtomograms are 1.5 times of this value.
+        :param crop_size: (None) The size of subtomogram, should be larger then the cube_size The default value is 16+cube_size.
         :param log_level: ("info") level of the output, either "info" or "debug"
         :param use_deconv_tomo: (True) If CTF deconvolved tomogram is found in tomogram.star, use that tomogram instead.
         """
@@ -356,7 +357,7 @@ class ISONET:
         :param convs_per_depth: (3) Number of convolution layer for each depth.
         :param kernel: (3,3,3) Kernel for convolution
         :param unet_depth: (3) Depth of UNet.
-        :param filter_base: (64) The base number of channels after convolution.
+        :param filter_base: (32) The base number of channels after convolution.
         :param batch_normalization: (True) Use Batch Normalization layer
         :param pool: (False) Use pooling layer instead of stride convolution layer.
         :param normalize_percentile: (True) Normalize the 5 percent and 95 percent pixel intensity to 0 and 1 respectively. If this is set to False, normalize the input to 0 mean and 1 standard dievation.
