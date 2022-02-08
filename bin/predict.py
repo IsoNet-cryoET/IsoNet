@@ -34,7 +34,7 @@ def predict(args):
     args.gpuID = str(args.gpuID)
     args.ngpus = len(list(set(args.gpuID.split(','))))
     if args.batch_size is None:
-        args.batch_size = max(4, 2 * args.ngpus)
+        args.batch_size = 4 * args.ngpus #max(4, 2 * args.ngpus)
     #print('batch_size',args.batch_size)
     os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
     os.environ["CUDA_VISIBLE_DEVICES"]=args.gpuID
@@ -101,7 +101,7 @@ def predict_one(args,one_tomo,model,output_file=None):
     #imposing wedge to every cubes
     #data=wedge_imposing(data)
 
-    N = args.batch_size * 4 # 8*4*8
+    N = args.batch_size #* args.ngpus * 4 # 8*4*8
     num_patches = data.shape[0]
     if num_patches%N == 0:
         append_number = 0
