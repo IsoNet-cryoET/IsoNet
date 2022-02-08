@@ -246,6 +246,7 @@ class ISONET:
         subtomo_folder: str = "subtomo",
         subtomo_star: str = "subtomo.star",
         cube_size: int = 64,
+        crop_size: int = None,
         log_level: str="info",
         tomo_idx = None
         ):
@@ -280,7 +281,10 @@ class ISONET:
             os.mkdir(subtomo_folder)
 
             from IsoNet.preprocessing.prepare import extract_subtomos
-            d_args.crop_size = int(int(cube_size) * 1.5)
+            if crop_size is None:
+                d_args.crop_size = cube_size + 16
+            else:
+                d_args.crop_size = crop_size
             d_args.subtomo_dir = subtomo_folder
             d_args.tomo_idx = idx2list(tomo_idx)
             extract_subtomos(d_args)
