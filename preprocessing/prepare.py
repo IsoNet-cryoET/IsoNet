@@ -2,6 +2,7 @@ import os
 import sys
 import logging
 import sys
+from tkinter import CENTER
 import mrcfile
 from IsoNet.preprocessing.cubes import create_cube_seeds,crop_cubes,DataCubes
 from IsoNet.preprocessing.img_processing import normalize
@@ -12,6 +13,8 @@ from functools import partial
 from IsoNet.util.rotations import rotation_list
 # from difflib import get_close_matches
 from IsoNet.util.metadata import MetaData, Item, Label
+from scipy.ndimage import affine_transform
+from scipy.stats import special_ortho_group
 #Make a new folder. If exist, nenew it
 # Do not set basic config for logging here
 # logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.DEBUG)
@@ -157,11 +160,23 @@ def get_cubes(inp,settings):
     else:
         orig_data = ow_data
 
-    for r in rotation_list:
-        data = np.rot90(orig_data, k=r[0][1], axes=r[0][0])
-        data = np.rot90(data, k=r[1][1], axes=r[1][0])
-        get_cubes_one(data, settings, start = start) 
-        start += 1#settings.ncube
+
+    old_rotation=True
+    if old_rotation:
+        for r in rotation_list:
+            data = np.rot90(orig_data, k=r[0][1], axes=r[0][0])
+            data = np.rot90(data, k=r[1][1], axes=r[1][0])
+            get_cubes_one(data, settings, start = start) 
+            start += 1#settings.ncube
+    else:
+        for _ in range(20):
+            rot = special_ortho_group.rvs(3)
+            center = (np.array(orig_data.shape) -1 )/2.
+            offset = center-np.dot(rot,center)
+            data = affine_transform(orig_data,rot,offset=offset)
+            get_cubes_one(data, settings, start=start)
+            start+=1
+
 
 def get_cubes_list(settings):
     '''
