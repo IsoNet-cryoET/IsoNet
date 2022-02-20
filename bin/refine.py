@@ -17,8 +17,10 @@ def run(args):
         logging.basicConfig(format='%(asctime)s, %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
         datefmt="%H:%M:%S",level=logging.DEBUG,handlers=[logging.StreamHandler(sys.stdout)])
     else:
-        logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',
-        datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[logging.StreamHandler(sys.stdout)])
+        #logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',
+        #datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[logging.StreamHandler(sys.stdout)])
+        logging.basicConfig(format='%(asctime)s.%(msecs)03d, %(levelname)-8s %(message)s',
+        datefmt="%Y-%m-%d,%H:%M:%S",level=logging.INFO,handlers=[logging.StreamHandler(sys.stdout)])
     logging.info('\n######Isonet starts refining######\n')
     try:
         if args.continue_from is None:

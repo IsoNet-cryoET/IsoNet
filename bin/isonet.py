@@ -391,7 +391,6 @@ class ISONET:
         d_args = Arg(d)
         from IsoNet.bin.predict import predict
 
-
         if d_args.log_level == "debug":
             logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',
             datefmt="%m-%d %H:%M:%S",level=logging.DEBUG,handlers=[logging.StreamHandler(sys.stdout)])
@@ -406,6 +405,42 @@ class ISONET:
             f.write(error_text)
             f.close()
             logging.error(error_text)
+    
+    def resize(self, star_file:str, apix: float=15, out_folder="tomograms_resized"):
+        '''
+        doc string
+        '''
+        md = MetaData()
+        md.read(star_file)
+        #print(md._data[0].rlnPixelSize)
+        from scipy.ndimage import zoom
+        #from skimage.transform import rescale
+        #import numpy as np
+        import mrcfile
+        if not os.path.isdir(out_folder):
+            os.makedirs(out_folder)
+        for item in md._data:
+            ori_apix = item.rlnPixelSize
+            tomo_name = item.rlnMicrographName
+            zoom_factor = float(ori_apix)/apix
+            new_tomo_name = "{}/{}".format(out_folder,os.path.basename(tomo_name))
+            with mrcfile.open(tomo_name) as mrc:
+                data = mrc.data
+            print("scaling: {}".format(tomo_name))
+            new_data = zoom(data, zoom_factor,order=3, prefilter=False)
+            #new_data = rescale(data, zoom_factor,order=3, anti_aliasing = True)
+            #new_data = new_data.astype(np.float32)
+
+            with mrcfile.new(new_tomo_name,overwrite=True) as mrc:
+                mrc.set_data(new_data)
+                mrc.voxel_size = apix
+
+            item.rlnPixelSize = apix
+            print(new_tomo_name)
+            item.rlnMicrographName = new_tomo_name
+            print(item.rlnMicrographName)
+        md.write(os.path.splitext(star_file)[0] + "_resized.star")
+        print("scale_finished")
 
     def check(self):
         from IsoNet.bin.predict import predict

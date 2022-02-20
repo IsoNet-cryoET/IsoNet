@@ -128,27 +128,28 @@ class DataCubes:
         self.tomogram2 = tomogram2
         self.__seeds = None
 
-    @property
-    def seeds(self):
-        if self.__seeds is None:
-            self.__seeds=create_cube_seeds(self.tomogram,self.nCubesPerImg,self.cropsize,self.mask)
-        return self.__seeds
+    #@property
+    #def seeds(self):
+    #    if self.__seeds is None:
+    #        self.__seeds=create_cube_seeds(self.tomogram,self.nCubesPerImg,self.cropsize,self.mask)
+    #    return self.__seeds
 
     @property
     def cubesX_padded(self):
         if self.__cubesX_padded is None:
-            self.__cubesX_padded=crop_cubes(self.tomogram,self.seeds,self.cropsize).astype(np.float32)
-            self.__cubesX_padded = np.array(list(map(apply_wedge, self.__cubesX_padded)), dtype = np.float32)
+            #self.__cubesX_padded=crop_cubes(self.tomogram,self.seeds,self.cropsize).astype(np.float32)
+            #self.__cubesX_padded = np.array(list(map(apply_wedge, self.__cubesX_padded)), dtype = np.float32)
+            self.__cubesX_padded = apply_wedge(self.tomogram)
         return self.__cubesX_padded
 
     @property
     def cubesY_padded(self):
         if self.__cubesY_padded is None:
-            if self.tomogram2 is None:
-                self.__cubesY_padded=crop_cubes(self.tomogram,self.seeds,self.cropsize)
-            else:
-                self.__cubesY_padded=crop_cubes(self.tomogram2,self.seeds,self.cropsize)
-            self.__cubesY_padded = self.__cubesY_padded.astype(np.float32)
+            #if self.tomogram2 is None:
+            #    self.__cubesY_padded=crop_cubes(self.tomogram,self.seeds,self.cropsize)
+            #else:
+            #    self.__cubesY_padded=crop_cubes(self.tomogram2,self.seeds,self.cropsize)
+            self.__cubesY_padded = self.tomogram
         return self.__cubesY_padded
 
 
@@ -182,7 +183,7 @@ class DataCubes:
     def crop_to_size(self, array, size):
         start = self.cropsize//2 - size//2
         end = self.cropsize//2 + size//2
-        return array[:,start:end,start:end,start:end]
+        return array[start:end,start:end,start:end]
 
     def create_training_data3D(self):
         n_val = int(self.cubesX.shape[0]*self.validationSplit)

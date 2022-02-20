@@ -2,6 +2,7 @@ import os
 import sys
 import logging
 import sys
+from xml.etree.ElementInclude import default_loader
 import mrcfile
 from IsoNet.preprocessing.cubes import create_cube_seeds,crop_cubes,DataCubes
 from IsoNet.preprocessing.img_processing import normalize
@@ -126,11 +127,10 @@ def get_cubes_one(data, settings, start = 0, mask = None, add_noise = 0):
     '''
     data_cubes = DataCubes(data, nCubesPerImg=1, cubeSideLen = settings.cube_size, cropsize = settings.crop_size, 
     mask = mask, noise_folder = settings.noise_dir,noise_level = settings.noise_level_current,noise_mode = settings.noise_mode)
-    for i,img in enumerate(data_cubes.cubesX):
-        with mrcfile.new('{}/train_x/x_{}.mrc'.format(settings.data_dir, i+start), overwrite=True) as output_mrc:
-            output_mrc.set_data(img.astype(np.float32))
-        with mrcfile.new('{}/train_y/y_{}.mrc'.format(settings.data_dir, i+start), overwrite=True) as output_mrc:
-            output_mrc.set_data(data_cubes.cubesY[i].astype(np.float32))
+    with mrcfile.new('{}/train_x/x_{}.mrc'.format(settings.data_dir, start), overwrite=True) as output_mrc:
+        output_mrc.set_data(data_cubes.cubesX.astype(np.float32))
+    with mrcfile.new('{}/train_y/y_{}.mrc'.format(settings.data_dir, start), overwrite=True) as output_mrc:
+        output_mrc.set_data(data_cubes.cubesY.astype(np.float32))
     return 0
 
 
@@ -156,7 +156,6 @@ def get_cubes(inp,settings):
         orig_data = normalize(orig_data, percentile = settings.normalize_percentile)
     else:
         orig_data = ow_data
-
     for r in rotation_list:
         data = np.rot90(orig_data, k=r[0][1], axes=r[0][0])
         data = np.rot90(data, k=r[1][1], axes=r[1][0])
@@ -189,6 +188,7 @@ def get_cubes_list(settings):
             res = p.map(func,inp)
     if settings.preprocessing_ncpus == 1:
         for i in inp:
+            logging.info("{}".format(i))
             get_cubes(i, settings)
 
     all_path_x = os.listdir(settings.data_dir+'/train_x')
