@@ -1,7 +1,6 @@
 from IsoNet.models.unet import builder,builder_fullconv,builder_fullconv_old,build_old_net
 from tensorflow.keras.layers import Input,Add,Activation
 from tensorflow.keras.models import Model
-from IsoNet.losses.wedge_power import wedge_power_gain
 from tensorflow.keras.optimizers import Adam
 def Unet(filter_base=32,
         depth=3,
