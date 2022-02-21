@@ -126,13 +126,14 @@ def crop_to_size(array, crop_size, cube_size):
         end = crop_size//2 + cube_size//2
         return array[start:end,start:end,start:end]
 
-def get_cubes_one(data, mw, settings, start = 0, mask = None, add_noise = 0):
+def get_cubes_one(data_X, data_Y, settings, start = 0, mask = None, add_noise = 0):
     '''
     crop out one subtomo and missing wedge simulated one from input data,
     and save them as train set
     '''
-    data_Y = crop_to_size(data, settings.crop_size, settings.cube_size)
-    data_X = crop_to_size(apply_wedge_dcube(data, mw), settings.crop_size, settings.cube_size)
+    #data_X = apply_wedge_dcube(data, mw)
+    #data_Y = crop_to_size(data, settings.crop_size, settings.cube_size)
+    #data_X = crop_to_size(apply_wedge_dcube(data, mw), settings.crop_size, settings.cube_size)
 
     if settings.noise_level_current > 0.0000001:
         if settings.noise_dir is not None:
@@ -181,11 +182,23 @@ def get_cubes(inp,settings):
         orig_data = normalize(orig_data, percentile = settings.normalize_percentile)
     else:
         orig_data = ow_data
-    mw = mw2d(settings.crop_size)   
-    for r in rotation_list:
+
+    rotated_data = np.zeros((len(rotation_list), *orig_data.shape))
+
+    for i,r in enumerate(rotation_list):
         data = np.rot90(orig_data, k=r[0][1], axes=r[0][0])
         data = np.rot90(data, k=r[1][1], axes=r[1][0])
-        get_cubes_one(data, mw, settings, start = start) 
+        rotated_data[i] = data
+    
+    mw = mw2d(settings.crop_size)   
+    datax = apply_wedge_dcube(rotated_data, mw)
+    #print(rotated_data.shape)
+    #print(datax.shape)
+
+    for i in range(len(rotation_list)): 
+        data_X = crop_to_size(datax[i], settings.crop_size, settings.cube_size)
+        data_Y = crop_to_size(rotated_data[i], settings.crop_size, settings.cube_size)
+        get_cubes_one(data_X, data_Y, settings, start = start) 
         start += 1#settings.ncube
 
 def get_cubes_list(settings):

@@ -43,14 +43,16 @@ def mw2d(dim,missingAngle=[30,30]):
     return mw
 
 
-
+#import tensorflow as tf
 def apply_wedge_dcube(ori_data, mw2d):
-    if len(ori_data.shape) > 3:
-        ori_data = np.squeeze(ori_data, axis=-1)
-    data = np.rot90(ori_data, k=1, axes=(0,1)) #clock wise of counter clockwise??
-    data = np.fft.ifft2(np.fft.fftshift(mw2d) * np.fft.fft2(data))
+    # the shape or ori_data is [len(rotation_list), cube_size, cube_size, cube_size]
+    #if len(ori_data.shape) > 3:
+    #    ori_data = np.squeeze(ori_data, axis=-1)
+    data = np.rot90(ori_data, k=1, axes=(1,2)) #clock wise of counter clockwise??
+    data = np.fft.ifft2(np.fft.fftshift(mw2d)[np.newaxis, np.newaxis, :, :] * np.fft.fft2(data))
+    #data = tf.signal.ifft2d(np.fft.fftshift(mw2d)[np.newaxis, np.newaxis, :, :] * tf.signal.fft2d(data))
     data = np.real(data)
-    data=np.rot90(data, k=3, axes=(0,1))
+    data=np.rot90(data, k=3, axes=(1,2))
     return data
 
 def apply_wedge(ori_data, ld1 = 1, ld2 =0):
