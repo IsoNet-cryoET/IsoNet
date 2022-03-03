@@ -408,7 +408,7 @@ class ISONET:
     
     def resize(self, star_file:str, apix: float=15, out_folder="tomograms_resized"):
         '''
-        doc string
+        This function rescale the tomograms to a given pixelsize
         '''
         md = MetaData()
         md.read(star_file)
