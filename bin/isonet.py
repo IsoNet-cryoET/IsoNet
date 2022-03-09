@@ -229,6 +229,8 @@ class ISONET:
                         #if mask_boundary is None:
                         if "rlnMaskBoundary" in md.getLabels() and it.rlnMaskBoundary not in [None, "None"]:
                             mask_boundary = it.rlnMaskBoundary 
+                        else:
+                            mask_boundary = None
                               
                         mask_out_name = '{}/{}_mask.mrc'.format(mask_folder,tomo_root_name)
                         make_mask(tomo_file,

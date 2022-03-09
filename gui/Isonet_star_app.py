@@ -270,6 +270,7 @@ class MainWindowUIClass( Ui_MainWindow ):
             "rlnMaskDensityPercentage": "50",
             "rlnMaskStdPercentage": "50",
             "rlnMaskName": "None"
+
         }
         return switcher.get(label, "None")
         
@@ -331,8 +332,18 @@ class MainWindowUIClass( Ui_MainWindow ):
             for j in range(columnCount):
                 try:
                     #print("update:",Label(self.model.header[j+1]),self.tableWidget.item(i, j).text())
-                    self.model.md._setItemValue(it,Label(self.model.header[j+1]),self.tableWidget.item(i, j).text())
+                    if len(self.tableWidget.item(i, j).text()) <1:
+                        
+                        if self.model.header[j+1] != "rlnMaskBoundary":
+                            previous_value = getattr(data[i],self.model.header[j+1])
+                        else:
+                            previous_value = "None"
 
+                        self.model.md._setItemValue(it,Label(self.model.header[j+1]),previous_value)
+                        self.tableWidget.setItem(i, j, QTableWidgetItem(str(previous_value)))
+                    else:
+                        self.model.md._setItemValue(it,Label(self.model.header[j+1]),self.tableWidget.item(i, j).text())
+                     
                     #self.model.md._setItemValue(it,Label(self.tableWidget.horizontalHeaderItem(j).text()),self.tableWidget.item(i, j).text())
                 except:
                     previous_value = getattr(data[i],self.model.header[j+1])
