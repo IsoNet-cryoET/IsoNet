@@ -32,14 +32,6 @@ def train3D_seq(outFile,
                 residual = True,
                 loss = 'mae'):
 
-    # optimizer = Adam(lr=lr)
-    # if loss == 'mae' or loss == 'mse':
-    #     metrics = ('mse', 'mae')
-    #     _metrics = [eval('loss_%s()' % m) for m in metrics]
-    # elif loss == 'binary_crossentropy':
-    #     _metrics = ['accuracy']
-
-
     strategy = tf.distribute.MirroredStrategy()
     if n_gpus > 1:
         with strategy.scope(): 
@@ -71,29 +63,12 @@ def train3D_seq(outFile,
     print(model.summary())
     train_data, test_data = prepare_dataseq(data_dir, batch_size)
     print('**train data size**',len(train_data))
-    callback_list = []
-    # check_point = ModelCheckpoint('{}/modellast.h5'.format(result_folder),
-    #                             monitor='val_loss',
-    #                             verbose=0,
-    #                             save_best_only=False,
-    #                             save_weights_only=False,
-    #                             mode='auto',
-    #                             period=1)
-    # callback_list.append(check_point)
-    # tensor_board = TensorBoard(log_dir='./Graph', histogram_freq=0, write_graph=True, write_images=True)
-    # callback_list.append(tensor_board)
     history = model.fit_generator(generator=train_data,
                                 validation_data=test_data,
                                 epochs=epochs,
                                 steps_per_epoch=steps_per_epoch,
                                 verbose=1)
-                                # callbacks=callback_list)
 
-    # if n_gpus>1:
-    #     model_from_multimodel = model.get_layer('model_1')   
-    #     model_from_multimodel.compile(optimizer=optimizer, loss='mae', metrics=_metrics)
-    #     model_from_multimodel.save(outFile)
-    # else:
     model.save(outFile)
 
     return history
@@ -124,7 +99,7 @@ def train3D_continue(outFile,
             model = load_model( model_file)
     else:
         model = load_model( model_file)
-    optimizer = Adam(lr=lr)
+    optimizer = Adam(learning_rate = lr)
     model.compile(optimizer=optimizer, loss='mae', metrics=('mse','mae'))
     # model.compile(optimizer=optimizer, loss='mae', metrics=_metrics)
     logging.info("Loaded model from disk")
@@ -168,9 +143,8 @@ def prepare_first_model(settings):
             last_activation = 'linear',
             loss = 'mae',
             lr = settings.learning_rate)
-    init_model_name = settings.result_dir+'/model_init.h5'
+    init_model_name = settings.result_dir+'/model_iter00.h5'
     model.save(init_model_name)
-    settings.init_model = init_model_name
     return settings
 
 def train_data(settings):
