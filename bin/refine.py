@@ -1,17 +1,13 @@
 import logging
-from IsoNet.preprocessing.cubes import prepare_cubes
-from IsoNet.preprocessing.img_processing import normalize
-from IsoNet.preprocessing.prepare import prepare_first_iter,get_cubes_list,get_noise_level
+from IsoNet.preprocessing.prepare import get_cubes_list,get_noise_level, prepare_first_iter
 from IsoNet.util.dict2attr import save_args_json,load_args_from_json
-import glob
-import mrcfile
 import numpy as np
-import glob
 import os
 import sys
 import shutil
-from IsoNet.util.metadata import MetaData, Item, Label
+from IsoNet.util.metadata import MetaData
 from IsoNet.util.utils import mkfolder
+
 def run(args):
     if args.log_level == "debug":
         logging.basicConfig(format='%(asctime)s, %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
@@ -21,14 +17,18 @@ def run(args):
         datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[logging.StreamHandler(sys.stdout)])
         #logging.basicConfig(format='%(asctime)s.%(msecs)03d, %(levelname)-8s %(message)s',
         #datefmt="%Y-%m-%d,%H:%M:%S",level=logging.INFO,handlers=[logging.StreamHandler(sys.stdout)])
-    logging.info('\n######Isonet starts refining######\n')
     try:
-        if args.continue_from is None:
-            args = run_whole(args)
-        else:
+
+        logging.info('\n######Isonet starts refining######\n')
+
+        if args.continue_from is not None:
             logging.info('\n######Isonet Continues Refining######\n')
-            args = run_continue(args)
-    
+            args_continue = load_args_from_json(args.continue_from)
+            for item in args_continue.__dict__:
+                if args_continue.__dict__[item] is not None and (args.__dict__ is None or not hasattr(args, item)):
+                    args.__dict__[item] = args_continue.__dict__[item]
+
+        args = run_whole(args)
         #environment
         os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
         os.environ["CUDA_VISIBLE_DEVICES"]=args.gpuID
@@ -42,36 +42,51 @@ def run(args):
         from IsoNet.training.predict import predict
         from IsoNet.training.train import prepare_first_model, train_data
 
-        # prepare iter00
-        args = prepare_first_iter(args)
-
         noise_level_series = get_noise_level(args.noise_level,args.noise_start_iter,args.iterations)
         
         current_iter = args.iter_count if hasattr(args, "iter_count") else 1
-        for num_iter in range(current_iter,args.iterations + 1):        
+        if args.continue_from is not None:
+            current_iter += 1
 
-            args.iter_count = num_iter
+        for num_iter in range(current_iter,args.iterations + 1):        
             logging.info("Start Iteration{}!".format(num_iter))
-            
-            if args.pretrained_model is not None and num_iter==1:
-                shutil.copyfile(args.pretrained_model,'{}/model_iter{:0>2d}.h5'.format(args.result_dir,1))
-                logging.info('Use Pretrained model as the output model of iteration 1 and predict subtomograms')
-                predict(args)
-                continue
-           
-            if num_iter == 1 and args.continue_from is None:
-                args = prepare_first_model(args)
+            if args.select_subtomo_number is not None:
+                args.mrc_list = np.random.choice(args.all_mrc_list, size = int(args.select_subtomo_number), replace = False)
             else:
-                args.init_model = '{}/model_iter{:0>2d}.h5'.format(args.result_dir,args.iter_count-1)
+                args.mrc_list = args.all_mrc_list
             
-            if args.continue_from is not None:
-                logging.info('Continue from previous model: {}/model_iter{:0>2d}.h5 of iteration {} and predict subtomograms'.format(args.result_dir,num_iter,num_iter))
+            args.iter_count = num_iter
+            
+            if args.pretrained_model is not None:
+                shutil.copyfile(args.pretrained_model,'{}/model_iter{:0>2d}.h5'.format(args.result_dir,num_iter-1))
+                logging.info('Use Pretrained model as the output model of iteration 0 and predict subtomograms')
+                args.pretrained_model = None
+                logging.info("Start predicting subtomograms!")
                 predict(args)
+                logging.info("Done predicting subtomograms!")
+            elif args.continue_from is not None:
+                logging.info('Continue from previous model: {}/model_iter{:0>2d}.h5 of iteration {} and predict subtomograms \
+                '.format(args.result_dir,num_iter -1,num_iter-1))
                 args.continue_from = None
-                continue
+                logging.info("Start predicting subtomograms!")
+                predict(args)
+                logging.info("Done predicting subtomograms!")
+            elif num_iter == 1:
+                mkfolder(args.result_dir)  
+                prepare_first_model(args)
+                prepare_first_iter(args)
+            else:
+                logging.info("Start predicting subtomograms!")
+                predict(args)
+                logging.info("Done predicting subtomograms!")
+
+            
+            args.init_model = "{}/model_iter{:0>2d}.h5".format(args.result_dir, num_iter-1)
+           
 
             # Noise settings
             args.noise_level_current =  noise_level_series[num_iter]
+            num_noise_volume = 1000
             if num_iter>=args.noise_start_iter[0] and (not os.path.isdir(args.noise_dir) or len(os.listdir(args.noise_dir))< num_noise_volume ):
 
                 from IsoNet.util.noise_generator import make_noise_folder
@@ -87,22 +102,29 @@ def run(args):
         
             get_cubes_list(args)
             logging.info("Done preparing subtomograms!")
+            if args.remove_intermediate is True:
+                logging.info("Remove intermediate files in iteration {}".format(args.iter_count-1))
+                for mrc in args.mrc_list:
+                    root_name = mrc.split('/')[-1].split('.')[0]
+                    current_mrc = '{}/{}_iter{:0>2d}.mrc'.format(args.result_dir,root_name,args.iter_count-1)
+                    os.remove(current_mrc)
             logging.info("Start training!")
             history = train_data(args) #train based on init model and save new one as model_iter{num_iter}.h5
             args.losses = history.history['loss']
             save_args_json(args,args.result_dir+'/refine_iter{:0>2d}.json'.format(num_iter))
             logging.info("Done training!")
-            logging.info("Start predicting subtomograms!")
-            predict(args)
-            logging.info("Done predicting subtomograms!")
+
+
+            if num_iter == args.iterations and args.remove_intermediate == False:
+                logging.info("Predicting subtomograms for last iterations")
+                args.iter_count +=1 
+                predict(args)
+                args.iter_count -=1 
+
             logging.info("Done Iteration{}!".format(num_iter))
+
     except Exception:
         import traceback
-        #exc_type, exc_value, exc_traceback = sys.exc_info()
-        #logging.addHandeler(logging.FileHandler('log.txt'))
-        #basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',
-        #datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[logging.FileHandler('log.txt'),logging.StreamHandler(sys.stderr),logging.StreamHandler(sys.stdout)])
-        #logging.info("comes here")
         error_text = traceback.format_exc()
         f =open('log.txt','a+')
         f.write(error_text)
@@ -138,7 +160,10 @@ def run_whole(args):
     if args.filter_base is None:
         args.filter_base = 32
     if args.steps_per_epoch is None:
-        args.steps_per_epoch = min(int(len(md) * 6/args.batch_size) , 200)
+        if args.select_subtomo_number is None:
+            args.steps_per_epoch = min(int(len(md) * 6/args.batch_size) , 200)
+        else:
+            args.steps_per_epoch = min(int(int(args.select_subtomo_number) * 6/args.batch_size) , 200)
     if args.learning_rate is None:
         args.learning_rate = 0.0004
     if args.noise_level is None:
@@ -155,54 +180,10 @@ def run_whole(args):
     if len(md) <=0:
         logging.error("Subtomo list is empty!")
         sys.exit(0)
-    args.mrc_list = []
+    args.all_mrc_list = []
     for i,it in enumerate(md):
         if "rlnImageName" in md.getLabels():
-            args.mrc_list.append(it.rlnImageName)
-    return args
-
-def run_continue(continue_args):
-    
-    #params need to to be recalculated when in continue_from mode
-    # [gpuID, batch_size, steps_per_epoch, iterations] 
-    args = load_args_from_json(continue_args.continue_from)
-    md = MetaData()
-    md.read(args.subtomo_star)
-    if continue_args.iterations is not None:
-        args.iterations = continue_args.iterations
-    if continue_args.gpuID is not None:
-        args.gpuID = str(continue_args.gpuID)
-    args.ngpus = len(args.gpuID.split(','))
-    if continue_args.data_dir is not None:
-        args.data_dir = continue_args.data_dir
-    if continue_args.batch_size is not None:
-        args.batch_size = continue_args.batch_size
-    elif continue_args.gpuID is not None:
-        args.batch_size = max(4, 2 * args.ngpus)
-    args.predict_batch_size = args.batch_size
-    if continue_args.steps_per_epoch is not None:
-        args.steps_per_epoch = continue_args.steps_per_epoch
-    elif continue_args.gpuID is not None:
-        args.steps_per_epoch = min(int(len(md) * 6/args.batch_size) , 200)
-    if continue_args.learning_rate is not None:
-        args.learning_rate = continue_args.learning_rate
-    if continue_args.noise_level is not None:
-        args.noise_level = continue_args.noise_level
-    if continue_args.noise_start_iter is not None:
-        args.noise_start_iter = continue_args.noise_start_iter
-    if continue_args.noise_mode is not None:
-        args.noise_mode = continue_args.noise_mode
-    if continue_args.log_level is not None:
-        args.log_level = continue_args.log_level
-    #logger = logging.getLogger('IsoNet.refine')
-    num_noise_volume = 1000
-    if len(md) <=0:
-        logging.error("Subtomo list is empty!")
-        sys.exit(0)
-    args.mrc_list = []
-    for i,it in enumerate(md):
-        if "rlnImageName" in md.getLabels():
-            args.mrc_list.append(it.rlnImageName)
+            args.all_mrc_list.append(it.rlnImageName)
     return args
 
 

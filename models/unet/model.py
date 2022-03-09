@@ -49,7 +49,7 @@ def Unet(filter_base=32,
         outputs = unet_out
     # outputs = Activation(activation=last_activation)(outputs)
     model = Model(inputs=inputs, outputs=outputs)
-    optimizer = Adam(lr=lr)
+    optimizer = Adam(learning_rate=lr)
     if loss == 'mae' or loss == 'mse':
         metrics = ('mse', 'mae')
 

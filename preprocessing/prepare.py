@@ -2,7 +2,6 @@ import os
 import sys
 import logging
 import sys
-from xml.etree.ElementInclude import default_loader
 import mrcfile
 from IsoNet.preprocessing.cubes import create_cube_seeds,crop_cubes,DataCubes
 from IsoNet.preprocessing.img_processing import normalize
@@ -17,39 +16,12 @@ from IsoNet.util.metadata import MetaData, Item, Label
 #Make a new folder. If exist, nenew it
 # Do not set basic config for logging here
 # logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.DEBUG)
-def mkfolder(folder):
-    import os
-    try:
-        os.makedirs(folder)
-    except FileExistsError:
-        logging.warning("The {0} folder already exists before the 1st iteration \n The old {0} folder will be renamed (to {0}~)".format(folder))
-        import shutil
-        if os.path.exists(folder+'~'):
-            shutil.rmtree(folder+'~')
-        os.system('mv {} {}'.format(folder, folder+'~'))
-        os.makedirs(folder)
-
-def generate_first_iter_mrc(mrc,settings):
-    '''
-    Apply mw to the mrc and save as xx_iter00.xx
-    '''
-    root_name = mrc.split('/')[-1].split('.')[0]
-    extension = mrc.split('/')[-1].split('.')[1]
-    with mrcfile.open(mrc) as mrcData:
-        orig_data = normalize(mrcData.data.astype(np.float32)*-1, percentile = settings.normalize_percentile)
-    orig_data = apply_wedge(orig_data, ld1=1, ld2=0)
-    orig_data = normalize(orig_data, percentile = settings.normalize_percentile)
-
-    with mrcfile.new('{}/{}_iter00.{}'.format(settings.result_dir,root_name, extension), overwrite=True) as output_mrc:
-        output_mrc.set_data(-orig_data)
 
 def extract_subtomos(settings):
     '''
     extract subtomo from whole tomogram based on mask
     and feed to generate_first_iter_mrc to generate xx_iter00.xx
     '''
-    #mkfolder(settings.result_dir)
-    #mkfolder(settings.subtomo_dir)
     md = MetaData()
     md.read(settings.star_file)
     if len(md)==0:
@@ -97,29 +69,6 @@ def extract_subtomos(settings):
                     subtomo_md._setItemValue(subtomo_it,Label('rlnPixelSize'),pixel_size)
                     output_mrc.set_data(s.astype(np.float32))
     subtomo_md.write(settings.subtomo_star)
-
-
-#preparation files for the first iteration
-def prepare_first_iter(settings):
-    # extract_subtomos(settings)
-    mkfolder(settings.result_dir)  
-    # settings.mrc_list = os.listdir(settings.subtomo_dir)
-    # settings.mrc_list = ['{}/{}'.format(settings.subtomo_dir,i) for i in settings.mrc_list]
-
-    #need further test
-    #with Pool(settings.preprocessing_ncpus) as p:
-    #    func = partial(generate_first_iter_mrc, settings)
-    #    res = p.map(func, settings.mrc_list)
-
-    if settings.preprocessing_ncpus >1:
-        with Pool(settings.preprocessing_ncpus) as p:
-            func = partial(generate_first_iter_mrc, settings=settings)
-            res = p.map(func, settings.mrc_list)
-            # res = p.map(generate_first_iter_mrc, settings.mrc_list)
-    else:
-        for i in settings.mrc_list:
-            generate_first_iter_mrc(i,settings)
-    return settings
 
 def crop_to_size(array, crop_size, cube_size):
         start = crop_size//2 - cube_size//2
@@ -169,19 +118,16 @@ def get_cubes(inp,settings):
     mrc, start = inp
     root_name = mrc.split('/')[-1].split('.')[0]
     current_mrc = '{}/{}_iter{:0>2d}.mrc'.format(settings.result_dir,root_name,settings.iter_count-1)
+    with mrcfile.open(mrc) as mrcData:
+        iw_data = mrcData.data.astype(np.float32)*-1
+    iw_data = normalize(iw_data, percentile = settings.normalize_percentile)
 
     with mrcfile.open(current_mrc) as mrcData:
         ow_data = mrcData.data.astype(np.float32)*-1
     ow_data = normalize(ow_data, percentile = settings.normalize_percentile)
-    with mrcfile.open('{}/{}_iter00.mrc'.format(settings.result_dir,root_name)) as mrcData:
-        iw_data = mrcData.data.astype(np.float32)*-1
-    iw_data = normalize(iw_data, percentile = settings.normalize_percentile)
 
-    if settings.iter_count <= settings.iterations:
-        orig_data = apply_wedge(ow_data, ld1=0, ld2=1) + apply_wedge(iw_data, ld1 = 1, ld2=0)
-        orig_data = normalize(orig_data, percentile = settings.normalize_percentile)
-    else:
-        orig_data = ow_data
+    orig_data = apply_wedge(ow_data, ld1=0, ld2=1) + apply_wedge(iw_data, ld1 = 1, ld2=0)
+    orig_data = normalize(orig_data, percentile = settings.normalize_percentile)
 
     rotated_data = np.zeros((len(rotation_list), *orig_data.shape))
 
@@ -224,8 +170,8 @@ def get_cubes_list(settings):
     if settings.preprocessing_ncpus > 1:
         func = partial(get_cubes, settings=settings)
         with Pool(settings.preprocessing_ncpus) as p:
-            res = p.map(func,inp)
-    if settings.preprocessing_ncpus == 1:
+            p.map(func,inp)
+    else:
         for i in inp:
             logging.info("{}".format(i))
             get_cubes(i, settings)
@@ -238,14 +184,40 @@ def get_cubes_list(settings):
     for i in ind:
         os.rename('{}/train_x/{}'.format(settings.data_dir, all_path_x[i]), '{}/test_x/{}'.format(settings.data_dir, all_path_x[i]) )
         os.rename('{}/train_y/{}'.format(settings.data_dir, all_path_y[i]), '{}/test_y/{}'.format(settings.data_dir, all_path_y[i]) )
-        #os.rename('data/train_y/'+all_path_y[i], 'data/test_y/'+all_path_y[i])
 
 def get_noise_level(noise_level_tuple,noise_start_iter_tuple,iterations):
     assert len(noise_level_tuple) == len(noise_start_iter_tuple) and type(noise_level_tuple) in [tuple,list]
     noise_level = np.zeros(iterations+1)
     for i in range(len(noise_start_iter_tuple)-1):
-        assert i < iterations and noise_start_iter_tuple[i]< noise_start_iter_tuple[i+1]
+        #remove this assert because it may not be necessary, and cause problem when iterations <3
+        #assert i < iterations and noise_start_iter_tuple[i]< noise_start_iter_tuple[i+1]
         noise_level[noise_start_iter_tuple[i]:noise_start_iter_tuple[i+1]] = noise_level_tuple[i]
     assert noise_level_tuple[-1] < iterations 
     noise_level[noise_start_iter_tuple[-1]:] = noise_level_tuple[-1]
     return noise_level
+
+def generate_first_iter_mrc(mrc,settings):
+    '''
+    Apply mw to the mrc and save as xx_iter00.xx
+    '''
+    root_name = mrc.split('/')[-1].split('.')[0]
+    extension = mrc.split('/')[-1].split('.')[1]
+    with mrcfile.open(mrc) as mrcData:
+        orig_data = normalize(mrcData.data.astype(np.float32)*-1, percentile = settings.normalize_percentile)
+    orig_data = apply_wedge(orig_data, ld1=1, ld2=0)
+    orig_data = normalize(orig_data, percentile = settings.normalize_percentile)
+
+    with mrcfile.new('{}/{}_iter00.{}'.format(settings.result_dir,root_name, extension), overwrite=True) as output_mrc:
+        output_mrc.set_data(-orig_data)
+
+    #preparation files for the first iteration
+def prepare_first_iter(settings):
+    if settings.preprocessing_ncpus >1:
+        with Pool(settings.preprocessing_ncpus) as p:
+            func = partial(generate_first_iter_mrc, settings=settings)
+            p.map(func, settings.mrc_list)
+    else:
+        for i in settings.mrc_list:
+            generate_first_iter_mrc(i,settings)
+    return settings
+

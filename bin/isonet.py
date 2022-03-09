@@ -325,6 +325,9 @@ class ISONET:
         filter_base: int = None,
         batch_normalization: bool = True,
         normalize_percentile: bool = True,
+
+        remove_intermediate = False,
+        select_subtomo_number = None
     ):
         """
         \ntrain neural network to correct missing wedge\n
