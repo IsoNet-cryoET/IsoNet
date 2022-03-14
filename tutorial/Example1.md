@@ -106,33 +106,33 @@ The predict time comsumption is much less than refinement step. This tomogram wi
 isonet.py gui &
 ```
 
-<img src="/Users/hengzhang/Library/Mobile Documents/com~apple~CloudDocs/projects/missingwedge/figures/gui1.png" alt="image-20220207001846094" style="zoom:30%;" />
+<img src="./figures/gui1.png" alt="image-20220207001846094" style="zoom:30%;" />
 
 1. Add tomograms
 
 Click *insert* on the upper-right panel and then click *None* in the *MicrographName* colume, select one tomogram.
 
-<img src="/Users/hengzhang/Library/Mobile Documents/com~apple~CloudDocs/projects/missingwedge/figures/gui_addtomo.png" alt="image-20220207002107926" style="zoom:30%;" />
+<img src="./figures/gui_addtomo.png" alt="image-20220207002107926" style="zoom:30%;" />
 
 Set the pixel size and the number of subtomogram to be extracted from this tomogram.
 
-<img src="/Users/hengzhang/Library/Mobile Documents/com~apple~CloudDocs/projects/missingwedge/figures/gui_settomo.png" alt="image-20220207002456475" style="zoom:33%;" />
+<img src="./figures/gui_settomo.png" alt="image-20220207002456475" style="zoom:33%;" />
 
 2. Generate mask
 
 Set proper parameter for producing mask.
 
-<img src="/Users/hengzhang/Library/Mobile Documents/com~apple~CloudDocs/projects/missingwedge/figures/gui_genmask.png" alt="image-20220207002807345" style="zoom:33%;" />
+<img src="./figures/gui_genmask.png" alt="image-20220207002807345" style="zoom:33%;" />
 
 
 
 And click **Generate Mask ** button.
 
-<img src="/Users/hengzhang/Library/Mobile Documents/com~apple~CloudDocs/projects/missingwedge/figures/gui_clickmask.png" alt="image-20220207002915179" style="zoom:33%;" />
+<img src="./figures/gui_clickmask.png" alt="image-20220207002915179" style="zoom:33%;" />
 
 We can view the produced mask via 3dmod: Click the small index  '1'  at the beginning of the row in the tomogram table and click **3dmod view**
 
-<img src="/Users/hengzhang/Library/Mobile Documents/com~apple~CloudDocs/projects/missingwedge/figures/gui_viewmask.png" alt="image-20220207003308839" style="zoom:33%;" />
+<img src="figures/gui_viewmask.png" alt="image-20220207003308839" style="zoom:33%;" />
 
 Check the mask you generate and adjust parameter if necessary.
 
@@ -140,17 +140,17 @@ Check the mask you generate and adjust parameter if necessary.
 
 Click **Extract**
 
-<img src="/Users/hengzhang/Library/Mobile Documents/com~apple~CloudDocs/projects/missingwedge/figures/gui_clickextract.png" alt="image-20220207002915179" style="zoom:33%;" />
+<img src="figures/gui_clickextract.png" alt="image-20220207002915179" style="zoom:33%;" />
 
 4. Refinement
 
 Click the **Refinement** tab at the upper most panel and set the GPU ID and results folder name.
 
-<img src="/Users/hengzhang/Library/Mobile Documents/com~apple~CloudDocs/projects/missingwedge/figures/gui_refinetab.png" alt="image-20220207003550613" style="zoom:33%;" />
+<img src="figures/gui_refinetab.png" alt="image-20220207003550613" style="zoom:33%;" />
 
 Click **Refinie** button below to start iterative refinement.
 
-<img src="/Users/hengzhang/Library/Mobile Documents/com~apple~CloudDocs/projects/missingwedge/figures/gui_clickrefine.png" alt="image-20220207003812744" style="zoom:33%;" />
+<img src="figures/gui_clickrefine.png" alt="image-20220207003812744" style="zoom:33%;" />
 
 If you want to run refinement step on a remote machine or cluster using command-line, you can check the 'only print command ' box. Then when you click **Refine** button, the command for refinement will output to your terminal window.
 
@@ -158,7 +158,7 @@ If you want to run refinement step on a remote machine or cluster using command-
 
 Click the **Prediction** tab at the upper most panel.
 
-<img src="/Users/hengzhang/Library/Mobile Documents/com~apple~CloudDocs/projects/missingwedge/figures/gui_predick.png" alt="image-20220314193414624" style="zoom:33%;" />
+<img src="figures/gui_predick.png" alt="image-20220314193414624" style="zoom:33%;" />
 
 Specify the GPU and choose the model for prediction. Click **Predict** to star predicting.
 
