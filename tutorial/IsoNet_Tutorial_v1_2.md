@@ -1,5 +1,7 @@
 # IsoNet Tutorial
 
+[toc]
+
 
 
 ## Introduction
@@ -26,11 +28,11 @@ The following two quick exmaples describe the basic steps of running the program
 
 1. [Here](./Example1.md) is the first example which handles a tomogram of synapse structure which is crowding and heterogeneous. 
 
-<img src="figures/pp676_demo.png" alt="pp676_demo" style="zoom:20%;" />
+<img src="figures/pp676_demo.png" alt="pp676_demo" width="600" />
 
 2. [Here](./Example2.md) is the second example which processes tomograms of HIV virus particles. These tomograms are relatively empty and noisy and the content is homogeneous. An additional step (CTF deconvolution) is performed.
 
-<img src="figures/fig1.png" alt="fig1" style="zoom:20%;" />
+<img src="figures/fig1.png" width="700" />
 
 For a detailed description of each command in these two examples, please refer to **Individual tasks**. Among the following tasks, only refinement and prediction steps are computational extensive and require GPU for acceleration.
 
@@ -88,21 +90,18 @@ these two parameters is shown in the following figures. You can also
 specify **tomo_index** (e.g. 1,3-4 ) so that only the specific tomogram
 or tomograms will be processed. Another parameter **hipassnyquest**
 applies a high pass filter at very low frequency, changing this
-parameter might be helpful if the tomograms are too blurry.
-
-![](figures/snrfalloff.png){width="1\\linewidth"}
-
-​					2D slices of CTF deconvolved tomograms with different deconvstrength parameters.
-
-​							 Left: deconvstrength=0.5; middle: deconvstrength=1;right:deconvstrength=1.5
-
-![](figures/decovstrength.png){width="1\\linewidth"}
+parameter might be helpful if the tomograms are too blurry. 
 
 
 
-​							2D slices of CTF deconvolved tomograms with different snrfalloff parameters. 
+<img src="figures/snrfalloff.png" width="800">
 
-​										Left: snrfalloff=0.5; middle: snrfalloff=1;right:snrfalloff=1.5
+<p style="text-align: center; font-size: 11pt"> 2D slices of CTF deconvolved tomograms with different deconvstrength parameters. 
+			Left: deconvstrength=0.5; middle: deconvstrength=1;right:deconvstrength=1.5 </p>
+
+<img src="figures/decovstrength.png" width="800">
+
+<p style="text-align: center; font-size: 11pt"> 2D slices of CTF deconvolved tomograms with different snrfalloff parameters. Left: snrfalloff=0.5; middle: snrfalloff=1;right:snrfalloff=1.5
 
 #### Parallel processing
 
@@ -168,11 +167,9 @@ All the pixels with STD ratio larger than the **std_percentage**% of all
 pixels will be included in the mask. When you don't want to use this
 mask, set the **std_percentage** value to 100.
 
-![](figures/mask.png){width="1\\linewidth"}
+<img src="figures/mask.png" width="800">
 
-​								XY slices of tomograms and corresponding masks. 
-
-​							Both using density_percentile=50 and std_percentile=50
+<p style="text-align: center; font-size: 11pt">XY slices of tomograms and corresponding masks. Both using density_percentile=50 and std_percentile=50 </p>
 
 
 
@@ -217,10 +214,10 @@ is one of the choices.
 This step allows generating a *star* file from a folder containing only
 subtomogram files. The subtomogram files should be in mrc format, with
 extension of \".mrc\". The generated star file can be used as input for
-refine.
+refinement.
 
 This step is not in the main workflow of IsoNet, but might be helpful if
-you already have subtomogram extracted, possibility through other
+you already have subtomograms extracted through other
 softwares. For example, if you are only interested in processing
 subtomograms of a particular protein, you can manually pick and extract
 them, then prepare star file with this command. We also recommend these
@@ -236,8 +233,8 @@ isonet.py prepare_subtomo_star folder_name [--output_star] [--cube_size]
 Where \"folder_name\" is the folder containing subparticles. The default
 output star file is \"subtomo.star\".
 
-And the \"cube_size\" is size of the cubic volumes used for training.
-This values is smaller than the size of subtomogram and should be
+And the \"cube_size\" is the size of the cubic volumes used for training.
+This value is smaller than the size of subtomograms and should be
 divisible by 8, eg. 64, 96. If this value isn't set, \"cube_size\" is
 automatically determined as int(subtomo_size / 1.5 + 1)//16 \* 16
 
@@ -261,7 +258,7 @@ for this preparation step.
 
 Users have to specify **gpuID**, e.g. 0,1,2,3, for the network training,
 so that 3D volumes will be distributed across those GPUs. Information of
-available GPUs can be found through command: *nvidia-smi*. In general,
+available GPUs can be found through the command: *nvidia-smi*. In general,
 Using more GPUs reduces GPU memory requirement for each GPU and current
 network training can not be performed across multiple computer machines.
 
@@ -291,7 +288,7 @@ using a single GPU, the default **batch_size** is four. We tested
 **batch_size** might lead to OOM error. **steps_per_epoch** defines how
 many batches are to be processed in one epoch. A value between 100 to
 300 are recommended for **steps_per_epoch**. If this value is not set by
-user, the default **steps_per_epoch** is min(number_of_subtomograms \* 6
+Users, the default **steps_per_epoch** is min(number_of_subtomograms \* 6
 / batch_size , 200)
 
 #### Denoising
@@ -326,7 +323,7 @@ IsoNet allows users to modify the network structures by the input
 arguments. For example, it might be useful to increase or decrease the
 size of the network by increasing or decreasing **unet_depth**, though this is
 not recommended unless users want to venture into the performance of
-different networks. Another paramerter which decides the complexity of the neural network is **filter_base**. It determines the scale of number of feature channels and has been set to 32 by defaults. Increasing it could lead to a better result at the cost of longer training time. Please note that these values will be ignored when using **pretrained_model**.
+different networks. Another parameter that decides the complexity of the neural network is **filter_base**. It determines the scale of the number of feature channels and has been set to 32 by defaults. Increasing it could lead to a better result at the cost of a longer training time. Please note that these values will be ignored when using **pretrained_model**.
 
 If **normalize_percentile** is set True, tomograms will be normalized by
 percentile, which scales the sub-tomograms in a range approximately from
@@ -367,28 +364,28 @@ tomogram star file, which can be generated with **isonet.py
 prepare_star** command, and a trained network model (with .h5 file
 extension) as input. The input tomograms in the tomogram star file are
 typically the exact tomograms used for training or other tomograms with
-the similar sample and imaging condition. If the network is trained with
+similar sample and imaging conditions. If the network is trained with
 CTF deconvolved tomograms, the tomograms used for predict should also be
 CTF deconvolved.
 
 This step is much faster than refine step. **gpuID** defines which
 GPU(s) will be used for predicting, e.g. 0,1,2,3. If this parameter is
-not set, one cpu will be used for predict, which could take much longer
+not set, CPU will be used for prediction, which could take much longer
 time than using GPU.
 
 To fit the tomogram into the GPU memory, one tomogram is divided into
 multiple tiles for the missing wedge correction and using the overlap
-tile strategy to prevent the artifact during the montaging the tiles. To
+tile strategy to prevent the artifact during montaging the tiles. To
 implement this strategy, the **crop_size** should be larger than the
-**cube_size**. The **cube_size** and **crop_size** is suggested to be
+**cube_size**. The **cube_size** and **crop_size** are suggested to be
 consistent with the training settings. If **crop_size** is not large
 enough, you may observe artifacts of grids between the adjacent tiles.
 
-The **batch_size** defines number of subtomograms grouped
+The **batch_size** defines the number of subtomograms grouped
 together for network predicting, this value should be divisible by the
 number of GPU. Larger **batch_size** will save more predicting time but
 occupy larger your GPU memory. **normalize_percentile** should be the
-same with that parameter in refine.
+same as that parameter in refine.
 
 ``` {.bash language="bash"}
 isonet.py predict tomogram.star path_to_network_model --gpuID 0,1,2,3 --cube_size 80 --crop_size 128
@@ -396,9 +393,9 @@ isonet.py predict tomogram.star path_to_network_model --gpuID 0,1,2,3 --cube_siz
 
 
 
-# GUI
+## GUI
 
-This section briefly described ISONET graphic user interface (GUI). You
+This section briefly described IsoNet graphic user interface (GUI). You
 can watch our [tutorial video](https://drive.google.com/drive/folders/1DXjIsz6-EiQm7mBMuMHHwdZErZ_bXAgp) for the details on how to use GUI.
 
 The GUI can be started by the following command:
@@ -407,39 +404,40 @@ The GUI can be started by the following command:
 isonet.py gui
 ```
 
+<img src="figures/gui_1.png" width="600">
+
 This software mainly have 3 pages, they are **Preparation**,
 **Refinement** and **Prediction**.
 
-1.  Preparation includes the reprocess steps to prepare the dataset to
+1.  Preparation includes the preprocessing steps to prepare the dataset to
     be trained in the later Refinement step.
-    -   Deconvolve ctf: increase the contrast of tomograms with no VPP
+    -   Deconvolve CTF: increase the contrast of tomograms with no VPP
         applied
 
-    -   Generate mask: only mask out the interested region in the
+    -   Generate mask: only mask out the region of interest in the
         tomogram
 
-    -   Subtomograms extraction: generate training data set
+    -   Subtomograms extraction: generate the training dataset
 
 2.  Refinement will train a neural network to learn how to correct the
     missing wedge effect.
 
-3.  Prediction help users to generate corrected tomogram based on the
-    model they trained in the Refinement step.
+3.  Prediction help users to generate corrected tomogram based on the model they trained in the Refinement step.
 
-Isonet take **.star** file as its input file, which follows the
+IsoNet takes the **.star** file as its input file, which follows the
 convention from *Relion*. The GUI will automatically read the
 **tomograms.star** as default if it exists in the current folder.
 
-In preparation tab, a input table can help user create or load their own
+In the preparation tab, an input table can help users create or load their own
 **.star**. One can click insert to add a new row into the table. For
 tutorial dataset of HIV, you need to specify MicrographName
 (reconstructed tomogram), pixel size, estimated defocus value for your 0
-degree image. You can select one row by click the index of the row on
-the left-most region. After selected, you can duplicated it or delete it
-by clicking insert or Delete button on the right. '3dmod view' helps
-user to visualize selected tomograms and/or masks.
+degree image. You can select one row by clicking the index of the row on
+the left-most region. After being selected, you can duplicate it or delete it
+by clicking the insert or Delete button on the right. '3dmod view' helps
+users to visualize selected tomograms and/or masks.
 
-Further operations of IsoNet GUI is intuitive. Please refer to the[video tutorial](https://drive.google.com/drive/folders/1DXjIsz6-EiQm7mBMuMHHwdZErZ_bXAgp) or the [first exmaple](Example1.md).
+Further operations of IsoNet GUI are intuitive. Please refer to the [video tutorial](https://drive.google.com/drive/folders/1DXjIsz6-EiQm7mBMuMHHwdZErZ_bXAgp) or the [first example](Example1.md).
 
 
 
