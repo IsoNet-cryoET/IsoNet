@@ -14,7 +14,7 @@ mv TS*.rec tomoset/
 ```
 
 Then run the following command in your project folder to generate a
-tomogram star file (in this example, the name of tomogram star file is
+tomogram.star file (in this example, the name of tomogram.star file is
 hiv_tomo.star)
 
 ``` {.bash language="bash"}
@@ -23,9 +23,9 @@ isonet.py prepare_star tomoset --output_star hiv_tomo.star --pixel_size 10.8
 
 If you are not using GUI, please use your favorite text editor, such as
 vi or gedit, to open the **hiv_tomo.star**, and enter one defocus value
-for each tomogram in fourth column. This value should be approximate
-defocus value calculated for the 0 degree tilt images in angstrom. After
-editing, your star file should looks as the follows. Note, this value is
+for each tomogram in the fourth column. This value should be the approximate
+defocus value calculated for the 0-degree tilt images in angstrom. After
+editing, your star file should look as follows. Note, this value is
 only for CTF deconvolution, if you want to skip CTF deconvolution step,
 leave this column as default 0.
 
@@ -79,11 +79,11 @@ time consumed:  8.76533579826355
 
 ## Generate Mask
 
-To exclude the areas that devoid of sample, we apply a binary sampling
+To exclude the areas that are devoid of sample, we apply a binary sampling
 mask to each tomogram. This step is optional but will improve the
 efficiency of the network training.
 
-By running following command, 3D mask volumes for each tomogram will be
+By running the following command, 3D mask volumes for each tomogram will be
 generated and stored in the **hiv_mask** folder. Default parameters will
 give you a good enough mask.
 
@@ -93,7 +93,7 @@ isonet.py make_mask hiv_tomo.star --mask_folder hiv_mask --density_percentage 50
 
 If this command works properly, you will find the mask file, when opened
 with your favorite mrc image viewer such as 3dmod, covers the areas of
-your sample of interest. Both this step and ctf deconvolve step will
+your sample of interest. Both this step and CTF deconvolve step will
 modify your tomogram star file (**hiv_tomo.star**):
 
 ``` {.bash language="bash"}
@@ -119,16 +119,16 @@ _rlnMaskName #11
 ## Extract Subtomograms
 
 This step extracts small 3D volumes (here we also call subtomograms)
-randomly from previous described tomograms or deconvoluded tomograms. If
+randomly from previously described tomograms or deconvoluted tomograms. If
 you provide a mask in your tomogram star file, the center of the
-subtomograms are inside the mask areas. The number of subtomograms to be
+subtomograms is inside the mask areas. The number of subtomograms to be
 extracted in each tomogram is defined in the **\_rlnNumberSubtomo**
 column in your tomogram star file. You can edit those as your desired
-value. Usually total 300 subtomograms are sufficient for network
+value. Usually, total of 300 subtomograms are sufficient for network
 training.
 
 The following command takes your tomogram star file as input and
-generate subtomograms in a folder named subtomo as well as a file named
+Generates subtomograms in a folder named subtomo as well as a file named
 subtomo.star
 
 ``` {.bash language="bash"}
@@ -136,9 +136,9 @@ isonet.py extract hiv_tomo.star
 ```
 
 The subtomo.star contains information for your subtomograms.
-**\_rlnCropSize** is size of subtomograms, and **\_rlnCubeSize** is the
+**\_rlnCropSize** is the size of subtomograms, and **\_rlnCubeSize** is the
 size actually used for network training, You can specify these values in
-extract command.
+the *extract* command.
 
 
     data_
@@ -166,10 +166,10 @@ extract command.
 
 The extracted sub-tomograms and subtomo star file are used as input in
 this refine step, which iteratively trains networks that fill the
-missing wedge information (and reduce noise). The output is defined in
-**result_dir** parameter, whose default value is \"results\". In this
-folder, you will find all the subtomograms in each iterations as well as
-the network model files with extension of h5, if this command runs
+missing wedge information (and reduce noise). The output is defined by
+**the result_dir** parameter, whose default value is \"results\". In this
+folder, you will find all the subtomograms in each iteration as well as
+the network model files with the extension of h5, if this command runs
 successfully.
 
 it will take about 10 hours for four Nvidia 1080Ti to finish the refine
@@ -220,7 +220,7 @@ Epoch 10/10
 ```
 
 You can also continue from the pretrained model for this dataset
-provided in the link. The following command will use the pretrained
+provided in the link. The following command will use the pre-trained
 network model as the model of 1st iteration, then predict subtomos and
 train networks starting from this model.:
 
@@ -230,7 +230,7 @@ isonet.py refine subtomo.star --pretrained_model ./pretrained_model.h5  --gpuID 
 
 Another option is to continues from previous runs, with
 **continue_from** command. This option allows reading the parameter from
-previous iteration in '.json' file and continue from that. For example:
+previous iteration in '.json' file and continuing from that. For example:
 
 ``` {.bash language="bash"}
 isonet.py refine subtomo.star --continue_from results/refine_iter20.json  --gpuID 0,1,2,3 
@@ -238,7 +238,7 @@ isonet.py refine subtomo.star --continue_from results/refine_iter20.json  --gpuI
 
 ## Predict
 
-During the refine step, the network models are saved in **result_dir**
+During the refinement step, the network models are saved in **result_dir**
 folder. You can select one and apply it to your entire tomograms in the
 tomogram star file. For example:
 

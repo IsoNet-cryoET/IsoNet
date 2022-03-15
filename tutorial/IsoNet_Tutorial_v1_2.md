@@ -352,7 +352,7 @@ This command enables using your pretrained model to predict the
 subtomograms of the first iteration. Starting with the second iteration,
 you are refining this model using the subtomograms in the subtomo.star
 
-### 6 Predict
+### 6. Predict
 
 This module applies the trained network model to tomograms to restore
 the information in the missing wedge region of tomograms. It takes the

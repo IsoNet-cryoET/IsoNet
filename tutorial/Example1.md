@@ -1,4 +1,4 @@
-### A step by step example
+## A step by step example
 
 This example processes tomogram of **synapse structure** through **IsoNet**.
 
@@ -22,19 +22,15 @@ command line:
 isonet.py prepare_star tomofile/ --pixel_size 18.12 --number_subtomos 300
 ```
 
-Default file name of STAR file will *tomograms.star* ; Contents in this file can be modified through text editor.
+The default file name of STAR file will *tomograms.star* ; Contents in this file can be modified through text editors.
 
 2. Deconvolution
 
-This step is unnecessary for tomographs accquired with phase plate.
+This step is unnecessary for tomograms acquired with a phase plate.
 
 3. Generate mask
 
-To exclude the areas that devoid of sample, we apply a binary sampling mask to each tomogram. This step will improve the quality of training dataset.
-
-Since this demo tomogram has a bin-factor of 4, a smaller gaussian filter can smooth out noise and keep the fine structure. We set *patch_size* to 2. 
-
-Usually, the top and bottom (along the z axis) region is in lack of content. We mask out the top 15% and bottom 15% region by setting *z_crop* to 0.15.
+To exclude the areas that are devoid of sample, we apply a binary sampling mask to each tomogram. This step will improve the quality of the training dataset. Since this demo tomogram has a bin-factor of 4, a smaller Gaussian filter can smooth out noise and keep the fine structure. We set *patch_size* to 2. Usually, the top and bottom (along the z-axis) regions are lack of content. We mask out the top 15% and bottom 15% region by setting *z_crop* to 0.15.
 
 ```bash
 isonet.py make_mask tomograms.star --z_crop 0.15 --patch_size 2
@@ -44,7 +40,7 @@ The output mask will be placed in the **mask** by default.
 
 4. Extract subtomogram
 
-This step extracts small volumes (here we also call subtomograms) from big tomogram , with the sampling mask generated in the preivous step.
+This step extracts small volumes (here we also call subtomograms) from big tomograms, with the sampling mask generated in the previous step.
 
 ```
 isonet.py extract tomograms.star
@@ -84,23 +80,23 @@ This process iteratively fills the missing wedge information by training deep ne
 isonet.py refine subtomo.star --gpuID 0,1 --result_dir demo_results
 ```
 
-The training time depends on the GPU performence. This example take **7 hours** on two Nvidia gtx1080 cards for 25 iterations.
+The training time depends on the GPU performance. This example takes **7 hours** on two Nvidia gtx1080 cards for 25 iterations.
 
 6. Predict
 
-All trained neural-net models after each itereation are stored in the results directory (**demo_results** in this example ) . Predict will imploy one of these models (typically models after 25~30 iterations, corresponding to denoise level between 0.15~0.20) to do missing wedge correction to the original tomogram (pp676-bin4-5i-demo_mask.mrc). In this demonstration, we use the model after 25 iteration.
+All trained neural-net models after each iteration are stored in the results directory (**demo_results** in this example ). Predict will employ one of these models (typically, those models after 25-30 iterations, corresponding to denoise levels between 0.15-0.20) to do missing wedge correction to the original tomogram (pp676-bin4-5i-demo_mask.mrc). In this demonstration, we use the model after 25 iterations.
 
 ```bash
 isonet.py predict tomograms.star demo_results/model_iter25.h5 --gpuID 0,1
 ```
 
-The predict time comsumption is much less than refinement step. This tomogram will take less than **2 minutes** to predict using two Nvidia gtx1080 cards.
+The prediction time consumption is much less than the refinement step. This tomogram will take less than **2 minutes** to predict using two Nvidia gtx1080 cards.
 
 
 
 **Following is the GUI usage of IsoNet**
 
-0. Open a terminal window, type following to lauch the GUI
+0. Open a terminal window, type the following to launch the GUI
 
 ```
 isonet.py gui &
@@ -110,7 +106,7 @@ isonet.py gui &
 
 1. Add tomograms
 
-Click *insert* on the upper-right panel and then click *None* in the *MicrographName* colume, select one tomogram.
+Click *insert* on the upper-right panel and then click *None* in the *MicrographName* column, select one tomogram.
 
 <img src="./figures/gui_addtomo.png" alt="image-20220207002107926" style="zoom:30%;" />
 
@@ -120,13 +116,13 @@ Set the pixel size and the number of subtomogram to be extracted from this tomog
 
 2. Generate mask
 
-Set proper parameter for producing mask.
+Set proper parameters for producing mask.
 
 <img src="./figures/gui_genmask.png" alt="image-20220207002807345" style="zoom:33%;" />
 
 
 
-And click **Generate Mask ** button.
+And click **Generate Mask** button.
 
 <img src="./figures/gui_clickmask.png" alt="image-20220207002915179" style="zoom:33%;" />
 
@@ -134,7 +130,7 @@ We can view the produced mask via 3dmod: Click the small index  '1'  at the begi
 
 <img src="figures/gui_viewmask.png" alt="image-20220207003308839" style="zoom:33%;" />
 
-Check the mask you generate and adjust parameter if necessary.
+Check the mask you generate and adjust the parameter if necessary.
 
 3. Extract subtomogram
 
@@ -144,19 +140,19 @@ Click **Extract**
 
 4. Refinement
 
-Click the **Refinement** tab at the upper most panel and set the GPU ID and results folder name.
+Click the **Refinement** tab at the uppermost panel and set the GPU ID and results folder name.
 
 <img src="figures/gui_refinetab.png" alt="image-20220207003550613" style="zoom:33%;" />
 
-Click **Refinie** button below to start iterative refinement.
+Click **Refine** button below to start iterative refinement.
 
 <img src="figures/gui_clickrefine.png" alt="image-20220207003812744" style="zoom:33%;" />
 
-If you want to run refinement step on a remote machine or cluster using command-line, you can check the 'only print command ' box. Then when you click **Refine** button, the command for refinement will output to your terminal window.
+If you want to run the refinement step on a remote machine or cluster using command-line, you can check the 'only print command ' box. Then when you click **Refine** button, the command for refinement will output to your terminal window.
 
 5. Predict
 
-Click the **Prediction** tab at the upper most panel.
+Click the **Prediction** tab at the uppermost panel.
 
 <img src="figures/gui_predick.png" alt="image-20220314193414624" style="zoom:33%;" />
 
