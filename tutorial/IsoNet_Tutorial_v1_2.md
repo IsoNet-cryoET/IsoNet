@@ -1,9 +1,5 @@
 # IsoNet Tutorial
 
-[toc]
-
-
-
 ## Introduction
 
 **IsoNet** stands for for ISOtropic reconstructioN of Electron Tomography. It trains deep convolutional neural networks to reconstruct meaningful contents in the missing wedge for electron tomography, and to increase signal-to-noise ratio, using the information learned from the original tomogram. The software requires tomograms as input. Observing at about 30A resolution, the IsoNet generated tomograms are largely isotropic. 
@@ -28,11 +24,11 @@ The following two quick exmaples describe the basic steps of running the program
 
 1. [Here](./Example1.md) is the first example which handles a tomogram of synapse structure which is crowding and heterogeneous. 
 
-<img src="figures/pp676_demo.png" alt="pp676_demo" width="600" />
+<p align="center"><img src="figures/pp676_demo.png" alt="pp676_demo" width="600" /> </p>
 
 2. [Here](./Example2.md) is the second example which processes tomograms of HIV virus particles. These tomograms are relatively empty and noisy and the content is homogeneous. An additional step (CTF deconvolution) is performed.
 
-<img src="figures/fig1.png" width="700" />
+<p align="center"><img src="figures/fig1.png" width="700" /> </p>
 
 For a detailed description of each command in these two examples, please refer to **Individual tasks**. Among the following tasks, only refinement and prediction steps are computational extensive and require GPU for acceleration.
 
@@ -94,12 +90,12 @@ parameter might be helpful if the tomograms are too blurry.
 
 
 
-<img src="figures/snrfalloff.png" width="800">
+<p align="center"><img src="figures/snrfalloff.png" width="800" /> </p>
 
 <p style="text-align: center; font-size: 11pt"> 2D slices of CTF deconvolved tomograms with different deconvstrength parameters. 
 			Left: deconvstrength=0.5; middle: deconvstrength=1;right:deconvstrength=1.5 </p>
 
-<img src="figures/decovstrength.png" width="800">
+<p align="center"> <img src="figures/decovstrength.png" width="800"> </p>
 
 <p style="text-align: center; font-size: 11pt"> 2D slices of CTF deconvolved tomograms with different snrfalloff parameters. Left: snrfalloff=0.5; middle: snrfalloff=1;right:snrfalloff=1.5
 
@@ -167,7 +163,7 @@ All the pixels with STD ratio larger than the **std_percentage**% of all
 pixels will be included in the mask. When you don't want to use this
 mask, set the **std_percentage** value to 100.
 
-<img src="figures/mask.png" width="800">
+<p align="center"> <img src="figures/mask.png" width=1000 > </p>
 
 <p style="text-align: center; font-size: 11pt">XY slices of tomograms and corresponding masks. Both using density_percentile=50 and std_percentile=50 </p>
 
