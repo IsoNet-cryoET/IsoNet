@@ -37,7 +37,7 @@ def build_unet(filter_base=32,depth=3,convs_per_depth=3,
         # begin bottleneck path
         b = layer
         bottle_start = layer
-        for i in range(convs_per_depth-1):
+        for i in range(convs_per_depth-2):
             b = conv_blocks(filter_base*2**depth,kernel,dropout=None,
                                     batch_norm=None,activation="LeakyReLU",
                                     name="bottleneck_no_%s" % (i))(b)
@@ -53,7 +53,7 @@ def build_unet(filter_base=32,depth=3,convs_per_depth=3,
             if pool is not None:
                 layer = Concatenate(axis=-1)([UpSampling3D(pool)(layer),concatenate[n]])
             else:
-                layer = decoder_block(layer, concatenate[n], filter_base*2**n, dropout=False,batchnorm=False,activation='linear')
+                layer = decoder_block(layer, concatenate[n], filter_base*2**n, dropout=False,batchnorm=False,activation=LeakyReLU(alpha=0.05))
             current_depth_start = layer
             for i in range(convs_per_depth):
                 layer = conv_blocks(filter_base * 2 ** n, kernel, dropout=dropout,

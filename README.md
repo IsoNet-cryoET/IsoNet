@@ -29,3 +29,21 @@ isonet.py check
 ```
 
 Tutorial data set and tutorial videos are on google drive https://drive.google.com/drive/folders/1DXjIsz6-EiQm7mBMuMHHwdZErZ_bXAgp
+
+# FAQ:
+## 1. IsoNet refine raise OOM error.
+
+This is caused by the insufficient GPU memory.
+The soluitions are:
+1. Specify a smaller batch\_size or use more(powerful) GPUs. The default batch\_size is 4 if you use one GPU, otherwise the default batch\_size is 2 times the number of GPU. Please note the batch_size should be multiple of number of GPUs, so the minimum batch\_size is the number of GPU you are using.
+For example, if you have one GPU and get OOM error, please reduce the batch\_size to 1 or 2; If you use 4 GPUs and get OOM error, please reduce the batch\_size to 4.
+2. Refine with a smaller cube\_size (not recommanded).
+
+## 2.  IsoNet extract ValueError: a must be greater than 0 unless no samples are taken
+This could be due to the tomogram thickness is smaller than the size of subtomograms to be extracted. Please make your tomogram thicker in this case.
+
+## 3. Can not see significent improvement after processing with IsoNet
+IsoNet is kind of conservative in adding information into missing wedge region. If it can not find reasonable prediction, IsoNet may simply returns the origional tomograms back to you. However, there are some ways to increase your success rate.
+1. IsoNet performs better in high contrast tomograms. That means it will be helpful to tweak the parameters (especially snrfalloff) in CTF deconvolution step to make increase the weight of low resolution information. Or trying with the data acquired with phaseplate first. As far as we know, phaseplate data will always give you good result.
+2. Missing wedge caused the nonlocal distributted information. You may observed the long shadows of gold beads in the tomograms, and those long shadows can not be fully corrected with sub-tomogram based missing correction in IsoNet, because the receptive field of the network is limitted to your subtomogram. This nonlocal information makes it particular difficult to recover the horizontal oriented membrane. There are several ways to improve. **First**, training with tomograms with larger size, the default cube size is 64, you may want to increase the size to 96 or 128, however this may lead to the OOM error Please refer to FAQ #1 when you have this problem. **Second**, bin your tomograms more. Some times we even bin our celluar tomograms to 20A/pix for IsoNet processing, this will of course increase your network receptive field, given the same size of subtomogram. Do not worry too much about binning, we found 40A resolution is sufficient for visualization of celluar tomograms. 
+3. If you find a third way of improve the performance, please share with us. 
