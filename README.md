@@ -1,3 +1,6 @@
+#Isotropic Reconstruction of Electron Tomograms with Deep Learning
+
+
 ## Installation
 python version at least 3.5 is required. If you download the package as a zip file from github, please rename the folder IsoNet-master to IsoNet.
 
