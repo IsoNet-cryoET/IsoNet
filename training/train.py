@@ -119,6 +119,11 @@ def train3D_continue(outFile,
     train_data, test_data= prepare_dataseq(data_dir, batch_size)
     train_data = tf.data.Dataset.from_generator(train_data,output_types=(tf.float32,tf.float32))
     test_data = tf.data.Dataset.from_generator(test_data,output_types=(tf.float32,tf.float32))
+    if n_gpus > 1:
+        options = tf.data.Options()
+        options.experimental_distribute.auto_shard_policy = tf.data.experimental.AutoShardPolicy.DATA
+        train_data = train_data.with_options(options)
+        test_data = test_data.with_options(options)
     history = model.fit(train_data, validation_data=test_data,
                                   epochs=epochs, steps_per_epoch=steps_per_epoch,validation_steps=np.ceil(0.1*steps_per_epoch),
                                   verbose=1)

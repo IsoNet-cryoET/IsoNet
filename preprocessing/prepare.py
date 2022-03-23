@@ -97,6 +97,7 @@ def get_cubes_one(data_X, data_Y, settings, start = 0, mask = None, add_noise = 
             from IsoNet.util.noise_generator import make_noise_one
             noise_volume = make_noise_one(cubesize = settings.cube_size,mode=settings.noise_mode)
         
+        #Noise along y axis is indenpedent, so that the y axis can be permutated.
         noise_volume = np.transpose(noise_volume, axes=(1,0,2))
         noise_volume = np.random.permutation(noise_volume)
         noise_volume = np.transpose(noise_volume, axes=(1,0,2))
