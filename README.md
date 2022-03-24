@@ -1,5 +1,6 @@
 # Isotropic Reconstruction of Electron Tomograms with Deep Learning
 
+Warning: from 2022 Feb.8 to now, default filter_base in refine was changed from 64 to 32 for faster test. To reproduce the tutorial result, it is better to specify it as 64.
 
 ## Installation
 python version at least 3.5 is required. If you download the package as a zip file from github, please rename the folder IsoNet-master to IsoNet.
