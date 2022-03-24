@@ -58,6 +58,7 @@ def run(args):
             args.iter_count = num_iter
             
             if args.pretrained_model is not None:
+                mkfolder(args.result_dir)  
                 shutil.copyfile(args.pretrained_model,'{}/model_iter{:0>2d}.h5'.format(args.result_dir,num_iter-1))
                 logging.info('Use Pretrained model as the output model of iteration 0 and predict subtomograms')
                 args.pretrained_model = None
