@@ -24,7 +24,7 @@ def build_unet(filter_base=32,depth=3,convs_per_depth=3,
             # if use res_block strategy
             if resnet:  
                 start_conv = Conv3D(filter_base*2**n,(1,1,1),
-                            padding='same',kernel_initializer="glorot_uniform")(current_depth_start)
+                            padding='same',kernel_initializer="he_uniform")(current_depth_start)
                 layer = Add()([start_conv,layer])
                 layer = activation_my("LeakyReLU")(layer)
             # save the last layer of current depth
@@ -33,7 +33,7 @@ def build_unet(filter_base=32,depth=3,convs_per_depth=3,
             if pool is not None:
                 layer = MaxPooling3D(pool)(layer)
             else:
-                layer = conv_blocks(filter_base*2**n,kernel,strides=(2,2,2),activation='linear')(layer)
+                layer = conv_blocks(filter_base*2**n,kernel,strides=(2,2,2),activation="LeakyReLU")(layer)
         # begin bottleneck path
         b = layer
         bottle_start = layer
@@ -53,17 +53,17 @@ def build_unet(filter_base=32,depth=3,convs_per_depth=3,
             if pool is not None:
                 layer = Concatenate(axis=-1)([UpSampling3D(pool)(layer),concatenate[n]])
             else:
-                layer = decoder_block(layer, concatenate[n], filter_base*2**n, dropout=False,batchnorm=False,activation='linear')
+                layer = decoder_block(layer, concatenate[n], filter_base*2**n, dropout=False,batchnorm=False,activation="LeakyReLU")
             current_depth_start = layer
             for i in range(convs_per_depth):
                 layer = conv_blocks(filter_base * 2 ** n, kernel, dropout=dropout,
-                                    batch_norm=batch_norm,name="up_level_%s_no_%s" % (n, i),activation = "LeakyReLU")(layer)
+                                    batch_norm=batch_norm,name="up_level_%s_no_%s" % (n, i),activation ="LeakyReLU")(layer)
             if resnet:
                 start_conv = Conv3D(filter_base*2**n,(1,1,1),
-                            padding='same',kernel_initializer="glorot_uniform")(current_depth_start)
+                            padding='same',kernel_initializer="he_uniform")(current_depth_start)
                 layer = Add()([start_conv,layer])
                 layer = activation_my("LeakyReLU")(layer)
-        final = conv_blocks(1, (1,1,1), dropout=None,activation='LeakyReLU',
+        final = conv_blocks(1, (1,1,1), dropout=None,activation='linear',
                                     batch_norm=None,name="fullconv_out")(layer)
         return final
     return _func

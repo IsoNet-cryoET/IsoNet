@@ -6,7 +6,7 @@
     Python Version: 3.6.5
 '''
 import sys,os
-
+import logging
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QTableWidgetItem,QMessageBox
 from PyQt5.QtCore import QObject, pyqtSlot, QProcess
@@ -38,17 +38,44 @@ class MainWindowUIClass( Ui_MainWindow ):
         that relates to the way we want our UI to operate.
         '''
         super().setupUi( MW )
-        
+
+
         #load default content in tomograms.star 
         setTableWidget(self.tableWidget, self.model.md)
         
         #set up functions when cells be clicked
-        self.tableWidget.cellPressed[int, int].connect(self.browseSlotTable)
+        #self.tableWidget.cellPressed[int, int].connect(self.browseSlotTable)
+        self.tableWidget.cellDoubleClicked[int, int].connect(self.browseSlotTable)
         self.tableWidget.cellChanged[int,int].connect(self.updateMDItem) 
-
+        #self.tableWidget.horizontalHeaderItem(1).setToolTip("Header 0");
+        #for i,lab in enumerate(self.model.header):
+        #    self.tableWidget.horizontalHeaderItem(i-1).setToolTip(self.get_toolTip(lab))
+        logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',
+        datefmt="%m-%d %H:%M:%S",level=logging.INFO,handlers=[logging.StreamHandler(sys.stdout)])
         ########################
         # connect function to buttons
         ########################
+        self.pushButton_insert.setStyleSheet("background-color : lightblue")
+        self.pushButton_delete.setStyleSheet("background-color : lightblue")
+        self.pushButton_open_star.setStyleSheet("background-color : lightblue")
+        self.pushButton_3dmod.setStyleSheet("background-color : lightblue")
+        self.button_deconov_dir.setStyleSheet("background-color : lightblue")
+        self.button_mask_dir.setStyleSheet("background-color : lightblue")
+        self.button_subtomo_dir.setStyleSheet("background-color : lightblue")
+        self.button_result_dir_refine.setStyleSheet("background-color : lightblue")
+        self.button_result_dir_predict.setStyleSheet("background-color : lightblue")
+        self.button_subtomo_star_refine.setStyleSheet("background-color : lightblue")
+        self.button_pretrain_model_refine.setStyleSheet("background-color : lightblue")
+        self.button_tomo_star_predict.setStyleSheet("background-color : lightblue")
+        self.button_pretrain_model_predict.setStyleSheet("background-color : lightblue")
+        self.button_continue_iter.setStyleSheet("background-color : lightblue")
+        self.pushButton_deconv.setStyleSheet("background-color : lightblue")
+        self.pushButton_generate_mask.setStyleSheet("background-color : lightblue")
+        self.pushButton_extract.setStyleSheet("background-color : lightblue")
+        self.pushButton_refine.setStyleSheet("background-color : lightblue")
+        self.pushButton_predict.setStyleSheet("background-color : lightblue")
+        self.pushButton_predict_3dmod.setStyleSheet("background-color : lightblue")
+        
         self.pushButton_insert.clicked.connect(self.copyRow)
         self.pushButton_delete.clicked.connect(self.removeRow)
         self.pushButton_open_star.clicked.connect(self.open_star)
@@ -107,6 +134,13 @@ class MainWindowUIClass( Ui_MainWindow ):
             
         self.textBrowser_log.setText(self.model.getLogContent(self.model.log_file))
         self.textBrowser_log.moveCursor(QtGui.QTextCursor.End)
+
+        #self.horizontalLayout_48.hide()
+        #for widgets in self.horizontalLayout_44.children():
+            #print(widgets.widget())
+            #for widget in widgets.children():
+                #print(widget)
+            #    widget.hide()
         
         ####################
         #self.log_watcher = QtCore.QFileSystemWatcher([self.model.log_file])
@@ -122,7 +156,7 @@ class MainWindowUIClass( Ui_MainWindow ):
             if btn.text() in ["Deconvolve","Generate Mask","Extract","Refine","Predict"]:
                 self.model.btn_pressed_text =  btn.text()
                 btn.setText("Stop")
-                btn.setStyleSheet('QPushButton {color: red;}')
+                btn.setStyleSheet('QPushButton {background-color : lightblue;color: red;}')
             else:
                 btn.setEnabled(False)
             self.mw.p.readyReadStandardOutput.connect(self.dataReady)
@@ -144,7 +178,7 @@ class MainWindowUIClass( Ui_MainWindow ):
                 btn.setText(self.model.btn_pressed_text)
                 #btn.setText("Refine")
                 self.model.btn_pressed_text = None
-                btn.setStyleSheet('QPushButton {color: black;}')
+                btn.setStyleSheet("QPushButton {background-color : lightblue;color: black;}")
         else:
             btn.setEnabled(True)
         self.model.read_star()
@@ -208,13 +242,18 @@ class MainWindowUIClass( Ui_MainWindow ):
                     self.tableWidget.insertRow(self.tableWidget.rowCount())
                     rowCount = self.tableWidget.rowCount()
                     for j in range(columnCount):
+                        if self.model.header[j+1] in ["rlnDeconvTomoName","rlnMaskName","rlnCorrectedTomoName","rlnMaskBoundary"]:
+                            self.tableWidget.setItem(rowCount-1, j, QTableWidgetItem("None"))
                         #self.tableWidget.cellChanged[rowCount-1, j].connect(self.updateMD)  
-                        self.tableWidget.setItem(rowCount-1, j, QTableWidgetItem(self.tableWidget.item(index.row(), j).text()))
+                        else:
+                            self.tableWidget.setItem(rowCount-1, j, QTableWidgetItem(self.tableWidget.item(index.row(), j).text()))
             else:
                 self.tableWidget.insertRow(self.tableWidget.rowCount())
                 rowCount = self.tableWidget.rowCount()
                 for j in range(columnCount):
-                    if not self.tableWidget.item(rowCount-2, j) is None:
+                    if self.model.header[j+1] in ["rlnDeconvTomoName","rlnMaskName","rlnCorrectedTomoName","rlnMaskBoundary"]:
+                            self.tableWidget.setItem(rowCount-1, j, QTableWidgetItem("None"))
+                    elif not self.tableWidget.item(rowCount-2, j) is None:
                         self.tableWidget.setItem(rowCount-1, j, QTableWidgetItem(self.tableWidget.item(rowCount-2, j).text()))
         self.updateMD()
     
@@ -227,9 +266,11 @@ class MainWindowUIClass( Ui_MainWindow ):
             "rlnSnrFalloff":"1",
             "rlnDeconvStrength": "1",
             "rlnDeconvTomoName":"None",
+            "rlnMaskBoundary":"None",
             "rlnMaskDensityPercentage": "50",
             "rlnMaskStdPercentage": "50",
             "rlnMaskName": "None"
+
         }
         return switcher.get(label, "None")
         
@@ -247,8 +288,32 @@ class MainWindowUIClass( Ui_MainWindow ):
             "continue_from": self.lineEdit_continue_iter
         }
         return switcher.get(btn, "Invaid btn name")
+    
+    def file_types(self, item):
+        switcher = {
+            "rlnMicrographName":"mrc or rec file (*.mrc *.rec) ;; All Files (*)",
+            "rlnDeconvTomoName":"mrc or rec file (*.mrc *.rec) ;; All Files (*)",
+            "rlnMaskName":"mrc or rec file (*.mrc *.rec) ;; All Files (*)",
+            "rlnMaskBoundary": "mod file (*.mod) ;; All Files (*)" 
+        }
+        return switcher.get(item, "Invaid file types")
+    def get_toolTip(self,label):
+        switcher = {
+            "rlnMicrographName": "Your tomogram filenames",
+            "rlnPixelSize": "pixel size of your input tomograms",
+            "rlnDefocus": "estimated defocus value around 0 degree",
+            "rlnNumberSubtomo":"number of subtomograms to be extraced",
+            "rlnSnrFalloff":"SNR fall rate with the frequency",
+            "rlnDeconvStrength": "(1.0) Strength of the deconvolution",
+            "rlnDeconvTomoName":"automaticly saved deconved tomogram filename",
+            "rlnMaskBoundary":"model file that define your mask boundary(optional)",
+            "rlnMaskDensityPercentage": "The approximate percentage of pixels to keep based on their local pixel density",
+            "rlnMaskStdPercentage": "The approximate percentage of pixels to keep based on their local standard deviation",
+            "rlnMaskName": "automaticly saved mask tomogram filename"
+        }
+        return switcher.get(label, "None")
 
-    def updateMD ( self ):
+    def updateMD ( self ):        
         star_file = self.model.tomogram_star
         rowCount = self.tableWidget.rowCount()
         columnCount = self.tableWidget.columnCount()
@@ -267,8 +332,18 @@ class MainWindowUIClass( Ui_MainWindow ):
             for j in range(columnCount):
                 try:
                     #print("update:",Label(self.model.header[j+1]),self.tableWidget.item(i, j).text())
-                    self.model.md._setItemValue(it,Label(self.model.header[j+1]),self.tableWidget.item(i, j).text())
+                    if len(self.tableWidget.item(i, j).text()) <1:
+                        
+                        if self.model.header[j+1] != "rlnMaskBoundary":
+                            previous_value = getattr(data[i],self.model.header[j+1])
+                        else:
+                            previous_value = "None"
 
+                        self.model.md._setItemValue(it,Label(self.model.header[j+1]),previous_value)
+                        self.tableWidget.setItem(i, j, QTableWidgetItem(str(previous_value)))
+                    else:
+                        self.model.md._setItemValue(it,Label(self.model.header[j+1]),self.tableWidget.item(i, j).text())
+                     
                     #self.model.md._setItemValue(it,Label(self.tableWidget.horizontalHeaderItem(j).text()),self.tableWidget.item(i, j).text())
                 except:
                     previous_value = getattr(data[i],self.model.header[j+1])
@@ -353,8 +428,7 @@ class MainWindowUIClass( Ui_MainWindow ):
     def browseSlotTable( self , i, j):
         ''' Called when the user presses the Browse folder button
         '''
-        if j == 0:
-            #lineEdit = self.switch_btn(btn)
+        if self.model.header[j+1] in ["rlnMicrographName", "rlnMaskBoundary","rlnDeconvTomoName","rlnMaskName"]:
             try:
                 options = QtWidgets.QFileDialog.Options()
                 options |= QtWidgets.QFileDialog.DontUseNativeDialog
@@ -362,7 +436,7 @@ class MainWindowUIClass( Ui_MainWindow ):
                                 None,
                                 "Choose File",
                                 "",
-                                "mrc or rec file (*.mrc *.rec) ;; All Files (*)",
+                                self.file_types(self.model.header[j+1]),
                                 options=options)
                 if not fileName:
                     fileName = self.tableWidget.item(i, j).text()
@@ -390,13 +464,14 @@ class MainWindowUIClass( Ui_MainWindow ):
             cmd = "{} --ncpu {}".format(cmd, self.lineEdit_ncpu.text())
         if self.lineEdit_highpassnyquist.text():
             cmd = "{} --highpassnyquist {}".format(cmd, self.lineEdit_highpassnyquist.text())
-        if self.lineEdit_tile.text():
-            cmd = "{} --chunk_size {}".format(cmd, self.lineEdit_tile.text())
+        if self.lineEdit_chunk_size.text():
+            cmd = "{} --chunk_size {}".format(cmd, self.lineEdit_chunk_size.text())
         if self.lineEdit_overlap.text():
             cmd = "{} --overlap {}".format(cmd, self.lineEdit_overlap.text())
 
         if self.checkBox_only_print_command_prepare.isChecked() and self.pushButton_deconv.text() == 'Deconvolve':
             print(cmd)
+            #logging.info(cmd)
         else:
             self.start_process(cmd,self.pushButton_deconv)
 
@@ -545,13 +620,24 @@ class MainWindowUIClass( Ui_MainWindow ):
         slected_items = self.tableWidget.selectedItems()
         if len(slected_items) > 0:
             cmd = "3dmod"
+            model_file=""
+            previous_i = -1
             for item in slected_items:
                 i = item.row()
                 j = item.column()
+                if previous_i != -1 and i != previous_i:
+                    cmd = "{} {} {}".format(cmd,model_file,"3dmod")
+                    model_file=""
                 item_text = self.tableWidget.item(i, j).text()
                 if item_text[-4:] == '.mrc' or item_text[-4:] == '.rec':
                     cmd = "{} {}".format(cmd,item_text)
-            #print(cmd)
+                if self.model.header[j+1]=="rlnMaskBoundary" and item_text != "None":
+                    model_file = "{}{}".format(item_text,";")
+                previous_i = i
+            
+            cmd = "{} {}".format(cmd,model_file)
+            print(cmd)
+
             if cmd != "3dmod":
                 os.system(cmd)
             else:

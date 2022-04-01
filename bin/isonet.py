@@ -18,7 +18,7 @@ class ISONET:
     isonet.py extract -h
     isonet.py refine -h
     isonet.py predict -h
-
+    isonet.py gui -h
     """
     #log_file = "log.txt"
 
@@ -37,7 +37,7 @@ class ISONET:
 
         """
         md = MetaData()
-        md.addLabels('rlnIndex','rlnMicrographName','rlnPixelSize','rlnDefocus','rlnNumberSubtomo')
+        md.addLabels('rlnIndex','rlnMicrographName','rlnPixelSize','rlnDefocus','rlnNumberSubtomo','rlnMaskBoundary')
         tomo_list = sorted(os.listdir(folder_name))
         i = 0
         for tomo in tomo_list:
@@ -50,6 +50,7 @@ class ISONET:
                 md._setItemValue(it,Label('rlnPixelSize'),pixel_size)
                 md._setItemValue(it,Label('rlnDefocus'),defocus)
                 md._setItemValue(it,Label('rlnNumberSubtomo'),number_subtomos)
+                md._setItemValue(it,Label('rlnMaskBoundary'),None)
         md.write(output_star)
 
     def prepare_subtomo_star(self, folder_name, output_star='subtomo.star', pixel_size: float=10.0, cube_size = None):
@@ -107,7 +108,7 @@ class ISONET:
         tomo_idx: str=None):
         """
         \nCTF deconvolution for the tomograms.\n
-        isonet.py deconv star_file [--deconv_folder] [--snrfalloff] [--deconvstrength] [--highpassnyquist] [--tile] [--overlap_rate] [--ncpu] [--tomo_idx]
+        isonet.py deconv star_file [--deconv_folder] [--snrfalloff] [--deconvstrength] [--highpassnyquist] [--overlap_rate] [--ncpu] [--tomo_idx]
         This step is recommanded because it enhances low resolution information for a better contrast. No need to do deconvolution for phase plate data.
         :param deconv_folder: (./deconv) Folder created to save deconvoluted tomograms.
         :param star_file: (None) Star file for tomograms.
@@ -169,6 +170,7 @@ class ISONET:
     def make_mask(self,star_file,
                 mask_folder: str = 'mask',
                 patch_size: int=4,
+                mask_boundary: str=None,
                 density_percentage: int=None,
                 std_percentage: int=None,
                 use_deconv_tomo:bool=True,
@@ -183,7 +185,7 @@ class ISONET:
         :param density_percentage: (50) The approximate percentage of pixels to keep based on their local pixel density.
         If this value is not set, the program will look for the parameter in the star file.
         If this value is not set and not found in star file, the default value 50 will be used.
-        :param std_percentage: (50) The approximate percentage of pixels to keel based on their local standard deviation.
+        :param std_percentage: (50) The approximate percentage of pixels to keep based on their local standard deviation.
         If this value is not set, the program will look for the parameter in the star file.
         If this value is not set and not found in star file, the default value 50 will be used.
         :param use_deconv_tomo: (True) If CTF deconvolved tomogram is found in tomogram.star, use that tomogram instead.
@@ -221,13 +223,22 @@ class ISONET:
                     tomo_root_name = os.path.splitext(os.path.basename(tomo_file))[0]
 
                     if os.path.isfile(tomo_file):
-                        logging.info('make_mask: {}| dir_to_save: {}| percentage: {}| window_scale: {}'.format(tomo_file,mask_folder,it.rlnMaskDensityPercentage,patch_size))
+                        logging.info('make_mask: {}| dir_to_save: {}| percentage: {}| window_scale: {}'.format(tomo_file,
+                        mask_folder, it.rlnMaskDensityPercentage, patch_size))
+                        
+                        #if mask_boundary is None:
+                        if "rlnMaskBoundary" in md.getLabels() and it.rlnMaskBoundary not in [None, "None"]:
+                            mask_boundary = it.rlnMaskBoundary 
+                        else:
+                            mask_boundary = None
+                              
                         mask_out_name = '{}/{}_mask.mrc'.format(mask_folder,tomo_root_name)
                         make_mask(tomo_file,
                                 mask_out_name,
+                                mask_boundary=mask_boundary,
                                 side=patch_size,
-                                percentile=it.rlnMaskDensityPercentage,
-                                threshold=it.rlnMaskStdPercentage,
+                                density_percentage=it.rlnMaskDensityPercentage,
+                                std_percentage=it.rlnMaskStdPercentage,
                                 surface = z_crop)
 
                     md._setItemValue(it,Label('rlnMaskName'),mask_out_name)
@@ -325,6 +336,9 @@ class ISONET:
         filter_base: int = None,
         batch_normalization: bool = True,
         normalize_percentile: bool = True,
+
+        remove_intermediate = False,
+        select_subtomo_number = None
     ):
         """
         \ntrain neural network to correct missing wedge\n
@@ -391,7 +405,6 @@ class ISONET:
         d_args = Arg(d)
         from IsoNet.bin.predict import predict
 
-
         if d_args.log_level == "debug":
             logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',
             datefmt="%m-%d %H:%M:%S",level=logging.DEBUG,handlers=[logging.StreamHandler(sys.stdout)])
@@ -406,6 +419,42 @@ class ISONET:
             f.write(error_text)
             f.close()
             logging.error(error_text)
+    
+    def resize(self, star_file:str, apix: float=15, out_folder="tomograms_resized"):
+        '''
+        This function rescale the tomograms to a given pixelsize
+        '''
+        md = MetaData()
+        md.read(star_file)
+        #print(md._data[0].rlnPixelSize)
+        from scipy.ndimage import zoom
+        #from skimage.transform import rescale
+        #import numpy as np
+        import mrcfile
+        if not os.path.isdir(out_folder):
+            os.makedirs(out_folder)
+        for item in md._data:
+            ori_apix = item.rlnPixelSize
+            tomo_name = item.rlnMicrographName
+            zoom_factor = float(ori_apix)/apix
+            new_tomo_name = "{}/{}".format(out_folder,os.path.basename(tomo_name))
+            with mrcfile.open(tomo_name) as mrc:
+                data = mrc.data
+            print("scaling: {}".format(tomo_name))
+            new_data = zoom(data, zoom_factor,order=3, prefilter=False)
+            #new_data = rescale(data, zoom_factor,order=3, anti_aliasing = True)
+            #new_data = new_data.astype(np.float32)
+
+            with mrcfile.new(new_tomo_name,overwrite=True) as mrc:
+                mrc.set_data(new_data)
+                mrc.voxel_size = apix
+
+            item.rlnPixelSize = apix
+            print(new_tomo_name)
+            item.rlnMicrographName = new_tomo_name
+            print(item.rlnMicrographName)
+        md.write(os.path.splitext(star_file)[0] + "_resized.star")
+        print("scale_finished")
 
     def check(self):
         from IsoNet.bin.predict import predict
@@ -416,6 +465,9 @@ class ISONET:
         print('IsoNet --version 0.1 installed')
 
     def gui(self):
+        """
+        \nGraphic User Interface\n
+        """
         import IsoNet.gui.Isonet_star_app as app
         app.main()
 
