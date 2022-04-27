@@ -2,7 +2,6 @@ import os
 import sys
 import logging
 import sys
-from tkinter import CENTER
 import mrcfile
 from IsoNet.preprocessing.cubes import create_cube_seeds,crop_cubes,DataCubes
 from IsoNet.preprocessing.img_processing import normalize
@@ -131,6 +130,7 @@ def get_cubes(inp,settings):
     ow_data = normalize(ow_data, percentile = settings.normalize_percentile)
 
     orig_data = apply_wedge(ow_data, ld1=0, ld2=1) + apply_wedge(iw_data, ld1 = 1, ld2=0)
+    #orig_data = ow_data
     orig_data = normalize(orig_data, percentile = settings.normalize_percentile)
 
     rotated_data = np.zeros((len(rotation_list), *orig_data.shape))
@@ -144,7 +144,7 @@ def get_cubes(inp,settings):
     else:
         for i in range(len(rotation_list)):
             rot = special_ortho_group.rvs(3)
-            print(rot)
+            #print(rot)
             center = (np.array(orig_data.shape) -1 )/2.
             offset = center-np.dot(rot,center)
             rotated_data[i] = affine_transform(orig_data,rot,offset=offset)
