@@ -27,8 +27,8 @@ def run(args):
             for item in args_continue.__dict__:
                 if args_continue.__dict__[item] is not None and (args.__dict__ is None or not hasattr(args, item)):
                     args.__dict__[item] = args_continue.__dict__[item]
-
         args = run_whole(args)
+
         #environment
         os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
         os.environ["CUDA_VISIBLE_DEVICES"]=args.gpuID
@@ -37,35 +37,46 @@ def run(args):
             os.environ['TF_CPP_MIN_LOG_LEVEL'] = '0'
         else:
             os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
-
-        check_gpu(args)
-        from IsoNet.training.predict import predict
-        from IsoNet.training.train import prepare_first_model, train_data
-
-        noise_level_series = get_noise_level(args.noise_level,args.noise_start_iter,args.iterations)
         
+        ### Seperate network with other modules in case we may use pytorch in the future ###
+        if True:
+            check_gpu(args)
+            from IsoNet.models.unet.predict import predict
+            from IsoNet.models.unet.train import prepare_first_model, train_data
+
+        ###  find current iterations ###        
         current_iter = args.iter_count if hasattr(args, "iter_count") else 1
         if args.continue_from is not None:
             current_iter += 1
 
+        ###  Main Loop ###
+        ###  1. find network model file ###
+        ###  2. prediction if network found ###
+        ###  3. prepare training data ###
+        ###  4. training and save model file ###
         for num_iter in range(current_iter,args.iterations + 1):        
             logging.info("Start Iteration{}!".format(num_iter))
+
+            ### Select a subset of subtomos, useful when the number of subtomo is too large ###
             if args.select_subtomo_number is not None:
                 args.mrc_list = np.random.choice(args.all_mrc_list, size = int(args.select_subtomo_number), replace = False)
             else:
                 args.mrc_list = args.all_mrc_list
-            
+
+            ### Update the iteration count ###
             args.iter_count = num_iter
             
             if args.pretrained_model is not None:
+                ### use pretrained model ###
                 mkfolder(args.result_dir)  
                 shutil.copyfile(args.pretrained_model,'{}/model_iter{:0>2d}.h5'.format(args.result_dir,num_iter-1))
-                logging.info('Use Pretrained model as the output model of iteration 0 and predict subtomograms')
+                logging.info('Use Pretrained model as the output model of iteration {} and predict subtomograms'.format(num_iter-1))
                 args.pretrained_model = None
                 logging.info("Start predicting subtomograms!")
                 predict(args)
                 logging.info("Done predicting subtomograms!")
             elif args.continue_from is not None:
+                ### Continue from a json file ###
                 logging.info('Continue from previous model: {}/model_iter{:0>2d}.h5 of iteration {} and predict subtomograms \
                 '.format(args.result_dir,num_iter -1,num_iter-1))
                 args.continue_from = None
@@ -73,49 +84,52 @@ def run(args):
                 predict(args)
                 logging.info("Done predicting subtomograms!")
             elif num_iter == 1:
+                ### First iteration ###
                 mkfolder(args.result_dir)  
                 prepare_first_model(args)
                 prepare_first_iter(args)
             else:
+                ### Subsequent iterations for all conditions ###
                 logging.info("Start predicting subtomograms!")
                 predict(args)
                 logging.info("Done predicting subtomograms!")
 
-            
             args.init_model = "{}/model_iter{:0>2d}.h5".format(args.result_dir, num_iter-1)
            
-
-            # Noise settings
-            args.noise_level_current =  noise_level_series[num_iter]
-            num_noise_volume = 1000
+            ### Noise settings ###
             if num_iter>=args.noise_start_iter[0] and (not os.path.isdir(args.noise_dir) or len(os.listdir(args.noise_dir))< num_noise_volume ):
-
                 from IsoNet.util.noise_generator import make_noise_folder
+                num_noise_volume = 1000
                 print(args.noise_mode)
                 make_noise_folder(args.noise_dir,args.noise_mode,args.cube_size,num_noise_volume,ncpus=args.preprocessing_ncpus)
-                                                
+            noise_level_series = get_noise_level(args.noise_level,args.noise_start_iter,args.iterations)
+            args.noise_level_current =  noise_level_series[num_iter]
             logging.info("Noise Level:{}".format(args.noise_level_current))
 
+            ### remove data_dir and generate training data in data_dir###
             try:
                 shutil.rmtree(args.data_dir)     
             except OSError:
                 pass
-        
             get_cubes_list(args)
             logging.info("Done preparing subtomograms!")
+
+            ### remove all the mrc files in results_dir ###
             if args.remove_intermediate is True:
                 logging.info("Remove intermediate files in iteration {}".format(args.iter_count-1))
                 for mrc in args.mrc_list:
                     root_name = mrc.split('/')[-1].split('.')[0]
                     current_mrc = '{}/{}_iter{:0>2d}.mrc'.format(args.result_dir,root_name,args.iter_count-1)
                     os.remove(current_mrc)
+
+            ### start training and save model and json ###
             logging.info("Start training!")
             history = train_data(args) #train based on init model and save new one as model_iter{num_iter}.h5
             args.losses = history.history['loss']
             save_args_json(args,args.result_dir+'/refine_iter{:0>2d}.json'.format(num_iter))
             logging.info("Done training!")
 
-
+            ### for last iteration predict subtomograms ###
             if num_iter == args.iterations and args.remove_intermediate == False:
                 logging.info("Predicting subtomograms for last iterations")
                 args.iter_count +=1 
@@ -135,13 +149,15 @@ def run(args):
 
 
 def run_whole(args):
+    '''
+    Consume all the argument parameters
+    '''
     md = MetaData()
     md.read(args.subtomo_star)
     #*******set fixed parameters*******
     args.crop_size = md._data[0].rlnCropSize
     args.cube_size = md._data[0].rlnCubeSize
     args.predict_cropsize = args.crop_size
-    num_noise_volume = 1000
     args.residual = True
     #*******calculate parameters********
     if args.gpuID is None:
@@ -159,7 +175,7 @@ def run_whole(args):
         args.batch_size = max(4, 2 * args.ngpus)
     args.predict_batch_size = args.batch_size
     if args.filter_base is None:
-        args.filter_base = 32
+        args.filter_base = 32 #this needs to be tested again
     if args.steps_per_epoch is None:
         if args.select_subtomo_number is None:
             args.steps_per_epoch = min(int(len(md) * 6/args.batch_size) , 200)

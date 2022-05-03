@@ -1,17 +1,4 @@
-'''
-Author: Hui Wang, Yuntao Liu
-Date: 04/25/2020
-
-Preprocessing functions for emapp 
-
---create_cube_seeds(): generate the seed array for creating cubes
---crop_cubes(): crop the cube from the entire tomograms
---prepare_cubes(): patch-wise generate train and test dataset
-
-
-'''
 import os
-import glob
 import numpy as np
 import mrcfile
 

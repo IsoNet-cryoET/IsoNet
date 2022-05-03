@@ -462,7 +462,7 @@ class ISONET:
         import skimage
         import PyQt5
         import tqdm
-        print('IsoNet --version 0.1 installed')
+        print('IsoNet --version 0.2 installed')
 
     def gui(self):
         """

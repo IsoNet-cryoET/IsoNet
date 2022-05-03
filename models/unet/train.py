@@ -1,77 +1,12 @@
 import tensorflow as tf
 import logging
 tf.get_logger().setLevel(logging.ERROR)
-from tensorflow.keras.layers import Activation, Add, Input, Conv2D, Conv3D
-from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.utils import Sequence
-from IsoNet.training.data_sequence import prepare_dataseq
+from IsoNet.models.unet.data_sequence import prepare_dataseq
 from IsoNet.models.unet.model import Unet
-from IsoNet.losses.losses import loss_mae,loss_mse
 import numpy as np
-from tensorflow.keras.models import model_from_json,load_model, clone_model
-import os
+from tensorflow.keras.models import load_model
 
-
-def train3D_seq(outFile,
-                data_dir = 'data',
-                result_folder='results',
-                epochs=40,
-                steps_per_epoch=128,
-                batch_size=32,
-                dropout = 0.3,
-                lr=0.0004,
-                filter_base=32,
-                convs_per_depth = 3,
-                kernel = (3,3,3),
-                pool = (2,2,2),
-                batch_norm = False,
-                depth = 3,
-                n_gpus=2,
-                last_activation = 'linear',
-                residual = True,
-                loss = 'mae'):
-
-    strategy = tf.distribute.MirroredStrategy()
-    if n_gpus > 1:
-        with strategy.scope(): 
-            model = Unet(filter_base=filter_base, 
-                depth=depth, 
-                convs_per_depth=convs_per_depth,
-                kernel=kernel,
-                batch_norm=batch_norm, 
-                dropout=dropout,
-                pool=pool,
-                residual = residual,
-                last_activation = last_activation,
-                loss = loss,
-                lr = lr)
-            # model.compile(optimizer=optimizer, loss=loss, metrics=_metrics)
-    else:
-        model = Unet(filter_base=filter_base, 
-            depth=depth, 
-            convs_per_depth=convs_per_depth,
-            kernel=kernel,
-            batch_norm=batch_norm, 
-            dropout=dropout,
-            pool=pool,
-            residual = residual,
-            last_activation = last_activation,
-            loss = loss,
-            lr = lr)
-        # model.compile(optimizer=optimizer, loss=loss, metrics=_metrics)
-    print(model.summary())
-    train_data, test_data = prepare_dataseq(data_dir, batch_size)
-    print('**train data size**',len(train_data))
-    history = model.fit_generator(generator=train_data,
-                                validation_data=test_data,
-                                epochs=epochs,
-                                steps_per_epoch=steps_per_epoch,
-                                verbose=1)
-
-    model.save(outFile)
-
-    return history
 
 def train3D_continue(outFile,
                     model_file,
