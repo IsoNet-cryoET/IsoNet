@@ -13,6 +13,8 @@ from functools import partial
 from IsoNet.util.rotations import rotation_list
 # from difflib import get_close_matches
 from IsoNet.util.metadata import MetaData, Item, Label
+from scipy.ndimage import affine_transform
+from scipy.stats import special_ortho_group
 #Make a new folder. If exist, nenew it
 # Do not set basic config for logging here
 # logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.DEBUG)
@@ -128,6 +130,7 @@ def get_cubes(inp,settings):
     ow_data = normalize(ow_data, percentile = settings.normalize_percentile)
 
     orig_data = apply_wedge(ow_data, ld1=0, ld2=1) + apply_wedge(iw_data, ld1 = 1, ld2=0)
+    #orig_data = ow_data
     orig_data = normalize(orig_data, percentile = settings.normalize_percentile)
 
     rotated_data = np.zeros((len(rotation_list), *orig_data.shape))
