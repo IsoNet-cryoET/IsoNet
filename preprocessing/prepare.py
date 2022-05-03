@@ -13,8 +13,6 @@ from functools import partial
 from IsoNet.util.rotations import rotation_list
 # from difflib import get_close_matches
 from IsoNet.util.metadata import MetaData, Item, Label
-from scipy.ndimage import affine_transform
-from scipy.stats import special_ortho_group
 #Make a new folder. If exist, nenew it
 # Do not set basic config for logging here
 # logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt="%H:%M:%S",level=logging.DEBUG)
