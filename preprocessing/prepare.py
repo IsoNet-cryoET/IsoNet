@@ -132,15 +132,23 @@ def get_cubes(inp,settings):
 
     rotated_data = np.zeros((len(rotation_list), *orig_data.shape))
 
-    for i,r in enumerate(rotation_list):
-        data = np.rot90(orig_data, k=r[0][1], axes=r[0][0])
-        data = np.rot90(data, k=r[1][1], axes=r[1][0])
-        rotated_data[i] = data
+    old_rotation = True
+    if old_rotation:
+        for i,r in enumerate(rotation_list):
+            data = np.rot90(orig_data, k=r[0][1], axes=r[0][0])
+            data = np.rot90(data, k=r[1][1], axes=r[1][0])
+            rotated_data[i] = data
+    else:
+        from scipy.ndimage import affine_transform
+        from scipy.stats import special_ortho_group 
+        for i in range(len(rotation_list)):
+            rot = special_ortho_group.rvs(3)
+            center = (np.array(orig_data.shape) -1 )/2.
+            offset = center-np.dot(rot,center)
+            rotated_data[i] = affine_transform(orig_data,rot,offset=offset)
     
     mw = mw2d(settings.crop_size)   
     datax = apply_wedge_dcube(rotated_data, mw)
-    #print(rotated_data.shape)
-    #print(datax.shape)
 
     for i in range(len(rotation_list)): 
         data_X = crop_to_size(datax[i], settings.crop_size, settings.cube_size)
