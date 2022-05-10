@@ -357,7 +357,7 @@ class ISONET:
         :param convs_per_depth: (3) Number of convolution layer for each depth.
         :param kernel: (3,3,3) Kernel for convolution
         :param unet_depth: (3) Depth of UNet.
-        :param filter_base: (32) The base number of channels after convolution.
+        :param filter_base: (64) The base number of channels after convolution.
         :param batch_normalization: (True) Use Batch Normalization layer
         :param pool: (False) Use pooling layer instead of stride convolution layer.
         :param normalize_percentile: (True) Normalize the 5 percent and 95 percent pixel intensity to 0 and 1 respectively. If this is set to False, normalize the input to 0 mean and 1 standard dievation.
