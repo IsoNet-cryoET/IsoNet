@@ -52,7 +52,7 @@ def crop_cubes(img3D,seeds,cubeSideLen):
     cubes=np.array(cubes)
     return cubes
 
-
+'''
 def prepare_cubes(X,Y,size=32,num=500):
     dirs_tomake = ['train_x','train_y', 'test_x', 'test_y']
     #make folders for train and test dataset
@@ -86,7 +86,7 @@ def prepare_cubes(X,Y,size=32,num=500):
         os.rename('{}train_y/{}'.format(settings.ab_data_folder, all_path_y[i]), '{}test_y/{}'.format(settings.ab_data_folder,all_path_y[i]))
         
     print("done create {} cubes! Split dataset into {} and {} for training and testing.".format(num,num-num_test,num_test))
-
+'''
 
 
 class DataCubes:
