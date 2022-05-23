@@ -175,7 +175,11 @@ def run_whole(args):
         args.batch_size = max(4, 2 * args.ngpus)
     args.predict_batch_size = args.batch_size
     if args.filter_base is None:
-        args.filter_base = 32 #this needs to be tested again
+        args.filter_base = 64
+        # if md._data[0].rlnPixelSize >15:
+        #     args.filter_base = 32
+        # else:
+        #     args.filter_base = 64
     if args.steps_per_epoch is None:
         if args.select_subtomo_number is None:
             args.steps_per_epoch = min(int(len(md) * 6/args.batch_size) , 200)
