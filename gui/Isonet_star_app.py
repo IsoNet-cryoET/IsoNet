@@ -188,7 +188,7 @@ class MainWindowUIClass( Ui_MainWindow ):
     #link to log window to display output of stdout
     def dataReady(self):
         cursor = self.textBrowser_log.textCursor()
-        cursor.movePosition(cursor.End)
+        #cursor.movePosition(cursor.End)
         # have transfer byte string to unicode string
         import string
         printable = set(string.printable)
@@ -211,8 +211,13 @@ class MainWindowUIClass( Ui_MainWindow ):
         f.close()
 
         self.previous_log_line = printable_txt
-        self.textBrowser_log.ensureCursorVisible()
-        self.textBrowser_log.moveCursor(QtGui.QTextCursor.End)
+        #self.textBrowser_log.ensureCursorVisible()
+        verScrollBar = self.textBrowser_log.verticalScrollBar()
+        scrollIsAtEnd = verScrollBar.maximum() - verScrollBar.value()
+        if scrollIsAtEnd <=100:
+            verScrollBar.setValue(verScrollBar.maximum()) # Scrolls to the bottom
+
+        #self.textBrowser_log.moveCursor(QtGui.QTextCursor.End)
         
     def removeRow(self):
         #print(self.tableWidget.selectionModel().selectedIndexes()[0].row())

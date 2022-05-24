@@ -15,7 +15,6 @@ def setTableWidget(tw, md):
 
         labels = md.getLabels()
         nColumns = len(labels)
-
         tw.setColumnCount(nColumns- 1 ) 
         tw.setRowCount(nRows)
 
@@ -62,6 +61,7 @@ def get_display_name(label):
         "rlnSnrFalloff":"SnrFalloff",
         "rlnDeconvStrength": "DeconvStrength",
         "rlnDeconvTomoName":"DeconvTomoName",
+        "rlnCorrectedTomoName":"CorrectedTomoName",
         "rlnMaskBoundary":"MaskBoundary",
         "rlnMaskDensityPercentage": "MaskDensityPercentage",
         "rlnMaskStdPercentage": "MaskStdPercentage",

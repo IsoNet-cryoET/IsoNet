@@ -137,6 +137,7 @@ class MetaData():
             if values[0].startswith('_rln'):  # Label line
                 # Skip leading underscore in label name
                 self._addLabel(labelName=values[0][1:])
+                print(values[0][1:])
                 found_label = True
 
             elif found_label:  # Read data lines after at least one label
