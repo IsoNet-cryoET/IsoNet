@@ -8,7 +8,7 @@ from IsoNet.util.metadata import MetaData,Label,Item
 
 class ISONET:
     """
-    ISONET: Train on tomograms and Predict to restore missing-wedge\n
+    ISONET: Train on tomograms and restore missing-wedge\n
     for detail discription, run one of the following commands:
 
     isonet.py prepare_star -h
@@ -18,6 +18,7 @@ class ISONET:
     isonet.py extract -h
     isonet.py refine -h
     isonet.py predict -h
+    isonet.py resize -h
     isonet.py gui -h
     """
     #log_file = "log.txt"
@@ -317,14 +318,16 @@ class ISONET:
         pretrained_model: str = None,
         log_level: str = None,
         result_dir: str='results',
+        remove_intermediate: bool =False,
+        select_subtomo_number: int = None,
         preprocessing_ncpus: int = 16,
         continue_from: str=None,
         epochs: int = 10,
         batch_size: int = None,
         steps_per_epoch: int = None,
 
-        noise_level:  tuple=None,
-        noise_start_iter: tuple=None,
+        noise_level:  tuple=(0.05,0.10,0.15,0.20),
+        noise_start_iter: tuple=(11,16,21,26),
         noise_mode: str = None,
         noise_dir: str = None,
         learning_rate: float = None,
@@ -337,12 +340,10 @@ class ISONET:
         batch_normalization: bool = True,
         normalize_percentile: bool = True,
 
-        remove_intermediate = False,
-        select_subtomo_number = None
     ):
         """
         \ntrain neural network to correct missing wedge\n
-        isonet.py refine subtomo_star [--iterations] [--gpuID] [--preprocessing_ncpus] [--batch_size] [--steps_per_epoch] [--noise_start_iter] [--noise_level] [--noise_pause] ...
+        isonet.py refine subtomo_star [--iterations] [--gpuID] [--preprocessing_ncpus] [--batch_size] [--steps_per_epoch] [--noise_start_iter] [--noise_level]...
         :param subtomo_star: (None) star file containing subtomogram(s).
         :param gpuID: (0,1,2,3) The ID of gpu to be used during the training. e.g 0,1,2,3.
         :param pretrained_model: (None) A trained neural network model in ".h5" format to start with.
@@ -364,6 +365,8 @@ class ISONET:
         :param noise_level: (0.05,0.1,0.15,0.2) Level of noise STD(added noise)/STD(data) after the iteration defined in noise_start_iter.
         :param noise_start_iter: (11,16,21,26) Iteration that start to add noise of corresponding noise level.
         :param noise_mode: (None) Filter names when generating noise volumes, can be 'ramp', 'hamming' and 'noFilter'
+        :param noise_dir: (None) Directory for generated noise volumes. If set to None, the Noise volumes should appear in results/training_noise
+
         ************************Network settings************************
 
         :param drop_out: (0.3) Drop out rate to reduce overfitting.
