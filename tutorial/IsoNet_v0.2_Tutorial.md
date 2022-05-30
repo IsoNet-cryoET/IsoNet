@@ -544,7 +544,7 @@ Pixels with STD ratio larger than the **std_percentage**% of all pixels will be 
 
 #### 3.3.3 Draw a polygon to define area of interest
 
-This option is new in version 0.2. The polygon should be drawn in 3dmod (a command in 3D mod). The polygon file (with extension .mod) corresponds to the **MaskBoundary** parameter in star file, or the table in graphic user interaface (GUI). This option is espacially useful to find carbon areas that can not detecte with the above two types of masks.
+This option is new in version 0.2. The polygon should be drawn in 3dmod (a command in IMOD). The polygon file (with extension .mod) corresponds to the **MaskBoundary** parameter in star file, or the table in graphic user interaface (GUI). This option is espacially useful to find carbon areas that can not detecte with the above two types of masks.
 
 To generate polygon mask in GUI, first click **3dmod view** to open a tomogram file. 
 
@@ -566,6 +566,27 @@ Then save the polygon to a file (with .mod extension) and double click the corre
 <p align="center"> <img src="figures/polygon_mask_final.png" width=800 > </p>
 
 <p style="text-align: center; font-size: 11pt">Mask generated with user defined polygon </p>
+
+Note: To create mask boundary with command line and **without** GUI. You should modify mask boundary column in the tomogram star file, then run **isonet.py make_mask tomograms.star**. The modified star file should look like follows:
+
+
+```
+data_
+
+loop_
+_rlnIndex #1
+_rlnMicrographName #2
+_rlnPixelSize #3
+_rlnDefocus #4
+_rlnNumberSubtomo #5
+_rlnSnrFalloff #6
+_rlnDeconvStrength #7
+_rlnDeconvTomoName #8
+_rlnMaskBoundary #9
+_rlnMaskDensityPercentage #10
+_rlnMaskStdPercentage #11
+1       ./tomograms/TS01-wbp.rec        10.880000       38838.000000    100     1.000000        1.000000        ./deconv/TS01-wbp.rec   ./tomograms/TS01-wbp.mod        50.000000       50.000000 
+```
 
 If you want only define z range instead of making polyson. you can simply click two points on the tomograms to define z range. Or specify the **z_crop** parameter. For example, **\--z_crop 0.2** will mask out both the top 20% and bottom 20% region along the z-axis.
 
