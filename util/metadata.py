@@ -70,7 +70,8 @@ LABELS = {
     'rlnIndex': str,
     'rlnSubtomoIndex': str,
     'rlnMaskDensityPercentage': float,
-    'rlnMaskStdPercentage': float
+    'rlnMaskStdPercentage': float,
+    'rlnMaskBoundary': str
 }
 
 

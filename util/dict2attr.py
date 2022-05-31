@@ -6,21 +6,18 @@ logger.setLevel(logging.INFO)
 global refine_param, predict_param, extract_param, param_to_check, param_to_set_attr
 refine_param = [ 'normalize_percentile', 'batch_normalization', 'filter_base', 'unet_depth', 'pool', 'kernel', 'convs_per_depth', 'drop_out','noise_dir', 
                 'noise_mode', 'noise_pause', 'noise_start_iter','learning_rate', 'noise_level', 'steps_per_epoch', 'batch_size', 'epochs', 'continue_from', 
-                'preprocessing_ncpus', 'result_dir', 'continue_iter', 'log_level', 'pretrained_model', 'data_dir', 'iterations', 'gpuID', 'subtomo_star','cmd']
+                'preprocessing_ncpus', 'result_dir', 'continue_iter', 'log_level', 'pretrained_model', 'data_dir', 'iterations', 'gpuID', 'subtomo_star','cmd',
+                'select_subtomo_number','remove_intermediate']
 predict_param = ['tomo_idx', 'Ntile', 'log_level', 'normalize_percentile', 'batch_size', 'use_deconv_tomo', 'crop_size', 'cube_size', 'gpuID', 'output_dir', 'model', 'star_file']
-extract_param = ['log_level', 'cube_size', 'subtomo_star', 'subtomo_folder', 'use_deconv_tomo', 'star_file','tomo_idx', 'crop_size']
+extract_param = ['log_level', 'cube_size', 'subtomo_star', 'subtomo_folder', 'use_deconv_tomo', 'star_file','tomo_idx','crop_size']
 deconv_param = ['star_file', 'deconv_folder','chunk_size', 'snrfalloff', 'deconvstrength', 'highpassnyquist', 'tile', 'overlap_rate', 'ncpu', 'tomo_idx']
-make_mask_param = ['star_file', 'mask_folder', 'patch_size', 'density_percentage', 'std_percentage', 'use_deconv_tomo', 'z_crop', 'tomo_idx']
+make_mask_param = ['star_file', 'mask_folder', 'patch_size', 'density_percentage', 'std_percentage', 'use_deconv_tomo', 'z_crop', 'tomo_idx', 'mask_boundary']
 prepare_star_param = ['number_subtomos', 'defocus', 'pixel_size', 'output_star', 'folder_name']
 prepare_subtomo_star_param = ['folder_name', 'output_star', 'pixel_size', 'cube_size']
 param_to_check = refine_param + predict_param + extract_param + ['self','run']
 param_to_set_attr = refine_param + predict_param + extract_param + ['iter_count','crop_size','cube_size','predict_cropsize','noise_dir','lr','ngpus','predict_batch_size','losses']
 class Arg:
     def __init__(self,dictionary,from_cmd=True):
-        # Do not set global basic logging 
-        #logging.basicConfig(level=logging.DEBUG,format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
-        #datefmt='%Y-%m-%d:%H:%M:%S')
-        #logger = logging.getLogger('IsoNet.util.dict2attr')
         for k, v in dictionary.items():
             if k not in param_to_check and from_cmd is True:
                 logger.error("{} not recognized!".format(k))

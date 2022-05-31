@@ -1,7 +1,6 @@
 from IsoNet.models.unet import builder,builder_fullconv,builder_fullconv_old,build_old_net
 from tensorflow.keras.layers import Input,Add,Activation
 from tensorflow.keras.models import Model
-from IsoNet.losses.wedge_power import wedge_power_gain
 from tensorflow.keras.optimizers import Adam
 def Unet(filter_base=32,
         depth=3,
@@ -50,7 +49,7 @@ def Unet(filter_base=32,
         outputs = unet_out
     # outputs = Activation(activation=last_activation)(outputs)
     model = Model(inputs=inputs, outputs=outputs)
-    optimizer = Adam(lr=lr)
+    optimizer = Adam(learning_rate=lr)
     if loss == 'mae' or loss == 'mse':
         metrics = ('mse', 'mae')
 
