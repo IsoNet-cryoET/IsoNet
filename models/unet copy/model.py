@@ -1,10 +1,7 @@
 from turtle import forward
 import torch
 import torch.nn as nn
-import pytorch_lightning as pl
-from torch.nn import L1Loss
-import logging
-class ConvBlock(pl.LightningModule):
+class ConvBlock(nn.Module):
     # conv_per_depth fixed to 2
     def __init__(self, in_channels, out_channels, kernal_size=3, stride=1, padding=1):
         super(ConvBlock, self).__init__()
@@ -23,7 +20,7 @@ class ConvBlock(pl.LightningModule):
     def forward(self, x):
         return self.net2(self.net1(x))
 
-class EncoderBlock(pl.LightningModule):
+class EncoderBlock(nn.Module):
     def __init__(self, filter_base, unet_depth = 3):
         super(EncoderBlock, self).__init__()
         self.module_dict = nn.ModuleDict()
@@ -32,7 +29,6 @@ class EncoderBlock(pl.LightningModule):
         for n in range(unet_depth):
             self.module_dict["conv_stack_{}".format(n)] = ConvBlock(in_channels=filter_base[n], out_channels=filter_base[n])
             self.module_dict["stride_conv_{}".format(n)] = nn.Conv3d(in_channels=filter_base[n], out_channels=filter_base[n+1], kernel_size=2, stride=2, padding=0)
-            self.module_dict["activation_{}".format(n)] = nn.LeakyReLU()
             #maybe need activation here
         
         self.module_dict["bottleneck"] = ConvBlock(in_channels=filter_base[n+1], out_channels=filter_base[n+1])
@@ -45,7 +41,7 @@ class EncoderBlock(pl.LightningModule):
                 down_sampling_features.append(x)
         return x, down_sampling_features
 
-class DecoderBlock(pl.LightningModule):
+class DecoderBlock(nn.Module):
     def __init__(self, filter_base, unet_depth = 3):
         super(DecoderBlock, self).__init__()
         self.module_dict = nn.ModuleDict()
@@ -56,7 +52,6 @@ class DecoderBlock(pl.LightningModule):
                                                                          stride=2,
                                                                          padding=0)
             ## maybe need activation here
-            self.module_dict["activation_{}".format(n)] = nn.LeakyReLU()
             self.module_dict["conv_stack_{}".format(n)] = ConvBlock(filter_base[n]*2, filter_base[n])
         
         self.module_dict["final"] = nn.Conv3d(in_channels=filter_base[0], out_channels=1, kernel_size=1, stride=1, padding=0 )
@@ -68,11 +63,12 @@ class DecoderBlock(pl.LightningModule):
                 x = torch.cat((down_sampling_features[int(k[-1])], x), dim=1)
         return x
 
-class Unet(pl.LightningModule):
+
+class Unet(nn.Module):
     def __init__(self):
         #filter_base = [64,128,256,320,320]
-        filter_base = [32,64,128,256,320]
-        #filter_base = [1,1,1,1,1]
+        #filter_base = [32,64,128,256,320]
+        filter_base = [1,1,1,1,1]
         super(Unet, self).__init__()
         self.encoder = EncoderBlock(filter_base=filter_base)
         self.decoder = DecoderBlock(filter_base=filter_base)
@@ -81,48 +77,4 @@ class Unet(pl.LightningModule):
         x, down_sampling_features = self.encoder(x)
         x = self.decoder(x, down_sampling_features)
         return x
-
-    def training_step(self, batch, batch_nb):
-        x,y = batch
-        loss = L1Loss()(self(x), y)
-        #self.log("train_loss", loss, on_step=False, on_epoch=True, prog_bar=True, logger=False)
-        return loss
-
-    def validation_step(self, batch, batch_idx):
-        x, y = batch
-        y_hat = self(x)
-        loss = L1Loss()(y_hat, y)
-        return loss
-    
-    def configure_optimizers(self):
-        return torch.optim.Adam(self.parameters(), lr=1e-4)
-
-
-        
-    def training_epoch_end(self, outputs):
-        #print(outputs)
-        #loss = torch.stack([x['loss'] for x in outputs]).mean()
-        #avg_loss = torch.stack([x['val_loss'] for x in outputs]).mean()
-        #self.trainer.progress_bar_callback.main_progress_bar.write(
-        #    f"test")        
-        print("\n")
-        #loss = torch.stack(outputs).mean()
-        #logger = logging.getLogger('lightning')
-        #logger.info(f"Training loss: {loss} \n")
-        #self.trainer.progress_bar_callback.main_progress_bar.write(
-        #    f"Epoch {self.trainer.current_epoch} validation loss={loss.item()}")
-        
-        #self.trainer.progress_bar_callback.main_progress_bar.refresh()
-
-    def validation_epoch_end(self, outputs):
-        #avg_loss = torch.stack([x['val_loss'] for x in outputs]).mean()
-        #self.trainer.progress_bar_callback.main_progress_bar.write(
-        #    f"test")        
-        #rint("asdfasfasf")
-        loss = torch.stack(outputs).mean()
-        logger = logging.getLogger('lightning')
-        logger.info(f"Validation loss: {loss} \n")
-        #self.trainer.progress_bar_callback.main_progress_bar.write(
-        #    f"Epoch {self.trainer.current_epoch} validation loss={loss.item()}")
-        
-        #self.trainer.progress_bar_callback.main_progress_bar.refresh()
+                

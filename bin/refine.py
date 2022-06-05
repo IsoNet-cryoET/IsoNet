@@ -40,7 +40,7 @@ def run(args):
         
         ### Seperate network with other modules in case we may use pytorch in the future ###
         if True:
-            check_gpu(args)
+            #check_gpu(args)
             from IsoNet.models.unet.predict import predict
             from IsoNet.models.unet.train import prepare_first_model, train_data
 
@@ -124,8 +124,8 @@ def run(args):
 
             ### start training and save model and json ###
             logging.info("Start training!")
-            history = train_data(args) #train based on init model and save new one as model_iter{num_iter}.h5
-            args.losses = history.history['loss']
+            train_data(args) #train based on init model and save new one as model_iter{num_iter}.h5
+            args.losses = 'not recorded'#history.history['loss']
             save_args_json(args,args.result_dir+'/refine_iter{:0>2d}.json'.format(num_iter))
             logging.info("Done training!")
 

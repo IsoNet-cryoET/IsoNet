@@ -22,7 +22,7 @@ class Brats(Dataset):
         rx = torch.from_numpy(rx.copy())
         ry = torch.from_numpy(ry.copy())
 
-        return rx, ry
+        return dict(image=rx, label=ry)
 
     def __len__(self):
         return len(self.path_all[0])
