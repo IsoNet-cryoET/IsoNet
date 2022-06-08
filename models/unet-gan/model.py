@@ -79,23 +79,104 @@ class Unet(pl.LightningModule):
         x, down_sampling_features = self.encoder(x)
         x = self.decoder(x, down_sampling_features)
         return x
-    
-    def training_step(self, batch, batch_idx):
-        x, y = batch
-        loss = nn.L1Loss()(self(x), y)
+
+class Discriminator(pl.LightningModule):
+    def __init__(self, filter_base = [32,64,128,256]):
+        super(Discriminator, self).__init__()
+        self.model = nn.Sequential(
+
+            nn.Conv3d(1, filter_base[0], kernel_size=2, stride=2, padding=0), #64->32
+            nn.LeakyReLU(),
+            ConvBlock(filter_base[0],filter_base[1]),
+
+            nn.Conv3d(filter_base[1], filter_base[1], kernel_size=2, stride=2, padding=0), #32->16
+            nn.LeakyReLU(),
+            ConvBlock(filter_base[1],filter_base[2]),
+
+            nn.Conv3d(filter_base[2], filter_base[2], kernel_size=2, stride=2, padding=0), #16->8
+            nn.LeakyReLU(),
+            ConvBlock(filter_base[2],filter_base[3]),
+
+            nn.Conv3d(filter_base[3], filter_base[3], kernel_size=2, stride=2, padding=0), #8->4
+            nn.LeakyReLU(),
+
+            nn.Flatten(),
+            nn.Linear(filter_base[3]*64, 64),
+            nn.LeakyReLU(),
+            nn.Linear(64, 1),
+        )
+
+    def forward(self, x):
+        validity = self.model(x)
+        return validity
+
+class Context_encoder(pl.LightningModule):
+    def __init__(self):
+        super(Context_encoder, self).__init__()
+        self.generator = Unet()
+        self.discriminator = Discriminator()
+
+    def forward(self, x):
+        return self.generator(x)
+
+    #def adv_loss(self, y_hat, y):
+    #    return torch.binary_cross_entropy_with_logits(y_hat, y)
+
+    def training_step(self, batch, batch_idx, optimizer_idx):
+        criterionMAE = nn.L1Loss()
+        #remove sigmoid
+        #criterion = nn.BCEWithLogitsLoss()
+        criterion = nn.L1Loss()
+
+        x,y = batch
+        ones = torch.ones(x.size(0), 1)
+        ones = ones.type_as(x)
+
+        zeros = torch.zeros(x.size(0),1)
+        zeros = zeros.type_as(x)
+
+        y_pred = self(x)
+        y_pred_disc = self.discriminator(y_pred)
+        
+        if optimizer_idx == 0:
+            #discriminator
+            #print("dis")
+            y_disc = self.discriminator(y)
+            #print(y_disc.size())
+            #print(y_pred_disc.size())
+            #print(ones.size())
+            #print(zeros.size())
+            loss = criterion(y_disc, ones) + criterion(y_pred_disc, zeros)
+            loss = loss*0.5
+            self.log("d_loss", loss, prog_bar=True)
+            return loss
+
+        if optimizer_idx == 1:
+            #generator
+            #print("gen")
+            mae_loss = criterionMAE(y_pred,y)
+            adv_loss = criterion(y_pred_disc, ones)
+            loss = mae_loss * 0.95 + adv_loss * 0.05
+            self.log("g_loss", loss, prog_bar=True)
+            self.log("mae", mae_loss, prog_bar=True)
+            return loss
+
         return loss
+
     
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=1e-4)
-        return optimizer 
+        opt_g = torch.optim.Adam(self.generator.parameters(), lr=1e-4)
+        opt_d = torch.optim.Adam(self.discriminator.parameters(), lr=1e-2)
+        return [opt_d, opt_g], []
+        #return opt_g
 
+    '''
     def validation_step(self, batch, batch_idx):
         x, y = batch
         y_hat = self(x)
-        loss = nn.L1Loss()(y_hat, y)
+        loss = L1Loss()(y_hat, y)
         return loss
         
-    '''
     def training_epoch_end(self, outputs):
         #print(outputs)
         #loss = torch.stack([x['loss'] for x in outputs]).mean()

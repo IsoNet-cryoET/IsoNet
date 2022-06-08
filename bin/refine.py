@@ -43,6 +43,7 @@ def run(args):
             #check_gpu(args)
             from IsoNet.models.unet.predict import predict
             from IsoNet.models.unet.train import prepare_first_model, train_data
+            from IsoNet.models.unet.model import Unet
 
         ###  find current iterations ###        
         current_iter = args.iter_count if hasattr(args, "iter_count") else 1
@@ -94,7 +95,7 @@ def run(args):
                 predict(args)
                 logging.info("Done predicting subtomograms!")
 
-            args.init_model = "{}/model_iter{:0>2d}.h5".format(args.result_dir, num_iter-1)
+            args.model_file = "{}/model_iter{:0>2d}.h5".format(args.result_dir, num_iter-1)
            
             ### Noise settings ###
             if num_iter>=args.noise_start_iter[0] and (not os.path.isdir(args.noise_dir) or len(os.listdir(args.noise_dir))< num_noise_volume ):

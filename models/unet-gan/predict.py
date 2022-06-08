@@ -16,9 +16,9 @@ def predict(settings):
     #        model = load_model('{}/model_iter{:0>2d}.h5'.format(settings.result_dir,settings.iter_count-1))
     #else:
     #    model = load_model('{}/model_iter{:0>2d}.h5'.format(settings.result_dir,settings.iter_count-1))
-    from .model import Unet
+    from .model import Unet,Context_encoder
     from torch.utils.data import DataLoader
-    model = Unet().cuda()
+    model = Context_encoder().cuda()
     from .train import reload_ckpt
     reload_ckpt('{}/model_iter{:0>2d}.h5'.format(settings.result_dir,settings.iter_count-1), model)
     model = torch.nn.DataParallel(model)

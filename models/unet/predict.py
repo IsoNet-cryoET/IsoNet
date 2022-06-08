@@ -1,29 +1,18 @@
 import torch
-#import logging
-#tf.get_logger().setLevel(logging.ERROR)
-#from tensorflow.keras.models import load_model
 import mrcfile
 from IsoNet.preprocessing.img_processing import normalize
 import numpy as np
-#import tensorflow.keras.backend as K
-#import tensorflow as tf
+from .data_sequence import Predict_sets
+from .train import reload_ckpt
 
 def predict(settings):    
-    # model = load_model('{}/model_iter{:0>2d}.h5'.format(settings.result_dir,settings.iter_count+1))
-    #strategy = tf.distribute.MirroredStrategy()
-    #if settings.ngpus >1:
-    #    with strategy.scope():
-    #        model = load_model('{}/model_iter{:0>2d}.h5'.format(settings.result_dir,settings.iter_count-1))
-    #else:
-    #    model = load_model('{}/model_iter{:0>2d}.h5'.format(settings.result_dir,settings.iter_count-1))
+
     from .model import Unet
     from torch.utils.data import DataLoader
     model = Unet().cuda()
-    from .train import reload_ckpt
     reload_ckpt('{}/model_iter{:0>2d}.h5'.format(settings.result_dir,settings.iter_count-1), model)
     model = torch.nn.DataParallel(model)
     model.eval()
-    from .data_sequence import Predict_sets
     bench_dataset = Predict_sets(settings.mrc_list)
     bench_loader = DataLoader(bench_dataset, batch_size=4, num_workers=1)
     predicted = []
