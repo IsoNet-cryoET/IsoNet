@@ -33,17 +33,14 @@ class Predict_sets(Dataset):
         rx = mrcfile.open(self.mrc_list[idx]).data[np.newaxis,:,:,:]
         rx=normalize(-rx, percentile = True)
 
-        return dict(image=rx)
+        return rx
 
     def __len__(self):
         return len(self.mrc_list)
 
 
 
-def get_datasets(settings):
-    base_folder = settings.data_dir#pathlib.Path(get_brats_folder(on)).resolve()
-    print(base_folder)
-
-    train_dataset = Train_sets(base_folder, prefix="train")
-    val_dataset = Predict_sets(base_folder, prefix="test")
+def get_datasets(data_dir):
+    train_dataset = Train_sets(data_dir, prefix="train")
+    val_dataset = Train_sets(data_dir, prefix="test")
     return train_dataset, val_dataset#, bench_dataset

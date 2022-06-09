@@ -38,12 +38,11 @@ def run(args):
         else:
             os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
         
-        ### Seperate network with other modules in case we may use pytorch in the future ###
-        if True:
             #check_gpu(args)
-            from IsoNet.models.unet.predict import predict
-            from IsoNet.models.unet.train import prepare_first_model, train_data
-            from IsoNet.models.unet.model import Unet
+            #from IsoNet.models.unet.predict import predict
+            #from IsoNet.models.unet.train import prepare_first_model, train_data
+        from IsoNet.models.network import Net
+        network = Net()
 
         ###  find current iterations ###        
         current_iter = args.iter_count if hasattr(args, "iter_count") else 1
@@ -66,36 +65,35 @@ def run(args):
 
             ### Update the iteration count ###
             args.iter_count = num_iter
-            
+            args.model_file = "{}/model_iter{:0>2d}.h5".format(args.result_dir, num_iter-1)
+
             if args.pretrained_model is not None:
                 ### use pretrained model ###
                 mkfolder(args.result_dir)  
-                shutil.copyfile(args.pretrained_model,'{}/model_iter{:0>2d}.h5'.format(args.result_dir,num_iter-1))
+                shutil.copyfile(args.pretrained_model, args.model_file)
+                network.load(args.model_file)
+
                 logging.info('Use Pretrained model as the output model of iteration {} and predict subtomograms'.format(num_iter-1))
                 args.pretrained_model = None
-                logging.info("Start predicting subtomograms!")
-                predict(args)
-                logging.info("Done predicting subtomograms!")
-            elif args.continue_from is not None:
+
+            if args.continue_from is not None and args.pretrained_model is None:
                 ### Continue from a json file ###
-                logging.info('Continue from previous model: {}/model_iter{:0>2d}.h5 of iteration {} and predict subtomograms \
-                '.format(args.result_dir,num_iter -1,num_iter-1))
+                logging.info('Continue from previous model: {} and predict subtomograms'.format(args.model_file))
                 args.continue_from = None
-                logging.info("Start predicting subtomograms!")
-                predict(args)
-                logging.info("Done predicting subtomograms!")
-            elif num_iter == 1:
+
+                network.load(args.model_file)
+
+            if num_iter == 1:
                 ### First iteration ###
                 mkfolder(args.result_dir)  
-                prepare_first_model(args)
+                network.save(args.model_file)
                 prepare_first_iter(args)
             else:
                 ### Subsequent iterations for all conditions ###
                 logging.info("Start predicting subtomograms!")
-                predict(args)
+                network.predict(args.mrc_list, args.result_dir, args.iter_count, args.normalize_percentile)
                 logging.info("Done predicting subtomograms!")
 
-            args.model_file = "{}/model_iter{:0>2d}.h5".format(args.result_dir, num_iter-1)
            
             ### Noise settings ###
             if num_iter>=args.noise_start_iter[0] and (not os.path.isdir(args.noise_dir) or len(os.listdir(args.noise_dir))< num_noise_volume ):
@@ -125,16 +123,20 @@ def run(args):
 
             ### start training and save model and json ###
             logging.info("Start training!")
-            train_data(args) #train based on init model and save new one as model_iter{num_iter}.h5
-            args.losses = 'not recorded'#history.history['loss']
+
+            network.train(args.data_dir) #train based on init model and save new one as model_iter{num_iter}.h5
+            network.save('{}/model_iter{:0>2d}.h5'.format(args.result_dir, args.iter_count))
+
             save_args_json(args,args.result_dir+'/refine_iter{:0>2d}.json'.format(num_iter))
+
+            args.losses = 'not recorded'#history.history['loss']
             logging.info("Done training!")
 
             ### for last iteration predict subtomograms ###
             if num_iter == args.iterations and args.remove_intermediate == False:
                 logging.info("Predicting subtomograms for last iterations")
                 args.iter_count +=1 
-                predict(args)
+                network.predict(args.mrc_list, args.result_dir, args.iter_count, args.normalize_percentile)
                 args.iter_count -=1 
 
             logging.info("Done Iteration{}!".format(num_iter))

@@ -4,18 +4,20 @@ import pytorch_lightning as pl
 import logging
 class ConvBlock(pl.LightningModule):
     # conv_per_depth fixed to 2
-    def __init__(self, in_channels, out_channels, n_conv = 2, kernal_size=3, stride=1, padding=1):
+    def __init__(self, in_channels, out_channels, n_conv = 2, kernel_size=3, stride=1, padding=1):
         super(ConvBlock, self).__init__()
         layers = [
             nn.Conv3d(in_channels=in_channels, out_channels=out_channels,
-                    kernel_size=kernal_size, stride=stride, padding=padding), 
+                    kernel_size=kernel_size, stride=stride, padding=padding), 
             nn.BatchNorm3d(num_features=out_channels),
+            #nn.InstanceNorm3d(num_features = out_channels),
             nn.LeakyReLU()
         ]
         for _ in range(n_conv-1):
             layers.append(nn.Conv3d(in_channels=out_channels, out_channels=out_channels,
-                    kernel_size=kernal_size, stride=stride, padding=padding))
+                    kernel_size=kernel_size, stride=stride, padding=padding))
             layers.append(nn.BatchNorm3d(num_features=out_channels))
+            #layers.append(nn.InstanceNorm3d(num_features=out_channels))
             layers.append(nn.LeakyReLU())
 
         self.net = nn.Sequential(*layers)
@@ -31,10 +33,9 @@ class EncoderBlock(pl.LightningModule):
 
         for n in range(unet_depth):
             self.module_dict["conv_stack_{}".format(n)] = ConvBlock(in_channels=filter_base[n], out_channels=filter_base[n])
-            self.module_dict["stride_conv_{}".format(n)] = nn.Conv3d(in_channels=filter_base[n], out_channels=filter_base[n+1], kernel_size=2, stride=2, padding=0)
-            self.module_dict["activation_{}".format(n)] = nn.LeakyReLU()
+            self.module_dict["stride_conv_{}".format(n)] = ConvBlock(in_channels=filter_base[n], out_channels=filter_base[n+1], n_conv=1, kernel_size=2, stride=2, padding=0)
         
-        self.module_dict["bottleneck"] = ConvBlock(in_channels=filter_base[n+1], out_channels=filter_base[n+1])
+        self.module_dict["bottleneck"] = ConvBlock(in_channels=filter_base[n+1], out_channels=filter_base[n+1], n_conv=1)
     
     def forward(self, x):
         down_sampling_features = []
@@ -69,8 +70,8 @@ class DecoderBlock(pl.LightningModule):
 class Unet(pl.LightningModule):
     def __init__(self):
         super(Unet, self).__init__()
-        #filter_base = [64,128,256,320,320]
-        filter_base = [32,64,128,256,320]
+        filter_base = [64,128,256,320,320,320]
+        #filter_base = [32,64,128,256,320,320]
         #filter_base = [1,1,1,1,1]
         self.encoder = EncoderBlock(filter_base=filter_base)
         self.decoder = DecoderBlock(filter_base=filter_base)
@@ -86,7 +87,7 @@ class Unet(pl.LightningModule):
         return loss
     
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=1e-4)
+        optimizer = torch.optim.Adam(self.parameters(), lr=3e-4)
         return optimizer 
 
     def validation_step(self, batch, batch_idx):
@@ -94,7 +95,7 @@ class Unet(pl.LightningModule):
         y_hat = self(x)
         loss = nn.L1Loss()(y_hat, y)
         return loss
-        
+
     '''
     def training_epoch_end(self, outputs):
         #print(outputs)
