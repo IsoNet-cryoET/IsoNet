@@ -13,7 +13,7 @@ class ConvBlock(pl.LightningModule):
             #nn.InstanceNorm3d(num_features = out_channels),
             nn.LeakyReLU()
         ]
-        for _ in range(n_conv-1):
+        for _ in range(max(n_conv-1,0)):
             layers.append(nn.Conv3d(in_channels=out_channels, out_channels=out_channels,
                     kernel_size=kernel_size, stride=stride, padding=padding))
             layers.append(nn.BatchNorm3d(num_features=out_channels))
@@ -26,16 +26,16 @@ class ConvBlock(pl.LightningModule):
         return self.net(x)
 
 class EncoderBlock(pl.LightningModule):
-    def __init__(self, filter_base, unet_depth = 3):
+    def __init__(self, filter_base, unet_depth = 3, n_conv = 2):
         super(EncoderBlock, self).__init__()
         self.module_dict = nn.ModuleDict()
         self.module_dict['first_conv'] = nn.Conv3d(in_channels=1, out_channels=filter_base[0], kernel_size=3, stride=1, padding=1)
 
         for n in range(unet_depth):
-            self.module_dict["conv_stack_{}".format(n)] = ConvBlock(in_channels=filter_base[n], out_channels=filter_base[n])
+            self.module_dict["conv_stack_{}".format(n)] = ConvBlock(in_channels=filter_base[n], out_channels=filter_base[n], n_conv=n_conv)
             self.module_dict["stride_conv_{}".format(n)] = ConvBlock(in_channels=filter_base[n], out_channels=filter_base[n+1], n_conv=1, kernel_size=2, stride=2, padding=0)
         
-        self.module_dict["bottleneck"] = ConvBlock(in_channels=filter_base[n+1], out_channels=filter_base[n+1], n_conv=1)
+        self.module_dict["bottleneck"] = ConvBlock(in_channels=filter_base[n+1], out_channels=filter_base[n+1], n_conv=n_conv-1)
     
     def forward(self, x):
         down_sampling_features = []
@@ -46,7 +46,7 @@ class EncoderBlock(pl.LightningModule):
         return x, down_sampling_features
 
 class DecoderBlock(pl.LightningModule):
-    def __init__(self, filter_base, unet_depth = 3):
+    def __init__(self, filter_base, unet_depth = 3, n_conv=2):
         super(DecoderBlock, self).__init__()
         self.module_dict = nn.ModuleDict()
         for n in reversed(range(unet_depth)):
@@ -56,7 +56,7 @@ class DecoderBlock(pl.LightningModule):
                                                                          stride=2,
                                                                          padding=0)
             self.module_dict["activation_{}".format(n)] = nn.LeakyReLU()
-            self.module_dict["conv_stack_{}".format(n)] = ConvBlock(filter_base[n]*2, filter_base[n])
+            self.module_dict["conv_stack_{}".format(n)] = ConvBlock(filter_base[n]*2, filter_base[n],n_conv=n_conv)
         
         self.module_dict["final"] = nn.Conv3d(in_channels=filter_base[0], out_channels=1, kernel_size=1, stride=1, padding=0 )
     
@@ -73,8 +73,10 @@ class Unet(pl.LightningModule):
         filter_base = [64,128,256,320,320,320]
         #filter_base = [32,64,128,256,320,320]
         #filter_base = [1,1,1,1,1]
-        self.encoder = EncoderBlock(filter_base=filter_base)
-        self.decoder = DecoderBlock(filter_base=filter_base)
+        unet_depth =3
+        n_conv = 2
+        self.encoder = EncoderBlock(filter_base=filter_base, unet_depth=unet_depth, n_conv=n_conv)
+        self.decoder = DecoderBlock(filter_base=filter_base, unet_depth=unet_depth, n_conv=n_conv)
     
     def forward(self, x):
         x, down_sampling_features = self.encoder(x)

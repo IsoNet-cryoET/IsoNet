@@ -17,6 +17,7 @@ class Net:
         self.model = Unet()
         self.gpuId = gpuId
         self.batch_size = len(gpuId)
+        print(self.model)
 
     def load(self, path):
         checkpoint = torch.load(path)
