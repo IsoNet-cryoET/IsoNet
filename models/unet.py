@@ -98,17 +98,16 @@ class Unet(pl.LightningModule):
         loss = nn.L1Loss()(y_hat, y)
         return loss
 
-    '''
     def training_epoch_end(self, outputs):
         #print(outputs)
-        #loss = torch.stack([x['loss'] for x in outputs]).mean()
+        loss = torch.stack([x['loss'] for x in outputs]).mean()
         #avg_loss = torch.stack([x['val_loss'] for x in outputs]).mean()
         #self.trainer.progress_bar_callback.main_progress_bar.write(
         #    f"test")        
         print("\n")
         #loss = torch.stack(outputs).mean()
-        #logger = logging.getLogger('lightning')
-        #logger.info(f"Training loss: {loss} \n")
+        logger = logging.getLogger('lightning')
+        logger.info(f"Training loss: {loss} \n")
         #self.trainer.progress_bar_callback.main_progress_bar.write(
         #    f"Epoch {self.trainer.current_epoch} validation loss={loss.item()}")
         
@@ -119,6 +118,8 @@ class Unet(pl.LightningModule):
         #self.trainer.progress_bar_callback.main_progress_bar.write(
         #    f"test")        
         #rint("asdfasfasf")
+
+        print("\n")
         loss = torch.stack(outputs).mean()
         logger = logging.getLogger('lightning')
         logger.info(f"Validation loss: {loss} \n")
@@ -126,4 +127,3 @@ class Unet(pl.LightningModule):
         #    f"Epoch {self.trainer.current_epoch} validation loss={loss.item()}")
         
         #self.trainer.progress_bar_callback.main_progress_bar.refresh()
-        '''

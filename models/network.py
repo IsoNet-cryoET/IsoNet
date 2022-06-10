@@ -2,14 +2,16 @@ from .unet import Unet
 import torch
 import pytorch_lightning as pl
 import os
-from pytorch_lightning.callbacks import RichProgressBar
+#from pytorch_lightning.callbacks import RichProgressBar
 from .data_sequence import get_datasets, Predict_sets
 import mrcfile
 from IsoNet.preprocessing.img_processing import normalize
 import numpy as np
 import logging
-from rich.progress import track
+#from rich.progress import track
 from IsoNet.util.toTile import reform3D
+import sys
+import tqdm
 
 
 class Net:
@@ -42,7 +44,7 @@ class Net:
             #enable_progress_bar=False,
             logger=False,
             enable_checkpointing=False,
-            callbacks=RichProgressBar(),
+            #callbacks=RichProgressBar(),
             num_sanity_val_steps=0
         )
         trainer.fit(self.model, train_loader, val_loader)
@@ -107,7 +109,7 @@ class Net:
         model = torch.nn.DataParallel(self.model.cuda())
         model.eval()
         with torch.no_grad():
-            for i in track(range(num_big_batch), description="Processing..."):
+            for i in tqdm(range(num_big_batch), file=sys.stdout):#track(range(num_big_batch), description="Processing..."):
                 in_data = torch.from_numpy(np.transpose(data[i*N:(i+1)*N],(0,4,1,2,3)))
                 outData[i*N:(i+1)*N] = np.transpose( model(in_data).cpu().detach().numpy().astype(np.float32), (0,2,3,4,1) )
 
