@@ -11,23 +11,31 @@ import logging
 #from rich.progress import track
 from IsoNet.util.toTile import reform3D
 import sys
-import tqdm
-
+from tqdm import tqdm
 
 class Net:
     def __init__(self, gpuId = [0,1,2,3]):
-        self.model = Unet()
         self.gpuId = gpuId
         self.batch_size = len(gpuId)
+
+    def initialize(self):
+        self.model = Unet()
         print(self.model)
 
     def load(self, path):
         checkpoint = torch.load(path)
         self.model.load_state_dict(checkpoint)
+    def load_jit(self, path):
+        #Using the TorchScript format, you will be able to load the exported model and run inference without defining the model class.
+        self.model = torch.jit.load(path)
+
     
     def save(self, path):
         state = self.model.state_dict()
         torch.save(state, path)
+    def save_jit(self, path):
+        model_scripted = torch.jit.script(self.model) # Export to TorchScript
+        model_scripted.save(path) # Save
 
     def train(self, data_path):
 

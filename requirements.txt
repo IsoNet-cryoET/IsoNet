@@ -2,7 +2,7 @@
 mrcfile
 scipy
 fire
-rich
+tqdm
 PyQt5
 ###### Requirements with Version Specifiers ######
 scikit-image==0.17.2

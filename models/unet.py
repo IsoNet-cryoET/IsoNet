@@ -1,10 +1,11 @@
+from typing import List
 import torch
 import torch.nn as nn
 import pytorch_lightning as pl
 import logging
 class ConvBlock(pl.LightningModule):
     # conv_per_depth fixed to 2
-    def __init__(self, in_channels, out_channels, n_conv = 2, kernel_size=3, stride=1, padding=1):
+    def __init__(self, in_channels, out_channels, n_conv, kernel_size =3, stride=1, padding=1):
         super(ConvBlock, self).__init__()
         layers = [
             nn.Conv3d(in_channels=in_channels, out_channels=out_channels,
@@ -26,7 +27,7 @@ class ConvBlock(pl.LightningModule):
         return self.net(x)
 
 class EncoderBlock(pl.LightningModule):
-    def __init__(self, filter_base, unet_depth = 3, n_conv = 2):
+    def __init__(self, filter_base, unet_depth, n_conv):
         super(EncoderBlock, self).__init__()
         self.module_dict = nn.ModuleDict()
         self.module_dict['first_conv'] = nn.Conv3d(in_channels=1, out_channels=filter_base[0], kernel_size=3, stride=1, padding=1)
@@ -46,7 +47,7 @@ class EncoderBlock(pl.LightningModule):
         return x, down_sampling_features
 
 class DecoderBlock(pl.LightningModule):
-    def __init__(self, filter_base, unet_depth = 3, n_conv=2):
+    def __init__(self, filter_base, unet_depth, n_conv):
         super(DecoderBlock, self).__init__()
         self.module_dict = nn.ModuleDict()
         for n in reversed(range(unet_depth)):
@@ -59,8 +60,9 @@ class DecoderBlock(pl.LightningModule):
             self.module_dict["conv_stack_{}".format(n)] = ConvBlock(filter_base[n]*2, filter_base[n],n_conv=n_conv)
         
         self.module_dict["final"] = nn.Conv3d(in_channels=filter_base[0], out_channels=1, kernel_size=1, stride=1, padding=0 )
-    
-    def forward(self, x, down_sampling_features):
+
+    def forward(self, x,
+        down_sampling_features: List[torch.Tensor]):
         for k, op in self.module_dict.items():
             x=op(x)
             if k.startswith("deconv"):
@@ -73,8 +75,8 @@ class Unet(pl.LightningModule):
         filter_base = [64,128,256,320,320,320]
         #filter_base = [32,64,128,256,320,320]
         #filter_base = [1,1,1,1,1]
-        unet_depth =3
-        n_conv = 2
+        unet_depth = 4
+        n_conv = 3
         self.encoder = EncoderBlock(filter_base=filter_base, unet_depth=unet_depth, n_conv=n_conv)
         self.decoder = DecoderBlock(filter_base=filter_base, unet_depth=unet_depth, n_conv=n_conv)
     

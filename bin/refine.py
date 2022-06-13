@@ -86,6 +86,7 @@ def run(args):
             if num_iter == 1:
                 ### First iteration ###
                 mkfolder(args.result_dir)  
+                network.initialize()
                 network.save(args.model_file)
                 prepare_first_iter(args)
             else:
