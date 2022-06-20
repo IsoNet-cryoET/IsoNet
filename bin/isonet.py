@@ -340,6 +340,8 @@ class ISONET:
         batch_normalization: bool = True,
         normalize_percentile: bool = True,
 
+        prefill: bool = False,
+
     ):
         """
         \ntrain neural network to correct missing wedge\n

@@ -215,8 +215,14 @@ def generate_first_iter_mrc(mrc,settings):
     with mrcfile.open(mrc) as mrcData:
         orig_data = normalize(mrcData.data.astype(np.float32)*-1, percentile = settings.normalize_percentile)
     orig_data = apply_wedge(orig_data, ld1=1, ld2=0)
-    orig_data = normalize(orig_data, percentile = settings.normalize_percentile)
+    
+    #prefill = True
+    if settings.prefill==True:
+        rot_data = np.rot90(orig_data, axes=(0,2))
+        rot_data = apply_wedge(rot_data, ld1=0, ld2=1)
+        orig_data = rot_data + orig_data
 
+    orig_data = normalize(orig_data, percentile = settings.normalize_percentile)
     with mrcfile.new('{}/{}_iter00.{}'.format(settings.result_dir,root_name, extension), overwrite=True) as output_mrc:
         output_mrc.set_data(-orig_data)
 
