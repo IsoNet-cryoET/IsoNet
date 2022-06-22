@@ -14,9 +14,12 @@ import sys
 from tqdm import tqdm
 
 class Net:
-    def __init__(self, gpuId = [0,1,2,3]):
+    def __init__(self, gpuId = [0,1,2,3], batch_size = None):
         self.gpuId = gpuId
-        self.batch_size = len(gpuId)
+        if batch_size is None:
+            self.batch_size = len(gpuId)
+        else:
+            self.batch_size = batch_size
 
     def initialize(self):
         self.model = Unet()
@@ -41,9 +44,9 @@ class Net:
 
         train_dataset, val_dataset = get_datasets(data_path)
         train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=self.batch_size, shuffle=True,persistent_workers=True,
-                                                num_workers=self.batch_size, pin_memory=True)
+                                                num_workers=self.batch_size, pin_memory=True, drop_last=True)
         val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=self.batch_size, shuffle=False,persistent_workers=True,
-                                                pin_memory=True, num_workers=self.batch_size)
+                                                pin_memory=True, num_workers=self.batch_size, drop_last=True)
         self.model.train()
         trainer = pl.Trainer(
             gpus=self.gpuId,

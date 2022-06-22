@@ -188,7 +188,7 @@ def get_cubes_list(settings):
 
     all_path_x = os.listdir(settings.data_dir+'/train_x')
     num_test = int(len(all_path_x) * 0.1) 
-    num_test = num_test - num_test%settings.ngpus + settings.ngpus
+    num_test = num_test - num_test%settings.batch_size + settings.batch_size
     all_path_y = ['y_'+i.split('_')[1] for i in all_path_x ]
     ind = np.random.permutation(len(all_path_x))[0:num_test]
     for i in ind:

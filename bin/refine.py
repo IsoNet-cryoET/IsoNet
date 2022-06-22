@@ -42,7 +42,7 @@ def run(args):
             #from IsoNet.models.unet.predict import predict
             #from IsoNet.models.unet.train import prepare_first_model, train_data
         from IsoNet.models.network import Net
-        network = Net()
+        network = Net(gpuId = args.gpuID, batch_size=args.batch_size)
 
         ###  find current iterations ###        
         current_iter = args.iter_count if hasattr(args, "iter_count") else 1
@@ -68,7 +68,7 @@ def run(args):
             args.model_file = "{}/model_iter{:0>2d}.h5".format(args.result_dir, num_iter-1)
 
             if args.pretrained_model is not None:
-                ### use pretrained model ###
+            ### use pretrained model ###
                 mkfolder(args.result_dir)  
                 shutil.copyfile(args.pretrained_model, args.model_file)
                 network.load(args.model_file)
@@ -77,20 +77,20 @@ def run(args):
                 args.pretrained_model = None
 
             if args.continue_from is not None and args.pretrained_model is None:
-                ### Continue from a json file ###
+            ### Continue from a json file ###
                 logging.info('Continue from previous model: {} and predict subtomograms'.format(args.model_file))
                 args.continue_from = None
 
                 network.load(args.model_file)
 
             if num_iter == 1:
-                ### First iteration ###
+            ### First iteration ###
                 mkfolder(args.result_dir)  
                 network.initialize()
                 network.save(args.model_file)
                 prepare_first_iter(args)
             else:
-                ### Subsequent iterations for all conditions ###
+            ### Subsequent iterations for all conditions ###
                 logging.info("Start predicting subtomograms!")
                 network.predict(args.mrc_list, args.result_dir, args.iter_count, args.normalize_percentile)
                 logging.info("Done predicting subtomograms!")
