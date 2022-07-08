@@ -1,5 +1,19 @@
 # Isotropic Reconstruction of Electron Tomograms with Deep Learning
 # IsoNet version 0.2
+
+##
+Update on July8 2022
+We maintain an IsoNet Google group for discussions or news.
+
+To subscribe or visit the group via the web interface please visit https://groups.google.com/u/1/g/isonet. 
+
+If you do not have and are not willing to create a Google login, you can also request membership by sending an email to yuntao@g.ucla.edu
+
+After your request is approved, you will be added to the group and will receive a confirmation email. Once subscribed, we request that you edit your membership settings so that your display name is your real name. 
+
+To post to the forum you can either use the web interface or email to isonet@googlegroups.com
+
+
 ## Installation
 python version at least 3.5 is required. If you download the package as a zip file from github, please rename the folder IsoNet-master to IsoNet.
 
