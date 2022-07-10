@@ -114,5 +114,6 @@ def predict_one(args,one_tomo,output_file=None):
     with mrcfile.new(output_file, overwrite=True) as output_mrc:
         output_mrc.set_data(-outData)
         output_mrc.voxel_size = voxelsize
+    K.clear_session()
     logging.info('Done predicting')
     # predict(args.model,args.weight,args.mrc_file,args.output_file, cubesize=args.cubesize, cropsize=args.cropsize, batch_size=args.batch_size, gpuID=args.gpuID, if_percentile=if_percentile)
