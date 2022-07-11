@@ -487,9 +487,13 @@ def pool_process(p_func,chunks_list,ncpu):
         results = list(p.map(p_func,chunks_list))
     # return results
 
-if __name__ == "__main__":
+def main():
     core.Display = Display
     # logging.basicConfig(format='%(asctime)s, %(levelname)-8s %(message)s',datefmt="%m-%d %H:%M:%S",level=logging.INFO)
     if len(sys.argv) > 1:
         check_parse(sys.argv[1:])
     fire.Fire(ISONET)
+
+
+if __name__ == "__main__":
+    exit(main())
