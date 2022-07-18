@@ -57,7 +57,7 @@ def get_display_name(label):
         "rlnMicrographName": "MicrographName",
         "rlnPixelSize": "PixelSize (A)",
         "rlnDefocus": "Defocus (A)",
-        "rlnNumberSubtomo":"NunberSubtomo",
+        "rlnNumberSubtomo":"NumberSubtomo",
         "rlnSnrFalloff":"SnrFalloff",
         "rlnDeconvStrength": "DeconvStrength",
         "rlnDeconvTomoName":"DeconvTomoName",

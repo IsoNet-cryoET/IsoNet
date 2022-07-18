@@ -55,6 +55,7 @@ class MainWindowUIClass( Ui_MainWindow ):
         ########################
         # connect function to buttons
         ########################
+        '''
         self.pushButton_insert.setStyleSheet("background-color : lightblue")
         self.pushButton_delete.setStyleSheet("background-color : lightblue")
         self.pushButton_open_star.setStyleSheet("background-color : lightblue")
@@ -75,7 +76,8 @@ class MainWindowUIClass( Ui_MainWindow ):
         self.pushButton_refine.setStyleSheet("background-color : lightblue")
         self.pushButton_predict.setStyleSheet("background-color : lightblue")
         self.pushButton_predict_3dmod.setStyleSheet("background-color : lightblue")
-        
+        '''
+
         self.pushButton_insert.clicked.connect(self.copyRow)
         self.pushButton_delete.clicked.connect(self.removeRow)
         self.pushButton_open_star.clicked.connect(self.open_star)
@@ -156,7 +158,7 @@ class MainWindowUIClass( Ui_MainWindow ):
             if btn.text() in ["Deconvolve","Generate Mask","Extract","Refine","Predict"]:
                 self.model.btn_pressed_text =  btn.text()
                 btn.setText("Stop")
-                btn.setStyleSheet('QPushButton {background-color : lightblue;color: red;}')
+                btn.setStyleSheet('QPushButton {color: red;}')
             else:
                 btn.setEnabled(False)
             self.mw.p.readyReadStandardOutput.connect(self.dataReady)
@@ -178,7 +180,7 @@ class MainWindowUIClass( Ui_MainWindow ):
                 btn.setText(self.model.btn_pressed_text)
                 #btn.setText("Refine")
                 self.model.btn_pressed_text = None
-                btn.setStyleSheet("QPushButton {background-color : lightblue;color: black;}")
+                btn.setStyleSheet("QPushButton {color: black;}")
         else:
             btn.setEnabled(True)
         self.model.read_star()
@@ -735,53 +737,20 @@ class MyWindow(QtWidgets.QMainWindow):
 
 stylesheet = """
 
-QListWidget {
-    outline: 0px;
-    font: 14px;
-    font-weight:bold;
+
+QWidget #tab, #tab_2, #tab_3{
+    background-color: rgb(253,247,226)
+}
+
+QTabWidget{
+    background: rgb(144,160,187)
+}
+
+QPushButton {
     background: rgb(239,221,241)
 }
-QWidget#tab_motioncor, #tab_summary {
-    font: 14px;
-    border-bottom: 0.5px solid;
-    background: rgb(239,221,241)
-}
 
-QTabWidget {
-    font: 16px;
-}
-'''
-QLabel{
-    font-weight: bold;
-    font: 14px;
-    border-width: 1px;
-    padding: 1px;
-    border-style: solid;
-    border-radius: 2px;
-    background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-    stop:0 white, stop: 0.95 purple, stop:1 black)
-}
 
-QPushButton#browse{
-    background: rgb(176,99,194);
-    font: 14px;
-}
-
-QLineEdit{
-    background: rgb(255,179,175);
-    font: 14px;
-}
-
-QLabel#label_summary{
-font-weight: bold;
-font:18px;
-background: rgb(252,243,203)
-}
-
-QHBoxLayout{
-    border: 2px solid rgb(255,0,0);
-}
-'''
 """
 
 def main():
