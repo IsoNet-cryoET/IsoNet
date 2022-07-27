@@ -27,7 +27,7 @@ class MainWindowUIClass( Ui_MainWindow ):
         #reset process as None
         self.p = None
         self.previous_log_line = ""
-        
+        self.setting_file = ".isonet.setting"
         # check for pid in last running
         #if os.path.isfile(self.model.pid_file):
         #    os.remove(self.model.pid_file)
@@ -125,6 +125,8 @@ class MainWindowUIClass( Ui_MainWindow ):
         self.button_pretrain_model_predict.setIcon(icon)
         self.button_result_dir_predict.setIcon(icon)
         self.button_continue_iter.setIcon(icon)
+
+        self.read_setting()
         
         ###Set up log file monitor###
         import datetime
@@ -476,6 +478,7 @@ class MainWindowUIClass( Ui_MainWindow ):
         if self.lineEdit_overlap.text():
             cmd = "{} --overlap {}".format(cmd, self.lineEdit_overlap.text())
 
+        self.save_setting()
         if self.checkBox_only_print_command_prepare.isChecked() and self.pushButton_deconv.text() == 'Deconvolve':
             print(cmd)
             #logging.info(cmd)
@@ -500,6 +503,7 @@ class MainWindowUIClass( Ui_MainWindow ):
         if self.lineEdit_z_crop.text():
             cmd = "{} --z_crop {}".format(cmd, self.lineEdit_z_crop.text())
 
+        self.save_setting()
         if self.checkBox_only_print_command_prepare.isChecked() and self.pushButton_generate_mask.text() == 'Generate Mask':
             print(cmd)
         else:
@@ -522,6 +526,7 @@ class MainWindowUIClass( Ui_MainWindow ):
         if self.lineEdit_tomo_index_extract.text():
             cmd = "{} --tomo_idx {}".format(cmd, self.lineEdit_tomo_index_extract.text())
         
+        self.save_setting()
         if self.checkBox_only_print_command_prepare.isChecked() and self.pushButton_extract.text() == 'Extract':
             print(cmd)
         else:
@@ -583,7 +588,7 @@ class MainWindowUIClass( Ui_MainWindow ):
         if not self.checkBox_normalization_percentile.isChecked():
             cmd = "{} --normalize_percentile {}".format(cmd, False)
             
-            
+        self.save_setting()
         if self.checkBox_only_print_command_refine.isChecked() and self.pushButton_refine.text() == 'Refine':
             print(cmd)
         else:
@@ -618,10 +623,13 @@ class MainWindowUIClass( Ui_MainWindow ):
         if not self.checkBox_use_deconv_predict.isChecked():
             cmd = "{} --use_deconv_tomo {}".format(cmd, False)        
                     
+        self.save_setting()
         if self.checkBox_only_print_command_predict.isChecked() and self.pushButton_predict.text() == "Predict":
             print(cmd)
         else:
             self.start_process(cmd,self.pushButton_predict)
+
+        
      
     def view_3dmod(self):
         slected_items = self.tableWidget.selectedItems()
@@ -689,7 +697,140 @@ class MainWindowUIClass( Ui_MainWindow ):
             except:
                 print("warning")
                 pass
+
+    def read_setting(self):
+        if os.path.exists(self.setting_file):
+            data = {}
+            try:
+                with open(self.setting_file) as f:
+                    for line in f:
+                        (k, v) = line.split(":")
+                        data[k] = v.strip()
+                self.lineEdit_deconv_dir.setText(data['deconv_dir'])
+                self.lineEdit_tomo_index_deconv.setText(data['tomo_index_deconv'])
+                self.lineEdit_preprocessing_ncpus.setText(data['preprocessing_ncpus'])
+                self.lineEdit_chunk_size.setText(data['chunk_size'])
+                self.lineEdit_highpassnyquist.setText(data['highpassnyquist'])
+                self.lineEdit_overlap.setText(data['overlap'])
+
+                self.lineEdit_mask_dir.setText(data['mask_dir'])
+                self.lineEdit_tomo_index_mask.setText(data['tomo_index_mask'])
+
+                self.checkBox_use_deconv_mask.setChecked(data['use_deconv_mask'] == 'True')
+
+                #self.checkBox_use_deconv_mask.setChecked(data['use_deconv_mask'])
+
+                self.lineEdit_patch_size.setText(data['patch_size'])
+                self.lineEdit_z_crop.setText(data['z_crop'])
+
+                self.lineEdit_subtomo_dir.setText(data['subtomo_dir'])
+                self.lineEdit_subtomo_star_extract.setText(data['subtomo_star_extract'])
+                self.checkBox_use_deconv_extract.setChecked(data['use_deconv_extract'] == 'True')
+                self.lineEdit_cube_size_extract.setText(data['cube_size_extract'])
+                self.lineEdit_tomo_index_extract.setText(data['tomo_index_extract'])
+
+                self.lineEdit_subtomo_star_refine.setText(data['subtomo_star_refine'])
+                self.lineEdit_gpuID_refine.setText(data['gpuID_refine'])
+                self.lineEdit_pretrain_model_refine.setText(data['pretrain_model_refine'])
+                self.lineEdit_continue_iter.setText(data['continue_iter'])
+                self.lineEdit_result_dir_refine.setText(data['result_dir_refine'])
+                self.lineEdit_ncpu.setText(data['ncpu'])
                 
+                self.lineEdit_epoch.setText(data['epoch'])
+                self.lineEdit_iteration.setText(data['iteration'])
+                self.lineEdit_lr.setText(data['lr'])
+                self.lineEdit_steps_per_epoch.setText(data['steps_per_epoch'])
+                self.lineEdit_batch_size.setText(data['batch_size'])
+
+                self.lineEdit_noise_level.setText(data['noise_level'])
+                self.lineEdit_noise_start_iter.setText(data['noise_start_iter'])
+                self.comboBox_noise_mode.setCurrentText(data['noise_mode'])
+
+                self.lineEdit_drop_out.setText(data['drop_out'])
+                self.lineEdit_network_depth.setText(data['network_depth'])
+                self.lineEdit_convs_per_depth.setText(data['convs_per_depth'])
+                self.lineEdit_kernel.setText(data['kernel'])
+                self.lineEdit_filter_base.setText(data['filter_base'])
+                self.checkBox_pool.setChecked(data['pool'] == 'True')
+                self.checkBox_batch_normalization.setChecked(data['batch_normalization'] == 'True')
+                self.checkBox_normalization_percentile.setChecked(data['normalization_percentile'] == 'True')
+
+                self.lineEdit_tomo_star_predict.setText(data['tomo_star_predict'])
+                self.lineEdit_gpuID_predict.setText(data['gpuID_predict'])
+                self.lineEdit_tomo_index_predict.setText(data['tomo_index_predict'])
+                self.lineEdit_pretrain_model_predict.setText(data['pretrain_model_predict'])
+                self.lineEdit_cube_size_predict.setText(data['cube_size_predict'])
+                self.lineEdit_result_dir_predict.setText(data['result_dir_predict'])
+                self.lineEdit_crop_size_predict.setText(data['crop_size_predict'])
+                self.checkBox_use_deconv_predict.setChecked(data['use_deconv_predict'] == 'True')
+                
+            except:
+                print("error reading {}!".format(self.setting_file))
+
+    def save_setting(self):
+        param = {}
+        param['deconv_dir'] = self.lineEdit_deconv_dir.text()
+        param['tomo_index_deconv'] = self.lineEdit_tomo_index_deconv.text()
+        param['preprocessing_ncpus'] = self.lineEdit_preprocessing_ncpus.text()
+        param['chunk_size'] = self.lineEdit_chunk_size.text()
+        param['highpassnyquist'] = self.lineEdit_highpassnyquist.text()
+        param['overlap'] = self.lineEdit_overlap.text()
+
+        param['mask_dir'] = self.lineEdit_mask_dir.text()
+        param['tomo_index_mask'] = self.lineEdit_tomo_index_mask.text()
+        param['use_deconv_mask'] = self.checkBox_use_deconv_mask.isChecked()
+        param['patch_size'] = self.lineEdit_patch_size.text()
+        param['z_crop'] = self.lineEdit_z_crop.text()
+
+        param['subtomo_dir'] = self.lineEdit_subtomo_dir.text()
+        param['subtomo_star_extract'] = self.lineEdit_subtomo_star_extract.text()
+        param['use_deconv_extract'] = self.checkBox_use_deconv_extract.isChecked()
+        param['cube_size_extract'] = self.lineEdit_cube_size_extract.text()
+        param['tomo_index_extract'] = self.lineEdit_tomo_index_extract.text()
+
+        param['subtomo_star_refine'] = self.lineEdit_subtomo_star_refine.text()
+        param['gpuID_refine'] = self.lineEdit_gpuID_refine.text()
+        param['pretrain_model_refine'] = self.lineEdit_pretrain_model_refine.text()
+        param['continue_iter'] = self.lineEdit_continue_iter.text()
+        param['result_dir_refine'] = self.lineEdit_result_dir_refine.text()
+        param['ncpu'] = self.lineEdit_ncpu.text()
+
+        param['epoch'] = self.lineEdit_epoch.text()
+        param['iteration'] = self.lineEdit_iteration.text()
+        param['lr'] = self.lineEdit_lr.text()
+        param['steps_per_epoch'] = self.lineEdit_steps_per_epoch.text()
+        param['batch_size'] = self.lineEdit_batch_size.text()
+
+        param['noise_level'] = self.lineEdit_noise_level.text()
+        param['noise_start_iter'] = self.lineEdit_noise_start_iter.text()
+        param['noise_mode'] = self.comboBox_noise_mode.currentText()
+
+        param['drop_out'] = self.lineEdit_drop_out.text()
+        param['network_depth'] = self.lineEdit_network_depth.text()
+        param['convs_per_depth'] = self.lineEdit_convs_per_depth.text()
+        param['kernel'] = self.lineEdit_kernel.text()
+        param['filter_base'] = self.lineEdit_filter_base.text()
+        param['pool'] = self.checkBox_pool.isChecked()
+        param['batch_normalization'] = self.checkBox_batch_normalization.isChecked()
+        param['normalization_percentile'] = self.checkBox_normalization_percentile.isChecked()
+
+        param['tomo_star_predict'] = self.lineEdit_tomo_star_predict.text()
+        param['gpuID_predict'] = self.lineEdit_gpuID_predict.text()
+        param['tomo_index_predict'] = self.lineEdit_tomo_index_predict.text()
+        param['pretrain_model_predict'] = self.lineEdit_pretrain_model_predict.text()
+        param['cube_size_predict'] = self.lineEdit_cube_size_predict.text()
+        param['result_dir_predict'] = self.lineEdit_result_dir_predict.text()
+        param['crop_size_predict'] = self.lineEdit_crop_size_predict.text()
+        param['use_deconv_predict'] = self.checkBox_use_deconv_predict.isChecked()
+
+
+        try:
+            with open(self.setting_file, 'w') as f: 
+                for key, value in param.items(): 
+                    f.write("{}:{}\n".format(key,value))
+        except:
+            print("error writing {}!".format(self.setting_file))
+
     def openGithub(self):
         import webbrowser
         webbrowser.open(self.model.github_addr)
