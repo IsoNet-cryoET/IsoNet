@@ -16,11 +16,11 @@ def stdmask(tomo,side=10,threshold=60):
     # print('std_filter')
     tomosq = tomo**2
     ones = np.ones(tomo.shape)
-    eps = 0.01
+    eps = 0.001
     kernel = np.ones((2*side+1, 2*side+1, 2*side+1))
     s = convolve(tomo, kernel, mode="same")
     s2 = convolve(tomosq, kernel, mode="same")
-    ns = convolve(ones, kernel, mode="same")
+    ns = convolve(ones, kernel, mode="same") + eps
 
     out = np.sqrt((s2 - s**2 / ns) / ns + eps)
     # out = out>np.std(tomo)*threshold

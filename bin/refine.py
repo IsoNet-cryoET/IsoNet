@@ -187,10 +187,10 @@ def run_whole(args):
             args.steps_per_epoch = min(int(int(args.select_subtomo_number) * 6/args.batch_size) , 200)
     if args.learning_rate is None:
         args.learning_rate = 0.0004
-    if args.noise_level is None:
-        args.noise_level = (0.05,0.10,0.15,0.20)
-    if args.noise_start_iter is None:
-        args.noise_start_iter = (11,16,21,26)
+    #if args.noise_level is None:
+    #    args.noise_level = (0.05,0.10,0.15,0.20)
+    #if args.noise_start_iter is None:
+    #    args.noise_start_iter = (11,16,21,26)
     if args.noise_mode is None:
         args.noise_mode = 'noFilter'
     if args.noise_dir is None:
