@@ -3,7 +3,7 @@
 from setuptools import setup, find_packages
 
 setup(name='IsoNet',
-    version=0.2,
+    version=0.3,
     description='IsoNet isotropic reconstruction',
     url='https://github.com/Heng-Z/IsoNet',
     license='MIT',
@@ -18,7 +18,7 @@ setup(name='IsoNet',
     },
     include_package_data = True,
     install_requires=[
-        'tensorflow',
+        'pytorch',
         'mrcfile',
         'PyQt5',
         'matplotlib',

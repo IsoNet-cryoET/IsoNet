@@ -1,0 +1,16 @@
+name: pytorch
+channels:
+  - conda-forge
+  - defaults
+
+dependencies:
+  - cudatoolkit=11.2
+  - cudnn=8.1
+  - python=3.8
+  - scikit-image
+  - matplotlib
+  - numpy
+  - mrcfile
+  - fire
+  - tqdm
+  - pytorch
