@@ -269,7 +269,7 @@ class ISONET:
         :param star_file: tomogram star file
         :param subtomo_folder: (subtomo) folder for output subtomograms.
         :param subtomo_star: (subtomo.star) star file for output subtomograms.
-        :param cube_size: (64) Size of cubes for training, should be divisible by 8, eg. 32, 64. The actual sizes of extracted subtomograms are 1.5 times of this value.
+        :param cube_size: (64) Size of cubes for training, should be divisible by 8, eg. 32, 64. The actual sizes of extracted subtomograms are this value adds 16.
         :param crop_size: (None) The size of subtomogram, should be larger then the cube_size The default value is 16+cube_size.
         :param log_level: ("info") level of the output, either "info" or "debug"
         :param use_deconv_tomo: (True) If CTF deconvolved tomogram is found in tomogram.star, use that tomogram instead.
