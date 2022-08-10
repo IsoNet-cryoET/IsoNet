@@ -1,0 +1,9 @@
+/home/cii/anaconda3/envs/test_pytorch/bin/isonet.py refine subtomo.star
+Traceback (most recent call last):
+  File "/home/cii/software/IsoNet/bin/refine.py", line 30, in run
+    args = run_whole(args)
+  File "/home/cii/software/IsoNet/bin/refine.py", line 160, in run_whole
+    md.read(args.subtomo_star)
+  File "/home/cii/software/IsoNet/util/metadata.py", line 129, in read
+    f = open(input_star)
+FileNotFoundError: [Errno 2] No such file or directory: 'subtomo.star'

@@ -1,0 +1,8 @@
+torch==1.12.1
+pytorch_lightning
+mrcfile
+PyQt5
+matplotlib
+fire
+scikit-image==0.17.2
+tqdm

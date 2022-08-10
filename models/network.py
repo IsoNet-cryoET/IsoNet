@@ -49,7 +49,8 @@ class Net:
                                                 pin_memory=True, num_workers=self.batch_size, drop_last=True)
         self.model.train()
         trainer = pl.Trainer(
-            gpus=self.gpuId,
+            accelerator='gpu',
+            devices=self.gpuId,
             max_epochs=3,
             strategy = 'dp',
             #enable_progress_bar=False,

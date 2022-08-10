@@ -75,7 +75,7 @@ class Unet(pl.LightningModule):
         filter_base = [64,128,256,320,320,320]
         #filter_base = [32,64,128,256,320,320]
         #filter_base = [1,1,1,1,1]
-        unet_depth = 4
+        unet_depth = 3
         n_conv = 3
         self.encoder = EncoderBlock(filter_base=filter_base, unet_depth=unet_depth, n_conv=n_conv)
         self.decoder = DecoderBlock(filter_base=filter_base, unet_depth=unet_depth, n_conv=n_conv)
