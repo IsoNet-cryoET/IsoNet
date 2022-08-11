@@ -1,2 +1,0 @@
-[console_scripts]
-isonet.py = IsoNet.bin.isonet:main
