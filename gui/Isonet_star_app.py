@@ -641,17 +641,17 @@ class MainWindowUIClass( Ui_MainWindow ):
                 i = item.row()
                 j = item.column()
                 if previous_i != -1 and i != previous_i:
-                    cmd = "{} {} {}".format(cmd,model_file,"3dmod")
+                    cmd = "{} {} {}".format(cmd,model_file,"; 3dmod")
                     model_file=""
                 item_text = self.tableWidget.item(i, j).text()
                 if item_text[-4:] == '.mrc' or item_text[-4:] == '.rec':
                     cmd = "{} {}".format(cmd,item_text)
                 if self.model.header[j+1]=="rlnMaskBoundary" and item_text != "None":
-                    model_file = "{}{}".format(item_text,";")
+                    model_file = "{}".format(item_text)
                 previous_i = i
             
             cmd = "{} {}".format(cmd,model_file)
-            print(cmd)
+            #print(cmd)
 
             if cmd != "3dmod":
                 os.system(cmd)
