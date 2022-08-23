@@ -1,6 +1,6 @@
 # Isotropic Reconstruction of Electron Tomograms with Deep Learning
 # IsoNet version 0.2
-
+[![DOI](https://zenodo.org/badge/222662248.svg)](https://zenodo.org/badge/latestdoi/222662248)
 ##
 Update on July8 2022
 
