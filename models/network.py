@@ -14,24 +14,25 @@ import sys
 from tqdm import tqdm
 
 class Net:
-    def __init__(self, gpuId = [0,1,2,3], batch_size = None):
+    def __init__(self, gpuId = [0,1,2,3], batch_size = None, sd_out =True):
         self.gpuId = gpuId
         if batch_size is None:
             self.batch_size = len(gpuId)
         else:
             self.batch_size = batch_size
+        self.sd_out = sd_out
 
     def initialize(self):
-        self.model = Unet()
+        self.model = Unet(sd_out = self.sd_out)
         print(self.model)
 
     def load(self, path):
         checkpoint = torch.load(path)
         self.model.load_state_dict(checkpoint)
+
     def load_jit(self, path):
         #Using the TorchScript format, you will be able to load the exported model and run inference without defining the model class.
         self.model = torch.jit.load(path)
-
     
     def save(self, path):
         state = self.model.state_dict()
@@ -70,18 +71,37 @@ class Net:
         model.eval()
 
         predicted = []
+        probability =[]
         with torch.no_grad():
             for _, val_data in enumerate(bench_loader):
-                res=model(val_data).cpu().detach().numpy().astype(np.float32)
-                for item in res:
-                    it = item.squeeze(0)
-                    predicted.append(it)
+                if not self.sd_out:
+                    res=model(val_data).cpu().detach().numpy().astype(np.float32)
+                    for item in res:
+                        it = item.squeeze(0)
+                        predicted.append(it)
+                else:
+                    res = model(val_data) 
+                    miu = res[0].cpu().detach().numpy().astype(np.float32)
+                    for item in miu:
+                        it = item.squeeze(0)
+                        predicted.append(it)
+                    sigma = res[1].cpu().detach().numpy().astype(np.float32)
+                    for item in sigma:
+                        p = item.squeeze(0)
+                        probability.append(p)
         
         for i,mrc in enumerate(mrc_list):
             root_name = mrc.split('/')[-1].split('.')[0]
             outData = normalize(predicted[i], percentile = normalize_percentile)
             with mrcfile.new('{}/{}_iter{:0>2d}.mrc'.format(result_dir, root_name, iter_count-1), overwrite=True) as output_mrc:
                 output_mrc.set_data(-outData)
+        
+        if self.sd_out:
+            for i,mrc in enumerate(mrc_list):
+                root_name = mrc.split('/')[-1].split('.')[0]
+                with mrcfile.new('{}/{}_prob_iter{:0>2d}.mrc'.format(result_dir, root_name, iter_count-1), overwrite=True) as output_mrc:
+                    output_mrc.set_data(predicted[i])
+ 
     
     def predict_tomo(self, args, one_tomo, output_file=None):
     #predict one tomogram in mrc format INPUT: mrc_file string OUTPUT: output_file(str) or <root_name>_corrected.mrc

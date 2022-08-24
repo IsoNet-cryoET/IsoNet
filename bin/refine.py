@@ -42,7 +42,7 @@ def run(args):
             #from IsoNet.models.unet.predict import predict
             #from IsoNet.models.unet.train import prepare_first_model, train_data
         from IsoNet.models.network import Net
-        network = Net(gpuId = args.gpuID, batch_size=args.batch_size)
+        network = Net(gpuId = args.gpuID, batch_size=args.batch_size, sd_out=args.probability)
 
         ###  find current iterations ###        
         current_iter = args.iter_count if hasattr(args, "iter_count") else 1
