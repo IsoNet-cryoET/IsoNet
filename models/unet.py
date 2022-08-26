@@ -92,6 +92,7 @@ class Unet(pl.LightningModule):
         self.sd_out = sd_out
         self.encoder = EncoderBlock(filter_base=filter_base, unet_depth=unet_depth, n_conv=n_conv)
         self.decoder = DecoderBlock(filter_base=filter_base, unet_depth=unet_depth, n_conv=n_conv, sd_out = self.sd_out)
+        self.laplace = True
     
     def forward(self, x):
         x, down_sampling_features = self.encoder(x)
@@ -102,8 +103,13 @@ class Unet(pl.LightningModule):
         x, y = batch
         out = self(x)
         if self.sd_out:
-            c = 0.6931471805599453 # log(2)
-            loss = torch.mean(torch.div(torch.abs(out[0]-y), out[1]) + torch.log(out[1]) + c)
+            if self.laplace: 
+                c = 0.6931471805599453 # log(2)
+                loss = torch.mean(torch.div(torch.abs(out[0]-y), out[1]) + torch.log(out[1]) + c)
+            else:
+                #out[1] is sigma squared
+                c= 0.918938533205 # 0.5*np.log(2*np.pi)
+                loss = torch.mean(0.5*(torch.div(torch.square(out[0]-y), out[1]) + torch.log(out[1])) + c)
         else:
             loss = nn.L1Loss()(out, y)
         return loss
@@ -116,8 +122,13 @@ class Unet(pl.LightningModule):
         x, y = batch
         out = self(x)
         if self.sd_out:
-            c = 0.6931471805599453 # log(2)
-            loss = torch.mean(torch.div(torch.abs(out[0]-y), out[1]) + torch.log(out[1]) + c)
+            if self.laplace: 
+                c = 0.6931471805599453 # log(2)
+                loss = torch.mean(torch.div(torch.abs(out[0]-y), out[1]) + torch.log(out[1]) + c)
+            else:
+                #out[1] is sigma squared
+                c= 0.918938533205 # 0.5*np.log(2*np.pi)
+                loss = torch.mean(0.5*(torch.div(torch.square(out[0]-y), out[1]) + torch.log(out[1])) + c)
         else:
             loss = nn.L1Loss()(out, y)
         return loss
