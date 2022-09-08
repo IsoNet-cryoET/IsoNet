@@ -48,11 +48,12 @@ class Net:
                                                 num_workers=self.batch_size, pin_memory=True, drop_last=True)
         val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=self.batch_size, shuffle=False,persistent_workers=True,
                                                 pin_memory=True, num_workers=self.batch_size, drop_last=True)
+        self.model.mse_out = False
         self.model.train()
         trainer = pl.Trainer(
             accelerator='gpu',
             devices=self.gpuId,
-            max_epochs=3,
+            max_epochs=1,
             strategy = 'dp',
             #enable_progress_bar=False,
             logger=False,
@@ -61,6 +62,20 @@ class Net:
             num_sanity_val_steps=0
         )
         trainer.fit(self.model, train_loader, val_loader)
+
+        self.model.mse_out=True
+        trainer = pl.Trainer(
+            accelerator='gpu',
+            devices=self.gpuId,
+            max_epochs=1,
+            strategy = 'dp',
+            #enable_progress_bar=False,
+            logger=False,
+            enable_checkpointing=False,
+            #callbacks=RichProgressBar(),
+            num_sanity_val_steps=0
+        )
+        trainer.fit(self.model, train_loader, val_loader)        
 
     def predict(self, mrc_list, result_dir, iter_count, normalize_percentile = True):    
 
@@ -94,13 +109,13 @@ class Net:
             root_name = mrc.split('/')[-1].split('.')[0]
             #outData = normalize(predicted[i], percentile = normalize_percentile)
             with mrcfile.new('{}/{}_iter{:0>2d}.mrc'.format(result_dir, root_name, iter_count-1), overwrite=True) as output_mrc:
-                output_mrc.set_data(predicted[i])
+                output_mrc.set_data(-predicted[i])
         
         if self.sd_out:
             for i,mrc in enumerate(mrc_list):
                 root_name = mrc.split('/')[-1].split('.')[0]
                 with mrcfile.new('{}/{}_prob_iter{:0>2d}.mrc'.format(result_dir, root_name, iter_count-1), overwrite=True) as output_mrc:
-                    output_mrc.set_data(predicted[i])
+                    output_mrc.set_data(probability[i])
  
     
     def predict_tomo(self, args, one_tomo, output_file=None):
@@ -111,8 +126,12 @@ class Net:
         if output_file is None:
             if os.path.isdir(args.output_file):
                 output_file = args.output_file+'/'+root_name+'_corrected.mrc'
+                sigma_file = args.output_file+'/'+root_name+'_variance.mrc'
             else:
                 output_file = root_name+'_corrected.mrc'
+                sigma_file = root_name+'_variance.mrc'
+        else:
+            sigma_file = output_file[:-13] + 'variance.mrc'
 
         logging.info('predicting:{}'.format(root_name))
 
@@ -134,24 +153,38 @@ class Net:
         data = np.append(data, data[0:append_number], axis = 0)
         num_big_batch = data.shape[0]//N
         outData = np.zeros(data.shape)
+        sigma = np.zeros(data.shape)
 
         logging.info("total batches: {}".format(num_big_batch))
 
 
         model = torch.nn.DataParallel(self.model.cuda())
         model.eval()
+        self.model.mse_out = True
         with torch.no_grad():
             for i in tqdm(range(num_big_batch), file=sys.stdout):#track(range(num_big_batch), description="Processing..."):
                 in_data = torch.from_numpy(np.transpose(data[i*N:(i+1)*N],(0,4,1,2,3)))
-                outData[i*N:(i+1)*N] = np.transpose( model(in_data).cpu().detach().numpy().astype(np.float32), (0,2,3,4,1) )
+                #print(in_data.shape)
+                #print(model(in_data).shape)
+                #print(model(in_data)[1].shape)
+                output = model(in_data)
+                outData[i*N:(i+1)*N] = np.transpose(output[0].cpu().detach().numpy().astype(np.float32), (0,2,3,4,1) )
+                sigma[i*N:(i+1)*N] = np.transpose(torch.square(output[1]).cpu().detach().numpy().astype(np.float32), (0,2,3,4,1) )
 
         outData = outData[0:num_patches]
+        sigma = sigma[0:num_patches]
 
         outData=reform_ins.restore_from_cubes_new(outData.reshape(outData.shape[0:-1]), args.cube_size, args.crop_size)
+        sigma=reform_ins.restore_from_cubes_new(sigma.reshape(sigma.shape[0:-1]), args.cube_size, args.crop_size)
 
         outData = normalize(outData,percentile=args.normalize_percentile)
         with mrcfile.new(output_file, overwrite=True) as output_mrc:
             output_mrc.set_data(-outData)
             output_mrc.voxel_size = voxelsize
+
+        sigma = sigma.astype(np.float32)
+        with mrcfile.new(sigma_file, overwrite=True) as output_mrc:
+            output_mrc.set_data(sigma)
+            output_mrc.voxel_size = voxelsize        
 
         logging.info('Done predicting')
