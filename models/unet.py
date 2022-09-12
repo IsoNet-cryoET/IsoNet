@@ -143,7 +143,6 @@ class Unet(pl.LightningModule):
         #    f"test")        
         #loss = torch.stack(outputs).mean()
         pb = self.trainer.progress_bar_callback.main_progress_bar
-        print(pb.format_dict["elapsed"])
         pb.write(
             "Epoch {}: train_loss:{:.5f}, val_loss:{:.5f}".format(self.trainer.current_epoch,loss, self.val_loss))
         #self.trainer.progress_bar_callback.main_progress_bar.set_description(
