@@ -1,4 +1,5 @@
 import logging
+from re import I
 from IsoNet.preprocessing.prepare import get_cubes_list,get_noise_level, prepare_first_iter
 from IsoNet.util.dict2attr import save_args_json,load_args_from_json
 import numpy as np
@@ -42,7 +43,7 @@ def run(args):
             #from IsoNet.models.unet.predict import predict
             #from IsoNet.models.unet.train import prepare_first_model, train_data
         from IsoNet.models.network import Net
-        network = Net(gpuId = args.gpuID, batch_size=args.batch_size, sd_out=args.probability)
+        network = Net()
 
         ###  find current iterations ###        
         current_iter = args.iter_count if hasattr(args, "iter_count") else 1
@@ -67,32 +68,38 @@ def run(args):
             args.iter_count = num_iter
             args.model_file = "{}/model_iter{:0>2d}.h5".format(args.result_dir, num_iter-1)
 
-            if args.pretrained_model is not None:
-            ### use pretrained model ###
-                mkfolder(args.result_dir)  
-                shutil.copyfile(args.pretrained_model, args.model_file)
-                network.load(args.model_file)
-
-                logging.info('Use Pretrained model as the output model of iteration {} and predict subtomograms'.format(num_iter-1))
-                args.pretrained_model = None
-
-            if args.continue_from is not None and args.pretrained_model is None:
-            ### Continue from a json file ###
-                logging.info('Continue from previous model: {} and predict subtomograms'.format(args.model_file))
-                args.continue_from = None
-
-                network.load(args.model_file)
-
-            if num_iter == 1:
+            if num_iter == 1 and args.pretrained_model is None:
             ### First iteration ###
                 mkfolder(args.result_dir)  
                 network.initialize()
                 network.save(args.model_file)
                 prepare_first_iter(args)
+                if args.continue_from is not None:
+                    logging.warning("Ignore continue_from and start from first iteration")                    
+
             else:
-            ### Subsequent iterations for all conditions ###
+                if args.pretrained_model is not None and args.continue_from is not None:
+                    logging.warning("You provided both pretrained_model and continue_from! Those two parameters conflict.")
+
+                if args.pretrained_model is not None:
+                ### use pretrained model ###
+                    mkfolder(args.result_dir)  
+                    shutil.copyfile(args.pretrained_model, args.model_file)
+                    network.load(args.model_file)
+
+                    logging.info('Use Pretrained model as the output model of iteration {} and predict subtomograms'.format(num_iter-1))
+                    args.pretrained_model = None
+
+                if args.continue_from is not None:
+                ### Continue from a json file ###
+                    logging.info('Continue from previous model: {} and predict subtomograms'.format(args.model_file))
+                    args.continue_from = None
+
+                    network.load(args.model_file)
+
+                ### Subsequent iterations for all conditions ###
                 logging.info("Start predicting subtomograms!")
-                network.predict(args.mrc_list, args.result_dir, args.iter_count, args.normalize_percentile)
+                network.predict(args.mrc_list, args.result_dir, args.iter_count, variance_out=args.probability)
                 logging.info("Done predicting subtomograms!")
 
            
@@ -100,7 +107,7 @@ def run(args):
             if num_iter>=args.noise_start_iter[0] and (not os.path.isdir(args.noise_dir) or len(os.listdir(args.noise_dir))< num_noise_volume ):
                 from IsoNet.util.noise_generator import make_noise_folder
                 num_noise_volume = 1000
-                print(args.noise_mode)
+                logging.info(args.noise_mode)
                 make_noise_folder(args.noise_dir,args.noise_mode,args.cube_size,num_noise_volume,ncpus=args.preprocessing_ncpus)
             noise_level_series = get_noise_level(args.noise_level,args.noise_start_iter,args.iterations)
             args.noise_level_current =  noise_level_series[num_iter]
@@ -124,8 +131,18 @@ def run(args):
 
             ### start training and save model and json ###
             logging.info("Start training!")
-
-            network.train(args.data_dir) #train based on init model and save new one as model_iter{num_iter}.h5
+            logging.warning(args.batch_size)
+            logging.warning(args.epochs)
+            print(args.steps_per_epoch)
+            network.train(args.data_dir,gpuID=args.gpuID, 
+                            learning_rate=args.learning_rate, batch_size=args.batch_size,
+                            epochs = args.epochs,steps_per_epoch=args.steps_per_epoch, variance_out = False) #train based on init model and save new one as model_iter{num_iter}.h5
+            if args.probability:
+                logging.info("Training network to predict aleatoric uncertainty")
+                network.train(args.data_dir,gpuID=args.gpuID, 
+                            learning_rate=args.learning_rate, batch_size=args.batch_size,
+                            epochs = args.epochs,steps_per_epoch=args.steps_per_epoch, variance_out = True) #train based on init model and save new one as model_iter{num_iter}.h5
+ 
             network.save('{}/model_iter{:0>2d}.h5'.format(args.result_dir, args.iter_count))
 
             save_args_json(args,args.result_dir+'/refine_iter{:0>2d}.json'.format(num_iter))
@@ -178,15 +195,15 @@ def run_whole(args):
     if args.batch_size is None:
         args.batch_size = max(4, 2 * args.ngpus)
     args.predict_batch_size = args.batch_size
-    if args.filter_base is None:
-        args.filter_base = 64
-        # if md._data[0].rlnPixelSize >15:
-        #     args.filter_base = 32
-        # else:
-        #     args.filter_base = 64
+    # if args.filter_base is None:
+    #     args.filter_base = 64
+    #     # if md._data[0].rlnPixelSize >15:
+    #     #     args.filter_base = 32
+    #     # else:
+    #     #     args.filter_base = 64
     if args.steps_per_epoch is None:
         if args.select_subtomo_number is None:
-            args.steps_per_epoch = min(int(len(md) * 6/args.batch_size) , 200)
+            args.steps_per_epoch = min(int(len(md) * 8/args.batch_size) , 200)
         else:
             args.steps_per_epoch = min(int(int(args.select_subtomo_number) * 6/args.batch_size) , 200)
     if args.learning_rate is None:
@@ -219,16 +236,3 @@ def check_gpu(args):
     out_str = out_str[0].decode('utf-8')
     if 'CUDA Version' not in out_str:
         raise RuntimeError('No GPU detected, Please check your CUDA version and installation')
-
-    #import tensorflow related modules after setting environment
-    import tensorflow as tf
-
-    gpu_info =  tf.config.list_physical_devices('GPU')
-    logging.debug(gpu_info)   
-    if len(gpu_info)!=args.ngpus:
-        if len(gpu_info) == 0:
-            logging.error('No GPU detected, Please check your CUDA version and installation')
-            raise RuntimeError('No GPU detected, Please check your CUDA version and installation')
-        else:
-            logging.error('Available number of GPUs don\'t match requested GPUs \n\n Detected GPUs: {} \n\n Requested GPUs: {}'.format(gpu_info,args.gpuID))
-            raise RuntimeError('Re-enter correct gpuID')

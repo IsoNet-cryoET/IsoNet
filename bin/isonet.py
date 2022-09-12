@@ -331,13 +331,8 @@ class ISONET:
         noise_mode: str = None,
         noise_dir: str = None,
         learning_rate: float = None,
-        drop_out: float = 0.3,
-        convs_per_depth: int = 3,
-        kernel: tuple = (3,3,3),
-        pool: tuple = None,
-        unet_depth: int = 3,
-        filter_base: int = None,
-        batch_normalization: bool = True,
+
+        arch: str="unet",
         normalize_percentile: bool = True,
         probability: bool = True,
 
@@ -361,7 +356,7 @@ class ISONET:
 
         :param epochs: (10) Number of epoch for each iteraction.
         :param batch_size: (None) Size of the minibatch.If None, batch_size will be the max(2 * number_of_gpu,4). batch_size should be divisible by the number of gpu.
-        :param steps_per_epoch: (None) Step per epoch. If not defined, the default value will be min(num_of_subtomograms * 6 / batch_size , 200)
+        :param steps_per_epoch: (None) Step per epoch. If not defined, the default value will be min(num_of_subtomograms * 8 / batch_size , 200)
 
         ************************Denoise settings************************
 
@@ -372,14 +367,8 @@ class ISONET:
 
         ************************Network settings************************
 
-        :param drop_out: (0.3) Drop out rate to reduce overfitting.
+        :param arch: ("unet") Network architecture
         :param learning_rate: (0.0004) learning rate for network training.
-        :param convs_per_depth: (3) Number of convolution layer for each depth.
-        :param kernel: (3,3,3) Kernel for convolution
-        :param unet_depth: (3) Depth of UNet.
-        :param filter_base: (64) The base number of channels after convolution.
-        :param batch_normalization: (True) Use Batch Normalization layer
-        :param pool: (False) Use pooling layer instead of stride convolution layer.
         :param normalize_percentile: (True) Normalize the 5 percent and 95 percent pixel intensity to 0 and 1 respectively. If this is set to False, normalize the input to 0 mean and 1 standard dievation.
         """
         from IsoNet.bin.refine import run
