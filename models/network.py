@@ -143,7 +143,7 @@ class Net:
 
         model = torch.nn.DataParallel(self.model.cuda())
         model.eval()
-        self.model.mse_out = True
+        self.model.variance_out = True
         with torch.no_grad():
             for i in tqdm(range(num_big_batch), file=sys.stdout):#track(range(num_big_batch), description="Processing..."):
                 in_data = torch.from_numpy(np.transpose(data[i*N:(i+1)*N],(0,4,1,2,3)))
