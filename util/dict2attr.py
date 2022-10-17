@@ -15,7 +15,7 @@ make_mask_param = ['star_file', 'mask_folder', 'patch_size', 'density_percentage
 prepare_star_param = ['number_subtomos', 'defocus', 'pixel_size', 'output_star', 'folder_name']
 prepare_subtomo_star_param = ['folder_name', 'output_star', 'pixel_size', 'cube_size']
 param_to_check = refine_param + predict_param + extract_param + ['self','run']
-param_to_set_attr = refine_param + predict_param + extract_param + ['iter_count','crop_size','cube_size','predict_cropsize','noise_dir','lr','ngpus','predict_batch_size','losses']
+param_to_set_attr = refine_param + predict_param + extract_param + ['iter_count','crop_size','cube_size','predict_cropsize','noise_dir','lr','ngpus','predict_batch_size','losses','metrics']
 class Arg:
     def __init__(self,dictionary,from_cmd=True):
         for k, v in dictionary.items():

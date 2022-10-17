@@ -43,7 +43,10 @@ def run(args):
             #from IsoNet.models.unet.predict import predict
             #from IsoNet.models.unet.train import prepare_first_model, train_data
         from IsoNet.models.network import Net
-        network = Net()
+        if not hasattr(args, "metrics"):
+            network = Net()
+        else:
+            network = Net(args.metrics)
 
         ###  find current iterations ###        
         current_iter = args.iter_count if hasattr(args, "iter_count") else 1
@@ -71,7 +74,6 @@ def run(args):
             if num_iter == 1 and args.pretrained_model is None:
             ### First iteration ###
                 mkfolder(args.result_dir)  
-                network.initialize()
                 network.save(args.model_file)
                 prepare_first_iter(args)
                 if args.continue_from is not None:
@@ -99,14 +101,14 @@ def run(args):
 
                 ### Subsequent iterations for all conditions ###
                 logging.info("Start predicting subtomograms!")
-                network.predict(args.mrc_list, args.result_dir, args.iter_count, variance_out=args.probability)
+                network.predict(args.mrc_list, args.result_dir, args.iter_count)
                 logging.info("Done predicting subtomograms!")
 
            
             ### Noise settings ###
+            num_noise_volume = 1000
             if num_iter>=args.noise_start_iter[0] and (not os.path.isdir(args.noise_dir) or len(os.listdir(args.noise_dir))< num_noise_volume ):
                 from IsoNet.util.noise_generator import make_noise_folder
-                num_noise_volume = 1000
                 logging.info(args.noise_mode)
                 make_noise_folder(args.noise_dir,args.noise_mode,args.cube_size,num_noise_volume,ncpus=args.preprocessing_ncpus)
             noise_level_series = get_noise_level(args.noise_level,args.noise_start_iter,args.iterations)
@@ -131,30 +133,26 @@ def run(args):
 
             ### start training and save model and json ###
             logging.info("Start training!")
-            logging.warning(args.batch_size)
-            logging.warning(args.epochs)
-            print(args.steps_per_epoch)
-            network.train(args.data_dir,gpuID=args.gpuID, 
+            # try:
+            metrics = network.train(args.data_dir,gpuID=args.gpuID, 
                             learning_rate=args.learning_rate, batch_size=args.batch_size,
-                            epochs = args.epochs,steps_per_epoch=args.steps_per_epoch, variance_out = False) #train based on init model and save new one as model_iter{num_iter}.h5
-            if args.probability:
-                logging.info("Training network to predict aleatoric uncertainty")
-                network.train(args.data_dir,gpuID=args.gpuID, 
-                            learning_rate=args.learning_rate, batch_size=args.batch_size,
-                            epochs = args.epochs,steps_per_epoch=args.steps_per_epoch, variance_out = True) #train based on init model and save new one as model_iter{num_iter}.h5
+                            epochs = args.epochs,steps_per_epoch=args.steps_per_epoch) #train based on init model and save new one as model_iter{num_iter}.h5
+            # except KeyboardInterrupt as exception: 
+            #     sys.exit("Keyboard interrupt")
+            args.metrics = metrics
  
             network.save('{}/model_iter{:0>2d}.h5'.format(args.result_dir, args.iter_count))
 
             save_args_json(args,args.result_dir+'/refine_iter{:0>2d}.json'.format(num_iter))
-
-            args.losses = 'not recorded'#history.history['loss']
+            from IsoNet.util.plot_metrics import plot_metrics
+            plot_metrics(metrics, args.result_dir+"/losses.png")
             logging.info("Done training!")
 
             ### for last iteration predict subtomograms ###
             if num_iter == args.iterations and args.remove_intermediate == False:
                 logging.info("Predicting subtomograms for last iterations")
                 args.iter_count +=1 
-                network.predict(args.mrc_list, args.result_dir, args.iter_count, args.normalize_percentile)
+                network.predict(args.mrc_list, args.result_dir, args.iter_count)
                 args.iter_count -=1 
 
             logging.info("Done Iteration{}!".format(num_iter))

@@ -15,8 +15,10 @@ class Train_sets(Dataset):
     def __getitem__(self, idx):
         with mrcfile.open(self.path_all[0][idx]) as mrc:
             rx = mrc.data[np.newaxis,:,:,:]
+            # rx = mrc.data[:,:,:,np.newaxis]
         with mrcfile.open(self.path_all[1][idx]) as mrc:
             ry = mrc.data[np.newaxis,:,:,:]
+            # ry = mrc.data[:,:,:,np.newaxis]
         rx = torch.from_numpy(rx.copy())
         ry = torch.from_numpy(ry.copy())
         return rx, ry
@@ -31,6 +33,7 @@ class Predict_sets(Dataset):
 
     def __getitem__(self, idx):
         rx = mrcfile.open(self.mrc_list[idx]).data[np.newaxis,:,:,:]
+        # rx = mrcfile.open(self.mrc_list[idx]).data[:,:,:,np.newaxis]
         rx=normalize(-rx, percentile = True)
 
         return rx

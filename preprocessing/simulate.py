@@ -40,7 +40,7 @@ def mw2d(dim,missingAngle=[45,45]):
 
 
 #import tensorflow as tf
-def apply_wedge_dcube(ori_data, mw2d, mw3d="mw.mrc"):
+def apply_wedge_dcube(ori_data, mw2d, mw3d=None):
     if mw3d is None:
         #if len(ori_data.shape) > 3:
         #    ori_data = np.squeeze(ori_data, axis=-1)
@@ -86,7 +86,7 @@ def apply_wedge(ori_data, ld1 = 1, ld2 =0):
     out = np.rot90(real, k=3, axes=(0,1))
     return out
 
-def apply_wedge1(ori_data, ld1 = 1, ld2 =0, mw3d = "mw.mrc"):
+def apply_wedge1(ori_data, ld1 = 1, ld2 =0, mw3d = None):
 
     if mw3d is None:
         data = np.rot90(ori_data, k=1, axes=(0,1)) #clock wise of counter clockwise??
