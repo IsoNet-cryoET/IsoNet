@@ -15,8 +15,8 @@ def plot_metrics(metrics, filename):
     plt.legend(title='metrics', labels=metrics.keys())
     #plt.legend(title='metrics', title_fontsize = 13, labels=metrics.keys())
     tl = metrics["val_loss"]
-    if len(tl) > 10:
-        ma = np.percentile(tl,90)
+    if len(tl) > 20:
+        ma = np.percentile(tl,95)
         plt.ylim(top=ma)
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)

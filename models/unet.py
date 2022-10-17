@@ -9,17 +9,17 @@ class ConvBlock(pl.LightningModule):
         super(ConvBlock, self).__init__()
         layers = [
             nn.Conv3d(in_channels=in_channels, out_channels=out_channels,
-                    kernel_size=kernel_size, stride=stride, padding=padding, bias=False), 
-            nn.BatchNorm3d(num_features=out_channels),
+                    kernel_size=kernel_size, stride=stride, padding=padding, bias=True), 
             #nn.InstanceNorm3d(num_features = out_channels),
-            nn.LeakyReLU()
+            nn.LeakyReLU(),
+            nn.BatchNorm3d(num_features=out_channels),
         ]
         for _ in range(max(n_conv-1,0)):
             layers.append(nn.Conv3d(in_channels=out_channels, out_channels=out_channels,
-                    kernel_size=kernel_size, stride=stride, padding=padding, bias=False))
-            layers.append(nn.BatchNorm3d(num_features=out_channels))
+                    kernel_size=kernel_size, stride=stride, padding=padding, bias=True))
             #layers.append(nn.InstanceNorm3d(num_features=out_channels))
             layers.append(nn.LeakyReLU())
+            layers.append(nn.BatchNorm3d(num_features=out_channels))
 
         self.net = nn.Sequential(*layers)
 
