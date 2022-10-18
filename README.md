@@ -59,3 +59,12 @@ The mask is only important if the sample is sparsely located in the tomograms. A
 To obtain a good mask, the tomograms should have sufficient contrast, which can be achieved by CTF deconvolution. User defined mask can also be supplied by changing the mask_name field in the star file. Alternately, you can also use subtomograms extracted with other methods and skip the entire mask creation and subtomograms extraction steps.
 
 If you want to exclude carbon area of the tomograms, you can try the new mask boundary feature in version 0.2. It allows you to draw a polygon in 3dmod so that the area outside the polygon will be excluded.
+
+4. Error loding GUI:
+The following error might occured when running isonet.py gui: 
+qt.qpa.plugin: Could not load the Qt platform plugin "xcb" in "" even though it was found.
+This application failed to start because no Qt platform plugin could be initialized. Reinstalling the application may fix this problem.
+
+Solution: please install dependencies
+yum install xcb-util*
+yum install libxkbcommon-x11

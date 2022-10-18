@@ -10,12 +10,10 @@ import logging
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QTableWidgetItem,QMessageBox
 from PyQt5.QtCore import QProcess
-
 #Isonet packages
 from IsoNet.gui.isonet_gui import Ui_MainWindow ##need to change in the package
 from IsoNet.gui.model_star import Model, setTableWidget #need to change in the package
 from IsoNet.util.metadata import MetaData,Label,Item
-
 
 class MainWindowUIClass( Ui_MainWindow ):
     def __init__( self ):
