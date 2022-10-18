@@ -336,6 +336,7 @@ class ISONET:
         normalize_percentile: bool = True,
 
         prefill: bool = False,
+        low_mem: bool = False
 
     ):
         """

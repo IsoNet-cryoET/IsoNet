@@ -136,7 +136,7 @@ def run(args):
             # try:
             metrics = network.train(args.data_dir,gpuID=args.gpuID, 
                             learning_rate=args.learning_rate, batch_size=args.batch_size,
-                            epochs = args.epochs,steps_per_epoch=args.steps_per_epoch) #train based on init model and save new one as model_iter{num_iter}.h5
+                            epochs = args.epochs,steps_per_epoch=args.steps_per_epoch,acc_grad=args.low_mem) #train based on init model and save new one as model_iter{num_iter}.h5
             # except KeyboardInterrupt as exception: 
             #     sys.exit("Keyboard interrupt")
             args.metrics = metrics

@@ -21,7 +21,7 @@ class Net:
     #def initialize(self):
         self.model = Unet(metrics=metrics)
         # self.model = self.model.to(memory_format=torch.channels_last)
-        print(self.model)
+        #print(self.model)
 
     def load(self, path):
         checkpoint = torch.load(path)
@@ -38,9 +38,19 @@ class Net:
         model_scripted = torch.jit.script(self.model) # Export to TorchScript
         model_scripted.save(path) # Save
 
-    def train(self, data_path, gpuID=[0,1,2,3], learning_rate=3e-4, batch_size=None, epochs = 10, steps_per_epoch=200):
-        if batch_size is None:
-            batch_size = len(gpuID)
+    def train(self, data_path, gpuID=[0,1,2,3], learning_rate=3e-4, batch_size=None, epochs = 10, steps_per_epoch=200, acc_grad =False):
+        self.model.learning_rate = learning_rate
+
+        train_batches = int(steps_per_epoch*0.9)
+        val_batches = steps_per_epoch - train_batches
+        if acc_grad:
+            logging.info("use accumulate gradient to reduce GPU memory consumption")
+            batch_size = batch_size//2
+            acc_batches = 2
+            train_batches = train_batches * 2
+            val_batches = val_batches * 2
+        else:
+            acc_batches = 1
 
         train_dataset, val_dataset = get_datasets(data_path)
         train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True,persistent_workers=True,
@@ -49,11 +59,10 @@ class Net:
         val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=False,persistent_workers=True,
                                                 pin_memory=True, num_workers=batch_size, drop_last=True)
 
-        self.model.learning_rate = learning_rate
-        train_batches = int(steps_per_epoch*0.9)
-        val_batches = steps_per_epoch - train_batches
         self.model.train()
+
         trainer = pl.Trainer(
+            accumulate_grad_batches=acc_batches,
             accelerator='gpu',
             devices=gpuID,
             num_nodes=1,
