@@ -4,8 +4,7 @@
 
 import numpy as np
 
-def mw2d(dim,missingAngle=[45,45]):
-#def mw2d(dim,missingAngle=[30,30]):
+def mw2d(dim,missingAngle=[30,30]):
     mw=np.zeros((dim,dim),dtype=np.double)
     missingAngle = np.array(missingAngle)
     missing=np.pi/180*(90-missingAngle)
