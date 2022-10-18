@@ -112,12 +112,8 @@ class Net:
         if output_file is None:
             if os.path.isdir(args.output_file):
                 output_file = args.output_file+'/'+root_name+'_corrected.mrc'
-                sigma_file = args.output_file+'/'+root_name+'_variance.mrc'
             else:
                 output_file = root_name+'_corrected.mrc'
-                sigma_file = root_name+'_variance.mrc'
-        else:
-            sigma_file = output_file[:-13] + 'variance.mrc'
 
         logging.info('predicting:{}'.format(root_name))
 
@@ -139,38 +135,25 @@ class Net:
         data = np.append(data, data[0:append_number], axis = 0)
         num_big_batch = data.shape[0]//N
         outData = np.zeros(data.shape)
-        sigma = np.zeros(data.shape)
 
         logging.info("total batches: {}".format(num_big_batch))
 
 
         model = torch.nn.DataParallel(self.model.cuda())
         model.eval()
-        self.model.variance_out = True
         with torch.no_grad():
             for i in tqdm(range(num_big_batch), file=sys.stdout):#track(range(num_big_batch), description="Processing..."):
                 in_data = torch.from_numpy(np.transpose(data[i*N:(i+1)*N],(0,4,1,2,3)))
-                #print(in_data.shape)
-                #print(model(in_data).shape)
-                #print(model(in_data)[1].shape)
                 output = model(in_data)
-                outData[i*N:(i+1)*N] = np.transpose(output[0].cpu().detach().numpy().astype(np.float32), (0,2,3,4,1) )
-                sigma[i*N:(i+1)*N] = np.transpose(torch.square(output[1]).cpu().detach().numpy().astype(np.float32), (0,2,3,4,1) )
+                outData[i*N:(i+1)*N] = np.transpose(output.cpu().detach().numpy().astype(np.float32), (0,2,3,4,1) )
 
         outData = outData[0:num_patches]
-        sigma = sigma[0:num_patches]
 
         outData=reform_ins.restore_from_cubes_new(outData.reshape(outData.shape[0:-1]), args.cube_size, args.crop_size)
-        sigma=reform_ins.restore_from_cubes_new(sigma.reshape(sigma.shape[0:-1]), args.cube_size, args.crop_size)
 
         outData = normalize(outData,percentile=args.normalize_percentile)
         with mrcfile.new(output_file, overwrite=True) as output_mrc:
             output_mrc.set_data(-outData)
             output_mrc.voxel_size = voxelsize
-
-        sigma = sigma.astype(np.float32)
-        with mrcfile.new(sigma_file, overwrite=True) as output_mrc:
-            output_mrc.set_data(sigma)
-            output_mrc.voxel_size = voxelsize        
 
         logging.info('Done predicting')
