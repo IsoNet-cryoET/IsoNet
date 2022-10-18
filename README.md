@@ -1,5 +1,20 @@
 # Isotropic Reconstruction of Electron Tomograms with Deep Learning
 # IsoNet version 0.2
+[![DOI](https://zenodo.org/badge/222662248.svg)](https://zenodo.org/badge/latestdoi/222662248)
+##
+Update on July8 2022
+
+We maintain an IsoNet Google group for discussions or news.
+
+To subscribe or visit the group via the web interface please visit https://groups.google.com/u/1/g/isonet. 
+
+If you do not have and are not willing to create a Google login, you can also request membership by sending an email to yuntao@g.ucla.edu
+
+After your request is approved, you will be added to the group and will receive a confirmation email. Once subscribed, we request that you edit your membership settings so that your display name is your real name. 
+
+To post to the forum you can either use the web interface or email to isonet@googlegroups.com
+
+
 ## Installation
 python version at least 3.5 is required. If you download the package as a zip file from github, please rename the folder IsoNet-master to IsoNet.
 
@@ -50,7 +65,7 @@ IsoNet is kind of conservative in adding information into missing wedge region. 
 However, there are some ways to increase your success rate.
 1. IsoNet performs better in high contrast tomograms. That means it will be helpful to tweak the parameters (especially snrfalloff) in CTF deconvolution step to make increase the weight of low resolution information. Or trying with the data acquired with phaseplate first. As far as we know, phaseplate data will always give you good result.
 
-2. Missing wedge caused the nonlocal distributted information. You may observed the long shadows of gold beads in the tomograms, and those long rays can not be fully corrected with sub-tomogram based missing correction in IsoNet, because the receptive field of the network is limitted to your subtomogram. This nonlocal information makes it particular difficult to recover the horizontal oriented membrane. There are several ways to improve. **First**, training with tomograms with larger size, the default cube size is 64, you may want to increase the size to 96 or 128, however this may lead to the OOM error Please refer to FAQ #1 when you have this problem. **Second**, bin your tomograms more. Some times we even bin our celluar tomograms to 20A/pix for IsoNet processing, this will of course increase your network receptive field, given the same size of subtomogram. 
+2. Missing wedge caused the nonlocal distributted information. You may observed the long shadows of gold beads in the tomograms, and those long rays can not be fully corrected with sub-tomogram based missing correction in IsoNet, because the receptive field of the network is limitted to your subtomogram. This nonlocal information makes it particular difficult to recover the horizontal oriented membrane. There are several ways to improve. **First**, training with subtomograms with larger  cube size, the default cube size is 64, you may want to increase the size to 80, 96, 112 or 128, however this may lead to the OOM error Please refer to FAQ #1 when you have this problem. **Second**, bin your tomograms more. Some times we even bin our celluar tomograms to 20A/pix for IsoNet processing, this will of course increase your network receptive field, given the same size of subtomogram. 
 
 3. IsoNet is currently designed to correct missing wedge for tomograms with -60 to 60 degress tilt range. The other tilt scheme or when the tomograms have large x axis tilt. The results might not be optimal. 
 ## 4. Can not create a good mask during mask generation step
