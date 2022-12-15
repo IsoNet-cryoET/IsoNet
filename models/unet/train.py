@@ -32,10 +32,12 @@ def train3D_continue(outFile,
     if n_gpus > 1:
         with strategy.scope():
             model = load_model( model_file)
+            optimizer = Adam(learning_rate = lr)
+            model.compile(optimizer=optimizer, loss='mae', metrics=('mse','mae'))
     else:
         model = load_model( model_file)
-    optimizer = Adam(learning_rate = lr)
-    model.compile(optimizer=optimizer, loss='mae', metrics=('mse','mae'))
+        optimizer = Adam(learning_rate = lr)
+        model.compile(optimizer=optimizer, loss='mae', metrics=('mse','mae'))
     # model.compile(optimizer=optimizer, loss='mae', metrics=_metrics)
     logging.info("Loaded model from disk")
 
