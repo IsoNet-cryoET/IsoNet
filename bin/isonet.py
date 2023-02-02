@@ -100,6 +100,8 @@ class ISONET:
 
     def deconv(self, star_file: str,
         deconv_folder:str="./deconv",
+        voltage: float=300.0,
+        cs: float=2.7,
         snrfalloff: float=None,
         deconvstrength: float=None,
         highpassnyquist: float=0.02,
@@ -113,6 +115,8 @@ class ISONET:
         This step is recommanded because it enhances low resolution information for a better contrast. No need to do deconvolution for phase plate data.
         :param deconv_folder: (./deconv) Folder created to save deconvoluted tomograms.
         :param star_file: (None) Star file for tomograms.
+        :param voltage: (300.0) Acceleration voltage in kV.
+        :param cs: (2.7) Spherical aberration in mm.
         :param snrfalloff: (1.0) SNR fall rate with the frequency. High values means losing more high frequency.
         If this value is not set, the program will look for the parameter in the star file.
         If this value is not set and not found in star file, the default value 1.0 will be used.
@@ -156,7 +160,7 @@ class ISONET:
                     base_name = os.path.basename(tomo_file)
                     deconv_tomo_name = '{}/{}'.format(deconv_folder,base_name)
 
-                    deconv_one(it.rlnMicrographName,deconv_tomo_name,defocus=it.rlnDefocus/10000.0, pixel_size=it.rlnPixelSize,snrfalloff=it.rlnSnrFalloff, deconvstrength=it.rlnDeconvStrength,highpassnyquist=highpassnyquist,chunk_size=chunk_size,overlap_rate=overlap_rate,ncpu=ncpu)
+                    deconv_one(it.rlnMicrographName,deconv_tomo_name,voltage=voltage,cs=cs,defocus=it.rlnDefocus/10000.0, pixel_size=it.rlnPixelSize,snrfalloff=it.rlnSnrFalloff, deconvstrength=it.rlnDeconvStrength,highpassnyquist=highpassnyquist,chunk_size=chunk_size,overlap_rate=overlap_rate,ncpu=ncpu)
                     md._setItemValue(it,Label('rlnDeconvTomoName'),deconv_tomo_name)
                 md.write(star_file)
             logging.info('\n######Isonet done ctf deconvolve######\n')
