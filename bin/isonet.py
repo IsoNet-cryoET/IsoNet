@@ -75,7 +75,7 @@ class ISONET:
         for i,subtomo in enumerate(subtomo_list):
             subtomo_name = os.path.join(folder_name,subtomo)
             try:
-                with mrcfile.open(subtomo_name, mode='r') as s:
+                with mrcfile.open(subtomo_name, mode='r', permissive=True) as s:
                     crop_size = s.header.nx
             except:
                 print("Warning: Can not process the subtomogram: {}!".format(subtomo_name))
