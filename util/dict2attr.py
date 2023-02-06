@@ -10,7 +10,7 @@ refine_param = [ 'normalize_percentile', 'batch_normalization', 'filter_base', '
                 'select_subtomo_number','remove_intermediate']
 predict_param = ['tomo_idx', 'Ntile', 'log_level', 'normalize_percentile', 'batch_size', 'use_deconv_tomo', 'crop_size', 'cube_size', 'gpuID', 'output_dir', 'model', 'star_file']
 extract_param = ['log_level', 'cube_size', 'subtomo_star', 'subtomo_folder', 'use_deconv_tomo', 'star_file','tomo_idx','crop_size']
-deconv_param = ['star_file', 'deconv_folder','chunk_size', 'snrfalloff', 'deconvstrength', 'highpassnyquist', 'tile', 'overlap_rate', 'ncpu', 'tomo_idx']
+deconv_param = ['star_file', 'deconv_folder','chunk_size', 'snrfalloff', 'deconvstrength', 'highpassnyquist', 'tile', 'overlap_rate', 'ncpu', 'tomo_idx', 'voltage', 'cs']
 make_mask_param = ['star_file', 'mask_folder', 'patch_size', 'density_percentage', 'std_percentage', 'use_deconv_tomo', 'z_crop', 'tomo_idx', 'mask_boundary']
 prepare_star_param = ['number_subtomos', 'defocus', 'pixel_size', 'output_star', 'folder_name']
 prepare_subtomo_star_param = ['folder_name', 'output_star', 'pixel_size', 'cube_size']

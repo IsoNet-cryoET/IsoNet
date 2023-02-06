@@ -30,21 +30,21 @@ def tom_ctf1d(pixelsize, voltage, cs, defocus, amplitude, phaseshift, bfactor, l
 
     return (pcurve + acurve)*bfactor
 
-def wiener1d(angpix, defocus, snrfalloff, deconvstrength, highpassnyquist, phaseflipped, phaseshift):
+def wiener1d(angpix, voltage, cs, defocus, snrfalloff, deconvstrength, highpassnyquist, phaseflipped, phaseshift):
     data = np.arange(0,1+1/2047.,1/2047.)
     highpass = np.minimum(np.ones(data.shape[0]), data/highpassnyquist) * np.pi
     highpass = 1-np.cos(highpass)
 
     snr = np.exp(-data * snrfalloff * 100 / angpix) * (10 ** deconvstrength) * highpass
     #snr[0] = -1
-    ctf = tom_ctf1d(angpix*1e-10, 300e3, 2.7e-3, -defocus*1e-6, 0.07, phaseshift / 180 * np.pi, 0)
+    ctf = tom_ctf1d(angpix*1e-10, voltage * 1e3, cs * 1e-3, -defocus*1e-6, 0.07, phaseshift / 180 * np.pi, 0)
     if phaseflipped:
         ctf = abs(ctf)
 
     wiener = ctf/(ctf*ctf+1/snr)
     return ctf, wiener
 
-def tom_deconv_tomo(vol_file, out_file,angpix, defocus, snrfalloff, deconvstrength, highpassnyquist, phaseflipped, phaseshift, ncpu=8):
+def tom_deconv_tomo(vol_file, out_file,angpix, voltage, cs, defocus, snrfalloff, deconvstrength, highpassnyquist, phaseflipped, phaseshift, ncpu=8):
     with mrcfile.open(vol_file) as f:
         header_in = f.header
         vol = f.data
@@ -55,7 +55,7 @@ def tom_deconv_tomo(vol_file, out_file,angpix, defocus, snrfalloff, deconvstreng
     eps = 1e-6
     snr = np.exp(-data * snrfalloff * 100 / angpix) * (10**deconvstrength) * highpass + eps
     #snr[0] = -1
-    ctf = tom_ctf1d(angpix*1e-10, 300e3, 2.7e-3, -defocus*1e-6, 0.07, phaseshift / 180 * np.pi, 0);
+    ctf = tom_ctf1d(angpix*1e-10, voltage * 1e3, cs * 1e-3, -defocus*1e-6, 0.07, phaseshift / 180 * np.pi, 0);
     if phaseflipped:
         ctf = abs(ctf)
 
@@ -177,7 +177,7 @@ class Chunks:
         return new[0:self._sp[0],0:self._sp[1],0:self._sp[2]]
 
 
-def deconv_one(tomo, out_tomo,defocus=1.0, pixel_size=1.0,snrfalloff=1.0, deconvstrength=1.0,highpassnyquist=0.02,chunk_size=200,overlap_rate = 0.25,ncpu=4):
+def deconv_one(tomo, out_tomo, voltage=300.0, cs=2.7, defocus=1.0, pixel_size=1.0,snrfalloff=1.0, deconvstrength=1.0,highpassnyquist=0.02,chunk_size=200,overlap_rate = 0.25,ncpu=4):
     import mrcfile
     from multiprocessing import Pool
     from functools import partial
@@ -193,14 +193,14 @@ def deconv_one(tomo, out_tomo,defocus=1.0, pixel_size=1.0,snrfalloff=1.0, deconv
     root_name = os.path.splitext(os.path.basename(tomo))[0]
     logging.info('deconv: {}| pixel: {}| defocus: {}| snrfalloff:{}| deconvstrength:{}'.format(tomo, pixel_size, defocus ,snrfalloff, deconvstrength))
     if chunk_size is None:
-        tom_deconv_tomo(tomo,out_tomo,pixel_size,defocus,snrfalloff,deconvstrength,highpassnyquist,phaseflipped=False, phaseshift=0,ncpu=ncpu)
+        tom_deconv_tomo(tomo,out_tomo,pixel_size, voltage, cs, defocus,snrfalloff,deconvstrength,highpassnyquist,phaseflipped=False, phaseshift=0,ncpu=ncpu)
     else:    
         c = Chunks(chunk_size=chunk_size,overlap=overlap_rate)
         chunks_list = c.get_chunks(tomo) # list of name of subtomograms
         # chunks_gpu_num_list = [[array,j%num_gpu] for j,array in enumerate(chunks_list)]
         chunks_deconv_list = []
         with Pool(ncpu) as p:
-            partial_func = partial(tom_deconv_tomo,out_file=None,angpix=pixel_size, defocus=defocus, snrfalloff=snrfalloff,
+            partial_func = partial(tom_deconv_tomo,out_file=None,angpix=pixel_size,voltage=voltage, cs=cs, defocus=defocus, snrfalloff=snrfalloff,
                     deconvstrength=deconvstrength, highpassnyquist=highpassnyquist, phaseflipped=False, phaseshift=0,ncpu=1) 
             chunks_deconv_list = list(p.map(partial_func,chunks_list))
         vol_restored = c.restore(chunks_deconv_list)
@@ -242,5 +242,5 @@ if __name__=='__main__':
     start = time.time()
 
     # deconv_one(args.mrcFile, args.outFile,defocus=args.defocus/10000.0, pixel_size=args.pixsize,snrfalloff=args.snrfalloff, deconvstrength=args.deconvstrength,tile=args.tile,ncpu=args.ncpu)
-    tom_deconv_tomo(args.mrcFile,defocus=args.defocus/10000.0, angpix=args.pixsize,snrfalloff=args.snrfalloff, deconvstrength=args.deconvstrength,
+    tom_deconv_tomo(args.mrcFile, voltage=args.voltage, cs=args.cs, defocus=args.defocus/10000.0, angpix=args.pixsize,snrfalloff=args.snrfalloff, deconvstrength=args.deconvstrength,
                     highpassnyquist=0.1, phaseflipped=False, phaseshift=0)
