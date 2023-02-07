@@ -80,7 +80,7 @@ def predict_one(args,one_tomo,output_file=None):
 
     logging.info('predicting:{}'.format(root_name))
 
-    with mrcfile.open(one_tomo) as mrcData:
+    with mrcfile.open(one_tomo,permissive=True) as mrcData:
         real_data = mrcData.data.astype(np.float32)*-1
         voxelsize = mrcData.voxel_size
     real_data = normalize(real_data,percentile=args.normalize_percentile)

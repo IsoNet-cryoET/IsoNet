@@ -39,7 +39,7 @@ def extract_subtomos(settings):
                     orig_data = mrcData.data.astype(np.float32)
             else:        
                 print("Extract from origional tomogram {}".format(it.rlnMicrographName))
-                with mrcfile.open(it.rlnMicrographName) as mrcData:
+                with mrcfile.open(it.rlnMicrographName, permissive =True) as mrcData:
                     orig_data = mrcData.data.astype(np.float32)
             
 

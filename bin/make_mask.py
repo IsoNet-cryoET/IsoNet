@@ -27,7 +27,7 @@ def make_mask(tomo_path, mask_name, mask_boundary = None, side = 5, density_perc
     from scipy.ndimage.filters import gaussian_filter
     from skimage.transform import resize
     
-    with mrcfile.open(tomo_path) as n:
+    with mrcfile.open(tomo_path, permissive=True) as n:
         header_input = n.header
         #print(header_input)
         pixel_size = n.voxel_size

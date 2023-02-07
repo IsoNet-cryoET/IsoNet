@@ -15,7 +15,7 @@ def tom_ctf1d(pixelsize, voltage, cs, defocus, amplitude, phaseshift, bfactor, l
 
 
     points = np.arange(0,length)
-    points = points.astype(np.float)
+    points = points.astype(float)
     points = points/(2 * length)*ny
 
     k2 = points**2
