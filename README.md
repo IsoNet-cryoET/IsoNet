@@ -22,7 +22,7 @@ python version at least 3.5 is required. If you download the package as a zip fi
 
 Please find your cuda version, cuDNN version and corresponding tensorflow version here: https://www.tensorflow.org/install/source#gpu. 
 
-For example, if you are using cude 10.1, you should install tensorflow 2.3:
+For example, if you are using cuda 10.1, you should install tensorflow 2.3:
 ```
 pip install tensorflow-gpu==2.3.0
 ```
@@ -51,25 +51,25 @@ Tutorial data set and tutorial videos are on google drive https://drive.google.c
 ## 1. IsoNet refine raise OOM error.
 
 This is caused by the insufficient GPU memory.
-The soluitions are:
-1. Specify a smaller batch\_size or use more(powerful) GPUs. The default batch\_size is 4 if you use one GPU, otherwise the default batch\_size is 2 times the number of GPU. Please note the batch_size should be divisiable by number of GPUs.
+The solutions are:
+1. Specify a smaller batch\_size or use more(powerful) GPUs. The default batch\_size is 4 if you use one GPU, otherwise the default batch\_size is 2 times the number of GPU. Please note the batch_size should be divisible by number of GPUs.
 For example, if you have one GPU and get OOM error, please reduce the batch\_size to 1 or 2; If you use 4 GPUs and get OOM error, please reduce the batch\_size to 4.
 
-2. Refine with a smaller cube\_size (not recommanded).
+2. Refine with a smaller cube\_size (not recommended).
 
 ## 2.  IsoNet extract ValueError: a must be greater than 0 unless no samples are taken
 This could be due to the tomogram thickness is smaller than the size of subtomograms to be extracted. Please make your tomogram thicker in this case.
 
-## 3. Can not see significent improvement after processing with IsoNet
-IsoNet is kind of conservative in adding information into missing wedge region. If it can not find reasonable prediction, IsoNet may simply returns the origional tomograms back to you. 
+## 3. Can not see significant improvement after processing with IsoNet
+IsoNet is kind of conservative in adding information into missing wedge region. If it can not find reasonable prediction, IsoNet may simply returns the original tomograms back to you. 
 However, there are some ways to increase your success rate.
 1. IsoNet performs better in high contrast tomograms. That means it will be helpful to tweak the parameters (especially snrfalloff) in CTF deconvolution step to make increase the weight of low resolution information. Or trying with the data acquired with phaseplate first. As far as we know, phaseplate data will always give you good result.
 
-2. Missing wedge caused the nonlocal distributted information. You may observed the long shadows of gold beads in the tomograms, and those long rays can not be fully corrected with sub-tomogram based missing correction in IsoNet, because the receptive field of the network is limitted to your subtomogram. This nonlocal information makes it particular difficult to recover the horizontal oriented membrane. There are several ways to improve. **First**, training with subtomograms with larger  cube size, the default cube size is 64, you may want to increase the size to 80, 96, 112 or 128, however this may lead to the OOM error Please refer to FAQ #1 when you have this problem. **Second**, bin your tomograms more. Some times we even bin our celluar tomograms to 20A/pix for IsoNet processing, this will of course increase your network receptive field, given the same size of subtomogram. 
+2. Missing wedge caused the nonlocal distributed information. You may observed the long shadows of gold beads in the tomograms, and those long rays can not be fully corrected with sub-tomogram based missing correction in IsoNet, because the receptive field of the network is limited to your subtomogram. This nonlocal information makes it particular difficult to recover the horizontal oriented membrane. There are several ways to improve. **First**, training with subtomograms with larger  cube size, the default cube size is 64, you may want to increase the size to 80, 96, 112 or 128, however this may lead to the OOM error Please refer to FAQ #1 when you have this problem. **Second**, bin your tomograms more. Sometimes we even bin our cellular tomograms to 20A/pix for IsoNet processing, this will of course increase your network receptive field, given the same size of subtomogram. 
 
-3. IsoNet is currently designed to correct missing wedge for tomograms with -60 to 60 degress tilt range. The other tilt scheme or when the tomograms have large x axis tilt. The results might not be optimal. 
+3. IsoNet is currently designed to correct missing wedge for tomograms with -60 to 60 degrees tilt range. The other tilt scheme or when the tomograms have large x axis tilt. The results might not be optimal. 
 ## 4. Can not create a good mask during mask generation step
-The mask is only important if the sample is sparsely located in the tomograms. And the mask do not need to be perfect to obtain good result, in other words, including many empty/unwanted subtomos during the refinement can be toralated. 
+The mask is only important if the sample is sparsely located in the tomograms. And the mask do not need to be perfect to obtain good result, in other words, including many empty/unwanted subtomograms during the refinement can be tolerated. 
 
 To obtain a good mask, the tomograms should have sufficient contrast, which can be achieved by CTF deconvolution. User defined mask can also be supplied by changing the mask_name field in the star file. Alternately, you can also use subtomograms extracted with other methods and skip the entire mask creation and subtomograms extraction steps.
 

@@ -9,7 +9,7 @@ from IsoNet.util.metadata import MetaData,Label,Item
 class ISONET:
     """
     ISONET: Train on tomograms and restore missing-wedge\n
-    for detail discription, run one of the following commands:
+    for detail description, run one of the following commands:
 
     isonet.py prepare_star -h
     isonet.py prepare_subtomo_star -h
@@ -29,8 +29,8 @@ class ISONET:
         isonet.py prepare_star folder_name [--output_star] [--pixel_size] [--defocus] [--number_subtomos]
         :param folder_name: (None) directory containing tomogram(s). Usually 1-5 tomograms are sufficient.
         :param output_star: (tomograms.star) star file similar to that from "relion". You can modify this file manually or with gui.
-        :param pixel_size: (10) pixel size in anstroms. Usually you want to bin your tomograms to about 10A pixel size.
-        Too large or too small pixel sizes are not recommanded, since the target resolution on Z-axis of corrected tomograms should be about 30A.
+        :param pixel_size: (10) pixel size in angstroms. Usually you want to bin your tomograms to about 10A pixel size.
+        Too large or too small pixel sizes are not recommended, since the target resolution on Z-axis of corrected tomograms should be about 30A.
         :param defocus: (0.0) defocus in Angstrom. Only need for ctf deconvolution. For phase plate data, you can leave defocus 0.
         If you have multiple tomograms with different defocus, please modify them in star file or with gui.
         :param number_subtomos: (100) Number of subtomograms to be extracted in later processes.
@@ -112,7 +112,7 @@ class ISONET:
         """
         \nCTF deconvolution for the tomograms.\n
         isonet.py deconv star_file [--deconv_folder] [--snrfalloff] [--deconvstrength] [--highpassnyquist] [--overlap_rate] [--ncpu] [--tomo_idx]
-        This step is recommanded because it enhances low resolution information for a better contrast. No need to do deconvolution for phase plate data.
+        This step is recommended because it enhances low resolution information for a better contrast. No need to do deconvolution for phase plate data.
         :param deconv_folder: (./deconv) Folder created to save deconvoluted tomograms.
         :param star_file: (None) Star file for tomograms.
         :param voltage: (300.0) Acceleration voltage in kV.
@@ -292,7 +292,7 @@ class ISONET:
 
         try:
             if os.path.isdir(subtomo_folder):
-                logging.warning("subtomo directory exists, the current directory will be overwriten")
+                logging.warning("subtomo directory exists, the current directory will be overwritten")
                 import shutil
                 shutil.rmtree(subtomo_folder)
             os.mkdir(subtomo_folder)
@@ -352,7 +352,7 @@ class ISONET:
         :param gpuID: (0,1,2,3) The ID of gpu to be used during the training. e.g 0,1,2,3.
         :param pretrained_model: (None) A trained neural network model in ".h5" format to start with.
         :param iterations: (30) Number of training iterations.
-        :param data_dir: (data) Temperary folder to save the generated data used for training.
+        :param data_dir: (data) Temporary folder to save the generated data used for training.
         :param log_level: (info) debug level, could be 'info' or 'debug'
         :param continue_from: (None) A Json file to continue from. That json file is generated at each iteration of refine.
         :param result_dir: ('results') The name of directory to save refined neural network models and subtomograms
