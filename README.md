@@ -40,6 +40,9 @@ export PATH=PATH_TO_ISONET_FOLDER/bin:$PATH
 
 export PYTHONPATH=PATH_TO_PARENT_FOLDER_OF_ISONET_FOLDER:$PYTHONPATH 
 ```
+
+or you can run `source source-env.sh` in your terminal, which will export required variables into your environment.
+
 4. Open a new terminal, enter your working directory and run 
 ```
 isonet.py check
