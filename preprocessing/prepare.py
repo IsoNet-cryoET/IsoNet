@@ -148,7 +148,7 @@ def get_cubes(inp,settings):
             offset = center-np.dot(rot,center)
             rotated_data[i] = affine_transform(orig_data,rot,offset=offset)
     
-    mw = mw2d(settings.crop_size)   
+    mw = mw2d(settings.crop_size, settings.missingAngle)   
     datax = apply_wedge_dcube(rotated_data, mw)
 
     for i in range(len(rotation_list)): 
