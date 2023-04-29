@@ -64,31 +64,32 @@ def apply_wedge_dcube(ori_data, mw2d, mw3d=None):
 
     return data
 
-def apply_wedge(ori_data, ld1 = 1, ld2 =0):
-    #apply -60~+60 wedge to single cube
-    data = np.rot90(ori_data, k=1, axes=(0,1)) #clock wise of counter clockwise??
-    mw = TwoDPsf(data.shape[1], data.shape[2]).getMW()
+# def apply_wedge(ori_data, ld1 = 1, ld2 =0):
+#     #apply -60~+60 wedge to single cube
+#     data = np.rot90(ori_data, k=1, axes=(0,1)) #clock wise of counter clockwise??
+#     mw = TwoDPsf(data.shape[1], data.shape[2]).getMW()
 
-    #if inverse:
-    #    mw = 1-mw
-    mw = mw * ld1 + (1-mw) * ld2
+#     #if inverse:
+#     #    mw = 1-mw
+#     mw = mw * ld1 + (1-mw) * ld2
 
-    mw3d = np.zeros(data.shape,dtype=np.complex)
-    f_data = np.fft.fftn(data)
-    for i, item in enumerate(f_data):
-        mw3d[i] = mw
-    mwshift = np.fft.fftshift(mw)
-    outData = mwshift*f_data
-    inv = np.fft.ifftn(outData)
-    real = np.real(inv).astype(np.float32)
-    out = np.rot90(real, k=3, axes=(0,1))
-    return out
+#     mw3d = np.zeros(data.shape,dtype=np.complex)
+#     f_data = np.fft.fftn(data)
+#     for i, item in enumerate(f_data):
+#         mw3d[i] = mw
+#     mwshift = np.fft.fftshift(mw)
+#     outData = mwshift*f_data
+#     inv = np.fft.ifftn(outData)
+#     real = np.real(inv).astype(np.float32)
+#     out = np.rot90(real, k=3, axes=(0,1))
+#     return out
 
-def apply_wedge1(ori_data, ld1 = 1, ld2 =0, mw3d = None):
+def apply_wedge(ori_data, mw = None, ld1 = 1, ld2 =0, mw3d = None):
 
     if mw3d is None:
         data = np.rot90(ori_data, k=1, axes=(0,1)) #clock wise of counter clockwise??
-        mw = mw2d(data.shape[1])
+        if mw is None:
+            mw = mw2d(data.shape[1])
 
         #if inverse:
         #    mw = 1-mw

@@ -11,7 +11,7 @@ from IsoNet.util.utils import mkfolder
 def simulate_noise1(params):
     np.random.seed(random.randint(0,100000))
     gs_cube = np.random.normal(size = (params[0],)*3).astype(np.float32)
-    gs_wedged = apply_wedge(gs_cube,ld1=1,ld2=0)
+    gs_wedged = apply_wedge(gs_cube,mw=None,ld1=1,ld2=0)
     return gs_wedged
 
 def simulate_noise2(params):

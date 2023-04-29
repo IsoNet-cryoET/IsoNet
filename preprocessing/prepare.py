@@ -5,7 +5,7 @@ import sys
 import mrcfile
 from IsoNet.preprocessing.cubes import create_cube_seeds,crop_cubes,DataCubes
 from IsoNet.preprocessing.img_processing import normalize
-from IsoNet.preprocessing.simulate import apply_wedge1 as  apply_wedge, mw2d
+from IsoNet.preprocessing.simulate import apply_wedge, mw2d
 from IsoNet.preprocessing.simulate import apply_wedge_dcube
 from multiprocessing import Pool
 import numpy as np
@@ -116,6 +116,9 @@ def get_cubes(inp,settings):
     normalized predicted + normalized orig -> normalize
     rotate by rotation_list and feed to get_cubes_one
     '''
+
+    mw = mw2d(settings.crop_size, settings.missingAngle)  
+    
     mrc, start = inp
     root_name = mrc.split('/')[-1].split('.')[0]
     current_mrc = '{}/{}_iter{:0>2d}.mrc'.format(settings.result_dir,root_name,settings.iter_count-1)
@@ -127,7 +130,7 @@ def get_cubes(inp,settings):
         ow_data = mrcData.data.astype(np.float32)*-1
     ow_data = normalize(ow_data, percentile = settings.normalize_percentile)
 
-    orig_data = apply_wedge(ow_data, ld1=0, ld2=1) + apply_wedge(iw_data, ld1 = 1, ld2=0)
+    orig_data = apply_wedge(ow_data, mw=mw, ld1=0, ld2=1) + apply_wedge(iw_data, mw=mw, ld1 = 1, ld2=0)
     #orig_data = ow_data
     orig_data = normalize(orig_data, percentile = settings.normalize_percentile)
 
@@ -148,7 +151,6 @@ def get_cubes(inp,settings):
             offset = center-np.dot(rot,center)
             rotated_data[i] = affine_transform(orig_data,rot,offset=offset)
     
-    mw = mw2d(settings.crop_size, settings.missingAngle)   
     datax = apply_wedge_dcube(rotated_data, mw)
 
     for i in range(len(rotation_list)): 
