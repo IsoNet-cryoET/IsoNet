@@ -324,8 +324,10 @@ class ISONET:
         result_dir: str='results',
         remove_intermediate: bool =False,
         select_subtomo_number: int = None,
-        preprocessing_ncpus: int = 16,
         continue_from: str=None,
+        preprocessing_ncpus: int = 16,
+        missingAngle: tuple=(30,30),
+        
         epochs: int = 10,
         batch_size: int = None,
         steps_per_epoch: int = None,
@@ -357,6 +359,10 @@ class ISONET:
         :param continue_from: (None) A Json file to continue from. That json file is generated at each iteration of refine.
         :param result_dir: ('results') The name of directory to save refined neural network models and subtomograms
         :param preprocessing_ncpus: (16) Number of cpu for preprocessing.
+
+        *********************Missing wedge settings*********************
+
+        :param missingAngle: (30,30) Missing wedge angular range in form (left_border, right_border) for the angular range of [-left_border, +right_border] counting from Z axis (default is [-30, +30]).
 
         ************************Training settings************************
 
