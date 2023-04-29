@@ -102,7 +102,7 @@ def run(args):
                 from IsoNet.util.noise_generator import make_noise_folder
                 
                 print(args.noise_mode)
-                make_noise_folder(args.noise_dir,args.noise_mode,args.cube_size,num_noise_volume,ncpus=args.preprocessing_ncpus)
+                make_noise_folder(args.noise_dir,args.noise_mode,args.cube_size,num_noise_volume,ncpus=args.preprocessing_ncpus, missingAngle=args.missingAngle)
             noise_level_series = get_noise_level(args.noise_level,args.noise_start_iter,args.iterations)
             args.noise_level_current =  noise_level_series[num_iter]
             logging.info("Noise Level:{}".format(args.noise_level_current))

@@ -2,8 +2,8 @@ import os
 import numpy as np
 import mrcfile
 
-from IsoNet.preprocessing.simulate import apply_wedge_dcube as apply_wedge
-from IsoNet.util.noise_generator import make_noise_one
+#from IsoNet.preprocessing.simulate import apply_wedge_dcube as apply_wedge
+#from IsoNet.util.noise_generator import make_noise_one
 # from IsoNet.preprocessing.simulate import apply_wedge
 
 def create_cube_seeds(img3D,nCubesPerImg,cubeSideLen,mask=None):
@@ -89,94 +89,94 @@ def prepare_cubes(X,Y,size=32,num=500):
 '''
 
 
-class DataCubes:
+# class DataCubes:
 
-    def __init__(self, tomogram, tomogram2 = None, nCubesPerImg=32, cubeSideLen=32, cropsize=32, mask = None, 
-    validationSplit=0.1, noise_folder = None, noise_level = 0, noise_mode = 'ramp'):
+#     def __init__(self, tomogram, tomogram2 = None, nCubesPerImg=32, cubeSideLen=32, cropsize=32, mask = None, 
+#     validationSplit=0.1, noise_folder = None, noise_level = 0, noise_mode = 'ramp'):
 
-        #TODO nCubesPerImg is always 1. We should not use this variable @Zhang Heng.
-        #TODO consider add gaussian filter here
-        self.tomogram = tomogram
-        self.nCubesPerImg = nCubesPerImg
-        self.cubeSideLen = cubeSideLen
-        self.cropsize = cropsize
-        self.mask = mask
-        self.validationSplit = validationSplit
-        self.__cubesY_padded = None
-        self.__cubesX_padded = None
-        self.__cubesY = None
-        self.__cubesX = None
-        self.noise_folder = noise_folder
-        self.noise_level = noise_level
-        self.noise_mode = noise_mode
+#         #TODO nCubesPerImg is always 1. We should not use this variable @Zhang Heng.
+#         #TODO consider add gaussian filter here
+#         self.tomogram = tomogram
+#         self.nCubesPerImg = nCubesPerImg
+#         self.cubeSideLen = cubeSideLen
+#         self.cropsize = cropsize
+#         self.mask = mask
+#         self.validationSplit = validationSplit
+#         self.__cubesY_padded = None
+#         self.__cubesX_padded = None
+#         self.__cubesY = None
+#         self.__cubesX = None
+#         self.noise_folder = noise_folder
+#         self.noise_level = noise_level
+#         self.noise_mode = noise_mode
 
-        #if we have two sub-tomograms for denoising (noise to noise), we will enable the parameter tomogram2, tomogram1 and 2 should be in same size
-        #Using tomogram1 for X and tomogram2 for Y.
-        self.tomogram2 = tomogram2
-        self.__seeds = None
+#         #if we have two sub-tomograms for denoising (noise to noise), we will enable the parameter tomogram2, tomogram1 and 2 should be in same size
+#         #Using tomogram1 for X and tomogram2 for Y.
+#         self.tomogram2 = tomogram2
+#         self.__seeds = None
 
-    #@property
-    #def seeds(self):
-    #    if self.__seeds is None:
-    #        self.__seeds=create_cube_seeds(self.tomogram,self.nCubesPerImg,self.cropsize,self.mask)
-    #    return self.__seeds
+#     #@property
+#     #def seeds(self):
+#     #    if self.__seeds is None:
+#     #        self.__seeds=create_cube_seeds(self.tomogram,self.nCubesPerImg,self.cropsize,self.mask)
+#     #    return self.__seeds
 
-    @property
-    def cubesX_padded(self):
-        if self.__cubesX_padded is None:
-            #self.__cubesX_padded=crop_cubes(self.tomogram,self.seeds,self.cropsize).astype(np.float32)
-            #self.__cubesX_padded = np.array(list(map(apply_wedge, self.__cubesX_padded)), dtype = np.float32)
-            self.__cubesX_padded = apply_wedge(self.tomogram)
-        return self.__cubesX_padded
+#     @property
+#     def cubesX_padded(self):
+#         if self.__cubesX_padded is None:
+#             #self.__cubesX_padded=crop_cubes(self.tomogram,self.seeds,self.cropsize).astype(np.float32)
+#             #self.__cubesX_padded = np.array(list(map(apply_wedge, self.__cubesX_padded)), dtype = np.float32)
+#             self.__cubesX_padded = apply_wedge(self.tomogram)
+#         return self.__cubesX_padded
 
-    @property
-    def cubesY_padded(self):
-        if self.__cubesY_padded is None:
-            #if self.tomogram2 is None:
-            #    self.__cubesY_padded=crop_cubes(self.tomogram,self.seeds,self.cropsize)
-            #else:
-            #    self.__cubesY_padded=crop_cubes(self.tomogram2,self.seeds,self.cropsize)
-            self.__cubesY_padded = self.tomogram
-        return self.__cubesY_padded
+#     @property
+#     def cubesY_padded(self):
+#         if self.__cubesY_padded is None:
+#             #if self.tomogram2 is None:
+#             #    self.__cubesY_padded=crop_cubes(self.tomogram,self.seeds,self.cropsize)
+#             #else:
+#             #    self.__cubesY_padded=crop_cubes(self.tomogram2,self.seeds,self.cropsize)
+#             self.__cubesY_padded = self.tomogram
+#         return self.__cubesY_padded
 
 
-    @property
-    def cubesY(self):
-        if self.__cubesY is None:
-            self.__cubesY = self.crop_to_size(self.cubesY_padded, self.cubeSideLen)
-        return self.__cubesY
+#     @property
+#     def cubesY(self):
+#         if self.__cubesY is None:
+#             self.__cubesY = self.crop_to_size(self.cubesY_padded, self.cubeSideLen)
+#         return self.__cubesY
 
-    @property
-    def cubesX(self):
-        if self.__cubesX is None:
+#     @property
+#     def cubesX(self):
+#         if self.__cubesX is None:
 
-            self.__cubesX = self.crop_to_size(self.cubesX_padded, self.cubeSideLen)
-            if self.noise_level > 0.0000001:
-                if self.noise_folder is not None:
-                    path_noise = sorted([self.noise_folder+'/'+f for f in os.listdir(self.noise_folder)])
-                    path_index = np.random.permutation(len(path_noise))[0:self.__cubesX.shape[0]]
-                    def read_vol(f):
-                        with mrcfile.open(f) as mf:
-                            res = mf.data
-                        return res
-                    noise_volume = np.array([read_vol(path_noise[j]) for j in path_index])
-                else:
-                    noise_volume = make_noise_one(cubesize = self.cubeSideLen,mode=self.noise_mode)
+#             self.__cubesX = self.crop_to_size(self.cubesX_padded, self.cubeSideLen)
+#             if self.noise_level > 0.0000001:
+#                 if self.noise_folder is not None:
+#                     path_noise = sorted([self.noise_folder+'/'+f for f in os.listdir(self.noise_folder)])
+#                     path_index = np.random.permutation(len(path_noise))[0:self.__cubesX.shape[0]]
+#                     def read_vol(f):
+#                         with mrcfile.open(f) as mf:
+#                             res = mf.data
+#                         return res
+#                     noise_volume = np.array([read_vol(path_noise[j]) for j in path_index])
+#                 else:
+#                     noise_volume = make_noise_one(cubesize = self.cubeSideLen,mode=self.noise_mode)
                 
-                self.__cubesX += self.noise_level * noise_volume / np.std(noise_volume)
-        return self.__cubesX
+#                 self.__cubesX += self.noise_level * noise_volume / np.std(noise_volume)
+#         return self.__cubesX
 
 
-    def crop_to_size(self, array, size):
-        start = self.cropsize//2 - size//2
-        end = self.cropsize//2 + size//2
-        return array[start:end,start:end,start:end]
+#     def crop_to_size(self, array, size):
+#         start = self.cropsize//2 - size//2
+#         end = self.cropsize//2 + size//2
+#         return array[start:end,start:end,start:end]
 
-    def create_training_data3D(self):
-        n_val = int(self.cubesX.shape[0]*self.validationSplit)
-        n_train = int(self.cubesX.shape[0])-n_val
-        X_train, Y_train = self.cubesX[:n_train], self.cubesY[:n_train]
-        X_train, Y_train = np.expand_dims(X_train,-1), np.expand_dims(Y_train,-1)
-        X_test, Y_test = self.cubesX[-n_val:], self.cubesY[-n_val:]
-        X_test, Y_test = np.expand_dims(X_test,-1), np.expand_dims(Y_test,-1)
-        return (X_train, Y_train),(X_test, Y_test)
+#     def create_training_data3D(self):
+#         n_val = int(self.cubesX.shape[0]*self.validationSplit)
+#         n_train = int(self.cubesX.shape[0])-n_val
+#         X_train, Y_train = self.cubesX[:n_train], self.cubesY[:n_train]
+#         X_train, Y_train = np.expand_dims(X_train,-1), np.expand_dims(Y_train,-1)
+#         X_test, Y_test = self.cubesX[-n_val:], self.cubesY[-n_val:]
+#         X_test, Y_test = np.expand_dims(X_test,-1), np.expand_dims(Y_test,-1)
+#         return (X_train, Y_train),(X_test, Y_test)
