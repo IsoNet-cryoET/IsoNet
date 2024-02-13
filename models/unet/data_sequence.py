@@ -22,8 +22,8 @@ class dataSequence(Sequence):
         idx = slice(i*self.batch_size,(i+1)*self.batch_size)
         idx = self.perm[idx]
         # print('*******',self.x[-1],mrcfile.open(self.x[0]).data[:,:,:,np.newaxis].shape)
-        rx = np.array([mrcfile.open(self.x[j]).data[:,:,:,np.newaxis] for j in idx])
-        ry = np.array([mrcfile.open(self.y[j]).data[:,:,:,np.newaxis] for j in idx])
+        rx = np.array([mrcfile.open(self.x[j], permissive=True).data[:,:,:,np.newaxis] for j in idx])
+        ry = np.array([mrcfile.open(self.y[j], permissive=True).data[:,:,:,np.newaxis] for j in idx])
         # for j in idx:
         #     print(mrcfile.open(self.x[j]).data.shape,mrcfile.open(self.y[j]).data.shape)
         return rx,ry
@@ -52,8 +52,8 @@ def get_gen(x_set,y_set,batch_size,shuffle=True):
             for i in range(len(x_set)//batch_size):
                 idx = slice(i * batch_size,(i+1) * batch_size)
                 idx = all_idx[idx]
-                rx = np.array([mrcfile.open(x_set[j]).data[:,:,:,np.newaxis] for j in idx])
-                ry = np.array([mrcfile.open(y_set[j]).data[:,:,:,np.newaxis] for j in idx])
+                rx = np.array([mrcfile.open(x_set[j], permissive=True).data[:,:,:,np.newaxis] for j in idx])
+                ry = np.array([mrcfile.open(y_set[j], permissive=True).data[:,:,:,np.newaxis] for j in idx])
 
                 yield rx,ry
     return gen
@@ -67,6 +67,6 @@ def get_gen_single(x_set,batch_size,shuffle=True):
             for i in range(len(x_set)//batch_size):
                 idx = slice(i * batch_size,(i+1) * batch_size)
                 idx = all_idx[idx]
-                rx = np.array([mrcfile.open(x_set[j]).data[:,:,:,np.newaxis] for j in idx])
+                rx = np.array([mrcfile.open(x_set[j], permissive=True).data[:,:,:,np.newaxis] for j in idx])
                 yield rx
     return gen

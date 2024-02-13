@@ -111,7 +111,7 @@ if __name__ == "__main__":
     import sys
     import mrcfile
     args = sys.argv
-    with mrcfile.open(args[1]) as n:
+    with mrcfile.open(args[1], permissive=True) as n:
         tomo = n.data
     mask = stdmask_mpi(tomo,cubelen=20,cubesize=80,ncpu=20,if_rescale=True)
     with mrcfile.new(args[2],overwrite=True) as n:

@@ -45,7 +45,7 @@ def wiener1d(angpix, voltage, cs, defocus, snrfalloff, deconvstrength, highpassn
     return ctf, wiener
 
 def tom_deconv_tomo(vol_file, out_file,angpix, voltage, cs, defocus, snrfalloff, deconvstrength, highpassnyquist, phaseflipped, phaseshift, ncpu=8):
-    with mrcfile.open(vol_file) as f:
+    with mrcfile.open(vol_file, permissive=True) as f:
         header_in = f.header
         vol = f.data
         voxelsize = f.voxel_size
@@ -135,7 +135,7 @@ class Chunks:
     def get_chunks(self,tomo_name):
         #side*(1-overlap)*(num-1)+side = sp + side*overlap -> side *(1-overlap) * num = side
         root_name = os.path.splitext(os.path.basename(tomo_name))[0]
-        with mrcfile.open(tomo_name) as f:
+        with mrcfile.open(tomo_name, permissive=True) as f:
             vol = f.data#.astype(np.float32)
         cropsize = int(self.chunk_size*(1+self.overlap))
         cubesize = self.chunk_size
@@ -169,7 +169,7 @@ class Chunks:
             for j in range(self._N[1]):
                 for k in range(self._N[2]):
                     one_chunk_file = new_file_list[i*self._N[1]*self._N[2]+j*self._N[2]+k]
-                    with mrcfile.open(one_chunk_file) as f:
+                    with mrcfile.open(one_chunk_file, permissive=True) as f:
                         one_chunk_data = f.data
                     new[i*cubesize:(i+1)*cubesize,j*cubesize:(j+1)*cubesize,k*cubesize:(k+1)*cubesize] \
                             = one_chunk_data[start:end,start:end,start:end]
@@ -205,7 +205,7 @@ def deconv_one(tomo, out_tomo, voltage=300.0, cs=2.7, defocus=1.0, pixel_size=1.
             chunks_deconv_list = list(p.map(partial_func,chunks_list))
         vol_restored = c.restore(chunks_deconv_list)
         
-        with mrcfile.open(tomo) as n:
+        with mrcfile.open(tomo, permissive=True) as n:
             header_input = n.header
             pixel_size = n.voxel_size
 

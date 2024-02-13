@@ -47,7 +47,7 @@ if __name__ == '__main__':
     mw = np.repeat(TwoDPsf(sidelen,sidelen).getMW()[:,np.newaxis,:],sidelen,axis=1)
     circle = np.repeat(TwoDPsf(sidelen,sidelen).circleMask()[:,np.newaxis,:],sidelen,axis=1)
     gain = (circle -mw)/2
-    with mrcfile.open('/storage/heng/mwrtest3D/t371_2/cuberesults/pp676-bin4-wbp_000073_iter15.mrc') as op:
+    with mrcfile.open('/storage/heng/mwrtest3D/t371_2/cuberesults/pp676-bin4-wbp_000073_iter15.mrc', permissive=True) as op:
         data = op.data
     a = tf.convert_to_tensor(mw[np.newaxis,:,:,:,np.newaxis])
     b = tf.convert_to_tensor(data[np.newaxis,:,:,:,np.newaxis])

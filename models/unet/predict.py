@@ -28,7 +28,7 @@ def predict(settings):
     data = []
     for i,mrc in enumerate(list(settings.mrc_list) + list(settings.mrc_list[:append_number])):
         root_name = mrc.split('/')[-1].split('.')[0]
-        with mrcfile.open(mrc) as mrcData:
+        with mrcfile.open(mrc, permissive=True) as mrcData:
             real_data = mrcData.data.astype(np.float32)*-1
         real_data=normalize(real_data, percentile = settings.normalize_percentile)
 

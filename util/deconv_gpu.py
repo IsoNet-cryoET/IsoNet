@@ -177,7 +177,7 @@ if __name__ == '__main__':
     num_cpu = int(args[6])
     deconvstrength = 1
     
-    with mrcfile.open(mrcFile) as mrc:
+    with mrcfile.open(mrcFile, permissive=True) as mrc:
         vol = mrc.data
     c = Chunks(num=(1,4,4),overlap=0.25)
     chunks_list = c.get_chunks(vol)

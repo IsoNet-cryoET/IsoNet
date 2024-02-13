@@ -445,7 +445,7 @@ class ISONET:
             tomo_name = item.rlnMicrographName
             zoom_factor = float(ori_apix)/apix
             new_tomo_name = "{}/{}".format(out_folder,os.path.basename(tomo_name))
-            with mrcfile.open(tomo_name) as mrc:
+            with mrcfile.open(tomo_name, permissive=True) as mrc:
                 data = mrc.data
             print("scaling: {}".format(tomo_name))
             new_data = zoom(data, zoom_factor,order=3, prefilter=False)

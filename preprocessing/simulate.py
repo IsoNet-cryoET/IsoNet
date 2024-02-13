@@ -51,7 +51,7 @@ def apply_wedge_dcube(ori_data, mw2d, mw3d=None):
 
     else:
         import mrcfile
-        with mrcfile.open(mw3d, 'r') as mrc:
+        with mrcfile.open(mw3d, permissive=True) as mrc:
             mw = mrc.data
         mwshift = np.fft.fftshift(mw)
         data = np.zeros_like(ori_data)
@@ -105,7 +105,7 @@ def apply_wedge1(ori_data, ld1 = 1, ld2 =0, mw3d = None):
         return outData
     else:
         import mrcfile
-        with mrcfile.open(mw3d, 'r') as mrc:
+        with mrcfile.open(mw3d, permissive=True) as mrc:
             mw = mrc.data
         mw = np.fft.fftshift(mw)
         mw = mw * ld1 + (1-mw) * ld2

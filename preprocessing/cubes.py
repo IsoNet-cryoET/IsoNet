@@ -156,7 +156,7 @@ class DataCubes:
                     path_noise = sorted([self.noise_folder+'/'+f for f in os.listdir(self.noise_folder)])
                     path_index = np.random.permutation(len(path_noise))[0:self.__cubesX.shape[0]]
                     def read_vol(f):
-                        with mrcfile.open(f) as mf:
+                        with mrcfile.open(f, permissive=True) as mf:
                             res = mf.data
                         return res
                     noise_volume = np.array([read_vol(path_noise[j]) for j in path_index])

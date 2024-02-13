@@ -35,7 +35,7 @@ def extract_subtomos(settings):
             pixel_size = it.rlnPixelSize
             if settings.use_deconv_tomo and "rlnDeconvTomoName" in md.getLabels() and os.path.isfile(it.rlnDeconvTomoName):
                 logging.info("Extract from deconvolved tomogram {}".format(it.rlnDeconvTomoName))
-                with mrcfile.open(it.rlnDeconvTomoName) as mrcData:
+                with mrcfile.open(it.rlnDeconvTomoName, permissive=True) as mrcData:
                     orig_data = mrcData.data.astype(np.float32)
             else:        
                 print("Extract from origional tomogram {}".format(it.rlnMicrographName))
@@ -44,7 +44,7 @@ def extract_subtomos(settings):
             
 
             if "rlnMaskName" in md.getLabels() and it.rlnMaskName not in [None, "None"]:
-                with mrcfile.open(it.rlnMaskName) as m:
+                with mrcfile.open(it.rlnMaskName, permissive=True) as m:
                     mask_data = m.data
             else:
                 mask_data = None
@@ -89,7 +89,7 @@ def get_cubes_one(data_X, data_Y, settings, start = 0, mask = None, add_noise = 
             path_noise = sorted([settings.noise_dir+'/'+f for f in os.listdir(settings.noise_dir)])
             path_index = np.random.randint(len(path_noise))
             def read_vol(f):
-                with mrcfile.open(f) as mf:
+                with mrcfile.open(f, permissive=True) as mf:
                     res = mf.data
                 return res
             noise_volume = read_vol(path_noise[path_index])
@@ -119,11 +119,11 @@ def get_cubes(inp,settings):
     mrc, start = inp
     root_name = mrc.split('/')[-1].split('.')[0]
     current_mrc = '{}/{}_iter{:0>2d}.mrc'.format(settings.result_dir,root_name,settings.iter_count-1)
-    with mrcfile.open(mrc) as mrcData:
+    with mrcfile.open(mrc, permissive=True) as mrcData:
         iw_data = mrcData.data.astype(np.float32)*-1
     iw_data = normalize(iw_data, percentile = settings.normalize_percentile)
 
-    with mrcfile.open(current_mrc) as mrcData:
+    with mrcfile.open(current_mrc, permissive=True) as mrcData:
         ow_data = mrcData.data.astype(np.float32)*-1
     ow_data = normalize(ow_data, percentile = settings.normalize_percentile)
 
@@ -212,7 +212,7 @@ def generate_first_iter_mrc(mrc,settings):
     '''
     root_name = mrc.split('/')[-1].split('.')[0]
     extension = mrc.split('/')[-1].split('.')[1]
-    with mrcfile.open(mrc) as mrcData:
+    with mrcfile.open(mrc, permissive=True) as mrcData:
         orig_data = normalize(mrcData.data.astype(np.float32)*-1, percentile = settings.normalize_percentile)
     orig_data = apply_wedge(orig_data, ld1=1, ld2=0)
     orig_data = normalize(orig_data, percentile = settings.normalize_percentile)
