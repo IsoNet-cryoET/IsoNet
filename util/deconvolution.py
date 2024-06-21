@@ -44,7 +44,7 @@ def wiener1d(angpix, voltage, cs, defocus, snrfalloff, deconvstrength, highpassn
     wiener = ctf/(ctf*ctf+1/snr)
     return ctf, wiener
 
-def tom_deconv_tomo(vol_file, out_file,angpix, voltage, cs, defocus, snrfalloff, deconvstrength, highpassnyquist, phaseflipped, phaseshift, ncpu=8):
+def tom_deconv_tomo(vol_file, out_file, angpix, voltage, cs, defocus, snrfalloff, deconvstrength, highpassnyquist, phaseflipped, phaseshift, ncpu=8):
     with mrcfile.open(vol_file, permissive=True) as f:
         header_in = f.header
         vol = f.data

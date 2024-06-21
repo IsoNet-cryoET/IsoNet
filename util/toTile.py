@@ -1,75 +1,130 @@
 import numpy as np
 
 class reform3D:
-    def __init__(self,data3D):
-        self._sp = data3D.shape
+    def __init__(self,data3D, cubesize, cropsize, edge_depth):
+        self._sp = np.array(data3D.shape)
         self._orig_data = data3D
+        self.cubesize = cubesize
+        self.cropsize = cropsize
+        self.edge_depth = edge_depth
+        self._sidelen = np.ceil((self._sp + edge_depth * 2)/self.cubesize).astype(int)
+        #self._sidelen = np.ceil((1.*self._sp)/self.cubesize).astype(int)
 
-    def pad_and_crop_new(self, cubesize=32, cropsize = 64):
-        self._cropsize = cropsize
-        sp = np.array(self._sp)
-        self._sidelen = sp//cubesize+1
-        padi = int((cropsize - cubesize)/2)
-        padsize = (self._sidelen*cubesize + padi - sp).astype(int)
-        data = np.pad(self._orig_data,((padi,padsize[0]),(padi,padsize[1]),(padi,padsize[2]),(0,0)),'symmetric')
+    def pad_and_crop(self):
+        
+        #----------------------------|---------------------------
+        #|                           |
+        #|     ---------------|------|--------edge---------------
+        #|     |  ------------|------|--------image_edge----------  
+        #|     |  |           |      |
+        #|     |  |           |      |
+        #|     |  |           |      |
+        #|     |  |           |      |
+        #|     -----cube-------      | 
+        #|     |  |                  |
+        #|     |  |                  |
+        #|----------crop--------------       
+        #|     |  |        
+        #|     |  |       
+        #|     |  |       
+        #|     |  |
+        pad_left = int((self.cropsize - self.cubesize)/2 + self.edge_depth)
+        
+        # pad_right + pad_left + shape = sidelen * cube_zize + (crop_size-cube_size)
+        # pad_right + pad_left + shape >= (self._sp + edge_depth * 2) + (crop_size-cube_size)
+        pad_right = (self._sidelen * self.cubesize + (self.cropsize-self.cubesize) - pad_left - self._sp).astype(int)
+
+        data = np.pad(self._orig_data,((pad_left,pad_right[0]),(pad_left,pad_right[1]),(pad_left,pad_right[2])),'symmetric')
         outdata=[]
 
         for i in range(self._sidelen[0]):
             for j in range(self._sidelen[1]):
                 for k in range(self._sidelen[2]):
-                    cube = data[i*cubesize:i*cubesize+cropsize,
-                            j*cubesize:j*cubesize+cropsize,
-                            k*cubesize:k*cubesize+cropsize]
+                    cube = data[i*self.cubesize:i*self.cubesize+self.cropsize,
+                            j*self.cubesize:j*self.cubesize+self.cropsize,
+                            k*self.cubesize:k*self.cubesize+self.cropsize]
                     outdata.append(cube)
         outdata=np.array(outdata)
         return outdata
+    
+    def mask(self, x_len, y_len, z_len):
+        # need to consider should partisioned to len+1 so that left and right can add to one
+        p = 2*self.edge_depth#(self.cropsize - self.cubesize)
+        assert x_len > 2*p
+        assert y_len > 2*p
+        assert z_len > 2*p
+
+        array_x = np.minimum(np.arange(x_len+1), p) / p
+        array_x = array_x * np.flip(array_x)
+        array_x  = array_x[np.newaxis,np.newaxis,:]
+
+        array_y = np.minimum(np.arange(y_len+1), p) / p
+        array_y = array_y * np.flip(array_y)
+        array_y  = array_y[np.newaxis,:,np.newaxis]
+
+        array_z = np.minimum(np.arange(z_len+1), p) / p
+        array_z = array_z * np.flip(array_z)
+        array_z  = array_z[:,np.newaxis,np.newaxis]
+
+        out = array_x * array_y * array_z
+        return out[:x_len,:y_len,:z_len]
 
 
+    def restore(self,cubes):
 
+        start = (self.cropsize-self.cubesize)//2-self.edge_depth
+        end = (self.cropsize-self.cubesize)//2+self.cubesize+self.edge_depth
+        cubes = cubes[:,start:end,start:end,start:end]
 
-    def pad_and_crop(self,cropsize=(64,64,64)):
-        self._cropsize = cropsize
-        sp = np.array(self._sp)
-        padsize = (sp//64+1)*64-sp
-        data = np.pad(self._orig_data,((0,padsize[0]),(0,padsize[1]),(0,padsize[2]),(0,0)),'edge')
-        self._sidelen = (padsize+sp)//64
-
-        outdata=[]
+        restored = np.zeros((self._sidelen[0]*self.cubesize+self.edge_depth*2,
+                        self._sidelen[1]*self.cubesize+self.edge_depth*2,
+                        self._sidelen[2]*self.cubesize+self.edge_depth*2))
+        print("size restored", restored.shape)
+        mask_cube = self.mask(self.cubesize+self.edge_depth*2,self.cubesize+self.edge_depth*2,self.cubesize+self.edge_depth*2)
         for i in range(self._sidelen[0]):
             for j in range(self._sidelen[1]):
                 for k in range(self._sidelen[2]):
-                    cube = data[i*cropsize[0]:(i+1)*cropsize[0],j*cropsize[0]:(j+1)*cropsize[0],k*cropsize[0]:(k+1)*cropsize[0]]
-                    outdata.append(cube)
-        outdata=np.array(outdata)
-        return outdata
+                    restored[i*self.cubesize:(i+1)*self.cubesize+self.edge_depth*2,
+                        j*self.cubesize:(j+1)*self.cubesize+self.edge_depth*2,
+                        k*self.cubesize:(k+1)*self.cubesize+self.edge_depth*2] \
+                        += cubes[i*self._sidelen[1]*self._sidelen[2]+j*self._sidelen[2]+k]\
+                            *mask_cube
+                        
+                    
+        p =self.edge_depth*2 #int((self.cropsize-self.cubesize)/2+self.edge_depth)
+        restored = restored[p:p+self._sp[0],p:p+self._sp[1],p:p+self._sp[2]]
+        return restored
 
+    def mask_old(self):
+        from functools import reduce
+        c = self.cropsize
+        p = (self.cropsize - self.cubesize)
+        mask = np.ones((c, c, c))
+        f = lambda x: min(x, p)/p 
+        for i in range(c):
+            for j in range(c):
+                for k in range(c):
+                    d = [i, c-i, j, c-j, k, c-k]
+                    d = map(f,d)
+                    d = reduce(lambda a,b: a*b, d)
+                    mask[i,j,k] = d
+        return mask
     def restore_from_cubes(self,cubes):
-        if len(cubes.shape)==5 and cubes.shape[-1]==1:
-            cubes = cubes.reshape(cubes.shape[0:-1])
-        new = np.zeros((self._sidelen[0]*64,self._sidelen[1]*64,self._sidelen[2]*64))
-        for i in range(self._sidelen[0]):
-            for j in range(self._sidelen[1]):
-                for k in range(self._sidelen[2]):
-                    new[i*self._cropsize[0]:(i+1)*self._cropsize[0],j*self._cropsize[0]:(j+1)*self._cropsize[0],k*self._cropsize[0]:(k+1)*self._cropsize[0]] \
-                     = cubes[i*self._sidelen[1]*self._sidelen[2]+j*self._sidelen[1]+k]
-        return new[0:self._sp[0],0:self._sp[1],0:self._sp[2]]
 
-    def restore_from_cubes_new(self,cubes, cubesize = 32, cropsize = 64):
-        if len(cubes.shape)==5 and cubes.shape[-1]==1:
-            cubes = cubes.reshape(cubes.shape[0:-1])
-
-        new = np.zeros((self._sidelen[0]*cubesize,self._sidelen[1]*cubesize,self._sidelen[2]*cubesize))
-        start=int((cropsize-cubesize)/2)
-        end=int((cropsize+cubesize)/2)
+        new = np.zeros((self._sidelen[0]*self.cubesize,
+                        self._sidelen[1]*self.cubesize,
+                        self._sidelen[2]*self.cubesize))
+        start=int((self.cropsize-self.cubesize)/2)
+        end=int((self.cropsize+self.cubesize)/2)
         
         for i in range(self._sidelen[0]):
             for j in range(self._sidelen[1]):
                 for k in range(self._sidelen[2]):
-                    new[i*cubesize:(i+1)*cubesize,j*cubesize:(j+1)*cubesize,k*cubesize:(k+1)*cubesize] \
-                            = cubes[i*self._sidelen[1]*self._sidelen[2]+j*self._sidelen[2]+k][start:end,start:end,start:end]
+                    new[i*self.cubesize:(i+1)*self.cubesize,
+                        j*self.cubesize:(j+1)*self.cubesize,
+                        k*self.cubesize:(k+1)*self.cubesize] \
+                        = cubes[i*self._sidelen[1]*self._sidelen[2]+j*self._sidelen[2]+k][start:end,start:end,start:end]
         return new[0:self._sp[0],0:self._sp[1],0:self._sp[2]]
-
-
     def pad4times(self,time=4):
         sp = np.array(self._orig_data.shape)
         sp = np.expand_dims(sp,axis=0)

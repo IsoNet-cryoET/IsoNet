@@ -83,10 +83,13 @@ def predict_one(args,one_tomo,output_file=None):
     with mrcfile.open(one_tomo,permissive=True) as mrcData:
         real_data = mrcData.data.astype(np.float32)*-1
         voxelsize = mrcData.voxel_size
-    real_data = normalize(real_data,percentile=args.normalize_percentile)
-    data=np.expand_dims(real_data,axis=-1)
-    reform_ins = reform3D(data)
-    data = reform_ins.pad_and_crop_new(args.cube_size,args.crop_size)
+    data = normalize(real_data,percentile=args.normalize_percentile)
+    #data=np.expand_dims(real_data,axis=-1)
+    #reform_ins = reform3D(data)
+    #data = reform_ins.pad_and_crop_new(args.cube_size,args.crop_size)
+    #print(data.shape)
+    reform_ins = reform3D(data,args.cube_size,args.crop_size,9)
+    data = reform_ins.pad_and_crop()
     #to_predict_data_shape:(n,cropsize,cropsize,cropsize,1)
     #imposing wedge to every cubes
     #data=wedge_imposing(data)
@@ -105,11 +108,11 @@ def predict_one(args,one_tomo,output_file=None):
         in_data = data[i*N:(i+1)*N]
         # in_data_gen = get_gen_single(in_data,args.batch_size,shuffle=False)
         # in_data_tf = tf.data.Dataset.from_generator(in_data_gen,output_types=tf.float32)
-        outData[i*N:(i+1)*N] = model.predict(in_data,verbose=0)
+        outData[i*N:(i+1)*N] = model.predict(in_data,verbose=0).squeeze()
     outData = outData[0:num_patches]
 
-    outData=reform_ins.restore_from_cubes_new(outData.reshape(outData.shape[0:-1]), args.cube_size, args.crop_size)
-
+    #outData=reform_ins.restore_from_cubes_new(outData.reshape(outData.shape[0:-1]), args.cube_size, args.crop_size)
+    outData=reform_ins.restore(outData)
     outData = normalize(outData,percentile=args.normalize_percentile)
     with mrcfile.new(output_file, overwrite=True) as output_mrc:
         output_mrc.set_data(-outData)
