@@ -389,6 +389,8 @@ class ISONET:
         :param pool: (False) Use pooling layer instead of stride convolution layer.
         :param normalize_percentile: (True) Normalize the 5 percent and 95 percent pixel intensity to 0 and 1 respectively. If this is set to False, normalize the input to 0 mean and 1 standard dievation.
         """
+        #switch the two angles
+        missingAngle=[missingAngle[1],missingAngle[0]]
         from IsoNet.bin.refine import run
         d = locals()
         d_args = Arg(d)
